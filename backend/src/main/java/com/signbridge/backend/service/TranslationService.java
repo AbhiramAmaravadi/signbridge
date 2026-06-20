@@ -1,26 +1,36 @@
 package com.signbridge.backend.service;
 
-import com.signbridge.backend.dto.TranslationRequest;
+import com.signbridge.backend.entity.Translation;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+/**
+ * TranslationService
+ *
+ * Handles translation-related business logic.
+ */
 @Service
 public class TranslationService {
 
     /**
-     * Converts recognized ASL words into a sentence.
+     * Converts recognized ASL words into a Translation object.
      *
-     * Current behavior:
-     * - Joins words together
-     *
-     * Future behavior:
-     * - Call OpenAI
-     * - Save translations to PostgreSQL
-     * - Track sessions
-     * - Generate predictions
+     * Future:
+     * OpenAI will generate natural English.
      */
-    public String translate(TranslationRequest request) {
+    public Translation translate(List<String> words) {
 
-        // Combine all ASL words into a single string
-        return String.join(" ", request.words());
+        // Current ASL gloss
+        String gloss = String.join(" ", words);
+
+        // Placeholder English sentence
+        String englishSentence = gloss;
+
+        return new Translation(
+                gloss,
+                englishSentence,
+                LocalDateTime.now());
     }
 }
