@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 
 
 class SequenceBuffer:
@@ -65,6 +66,7 @@ class SequenceBuffer:
     def save(self) -> Path:
         sequence = self.to_numpy()
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-        output_path = self.output_dir / f"sequence_{timestamp}.npy"
-        np.save(output_path, sequence)
+        output_path = self.output_dir / f"sequence_{timestamp}.parquet"
+        df_data = pd.DataFrame(sequence,columns=[f"Coordinate {i}" for i in range(1,len(sequence[1]) + 1)])
+        df_data.to_parquet(output_path,engine='fastparquet')
         return output_path

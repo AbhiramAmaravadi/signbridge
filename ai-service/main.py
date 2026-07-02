@@ -94,6 +94,7 @@ def main() -> None:
         output_dir=args.output_dir,
         save_stride=args.save_stride,
     )
+    
 
     last_frame_time = time.perf_counter()
     fps = 0.0
