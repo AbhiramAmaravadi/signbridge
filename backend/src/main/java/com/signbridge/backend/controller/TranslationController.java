@@ -4,7 +4,7 @@ import com.signbridge.backend.dto.TranslationRequest;
 import com.signbridge.backend.dto.TranslationResponse;
 import com.signbridge.backend.entity.Translation;
 import com.signbridge.backend.service.TranslationService;
-
+import java.util.List;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -81,5 +81,48 @@ public class TranslationController {
 
         return new TranslationResponse(
                 translation.getEnglishSentence());
+    }
+
+    /**
+     * Tests OpenAI integration.
+     */
+
+    /**
+     * Returns translation history.
+     */
+    @GetMapping("/translations")
+    public List<Translation> getTranslations() {
+        return translationService.getAllTranslations();
+    }
+
+    /**
+     * Returns a translation by ID.
+     *
+     * Example:
+     *
+     * GET /api/v1/translations/1
+     */
+    @GetMapping("/translations/{id}")
+    public Translation getTranslationById(
+            @PathVariable Long id) {
+
+        return translationService
+                .getTranslationById(id);
+    }
+
+    /**
+     * Deletes a translation by ID.
+     *
+     * Example:
+     *
+     * DELETE /api/v1/translations/1
+     */
+    @DeleteMapping("/translations/{id}")
+    public String deleteTranslation(
+            @PathVariable Long id) {
+
+        translationService.deleteTranslation(id);
+
+        return "Translation deleted successfully.";
     }
 }
