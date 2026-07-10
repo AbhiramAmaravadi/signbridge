@@ -16,8 +16,8 @@ class FeatureExtractor:
 
     LANDMARK_GROUPS = (
         LandmarkGroupSpec("face", 468),
-        LandmarkGroupSpec("pose", 33),
         LandmarkGroupSpec("left_hand", 21),
+        LandmarkGroupSpec("pose", 33),
         LandmarkGroupSpec("right_hand", 21),
     )
     VALUES_PER_LANDMARK = 3
@@ -26,8 +26,8 @@ class FeatureExtractor:
     def extract(self, results) -> np.ndarray:
         vectors = [
             self._landmarks_to_vector(results.face_landmarks, 468),
-            self._landmarks_to_vector(results.pose_landmarks, 33),
             self._landmarks_to_vector(results.left_hand_landmarks, 21),
+            self._landmarks_to_vector(results.pose_landmarks, 33),
             self._landmarks_to_vector(results.right_hand_landmarks, 21),
         ]
         return np.concatenate(vectors).astype(np.float32, copy=False)

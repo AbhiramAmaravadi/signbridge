@@ -6,9 +6,14 @@ from pathlib import Path
 
 import cv2
 
-from mediapipe_pipeline import FeatureExtractor, HolisticDetector, SequenceBuffer, Webcam
-from mediapipe_pipeline.holistic_detector import HolisticConfig
-from mediapipe_pipeline.webcam import WebcamConfig
+from mediapipe_pipeline import (
+    FeatureExtractor,
+    HolisticConfig,
+    HolisticDetector,
+    SequenceBuffer,
+    Webcam,
+    WebcamConfig,
+)
 
 
 WINDOW_NAME = "SignBridge MediaPipe Holistic"

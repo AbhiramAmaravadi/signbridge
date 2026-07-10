@@ -1,13 +1,15 @@
 """Reusable MediaPipe pipeline components for SignBridge."""
 
-from .feature_extractor import FeatureExtractor
-from .holistic_detector import HolisticDetector
+from .mediapipe.feature_extractor import FeatureExtractor
+from .mediapipe.holistic_detector import HolisticConfig, HolisticDetector
 from .sequence_buffer import SequenceBuffer
-from .webcam import Webcam
+from .webcam import Webcam, WebcamConfig
 
 __all__ = [
     "FeatureExtractor",
+    "HolisticConfig",
     "HolisticDetector",
     "SequenceBuffer",
     "Webcam",
+    "WebcamConfig",
 ]
