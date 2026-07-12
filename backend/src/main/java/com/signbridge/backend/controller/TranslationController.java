@@ -1,11 +1,13 @@
 package com.signbridge.backend.controller;
 
 import com.signbridge.backend.dto.TranslationRequest;
-import com.signbridge.backend.dto.TranslationResponse;
-import com.signbridge.backend.entity.Translation;
-import com.signbridge.backend.service.TranslationService;
+import com.signbridge.backend.dto.TranslationResult;
 
+import com.signbridge.backend.service.TranslationService;
+import java.util.List;
 import org.springframework.web.bind.annotation.*;
+
+import com.signbridge.backend.entity.Translation;
 
 /**
  * TranslationController
@@ -73,13 +75,52 @@ public class TranslationController {
      * @return translated sentence
      */
     @PostMapping("/translate")
-    public TranslationResponse translate(
+    public TranslationResult translate(
             @RequestBody TranslationRequest request) {
 
-        // Call service layer
-        Translation translation = translationService.translate(request.words());
+        return translationService.translate(request.words());
+    }
 
-        return new TranslationResponse(
-                translation.getEnglishSentence());
+    /**
+     * Tests OpenAI integration.
+     */
+
+    /**
+     * Returns translation history.
+     */
+    @GetMapping("/translations")
+    public List<Translation> getTranslations() {
+        return translationService.getAllTranslations();
+    }
+
+    /**
+     * Returns a translation by ID.
+     *
+     * Example:
+     *
+     * GET /api/v1/translations/1
+     */
+    @GetMapping("/translations/{id}")
+    public Translation getTranslationById(
+            @PathVariable Long id) {
+
+        return translationService
+                .getTranslationById(id);
+    }
+
+    /**
+     * Deletes a translation by ID.
+     *
+     * Example:
+     *
+     * DELETE /api/v1/translations/1
+     */
+    @DeleteMapping("/translations/{id}")
+    public String deleteTranslation(
+            @PathVariable Long id) {
+
+        translationService.deleteTranslation(id);
+
+        return "Translation deleted successfully.";
     }
 }
