@@ -1,5 +1,6 @@
 package com.signbridge.backend.service;
 
+import com.signbridge.backend.dto.TranslationResult;
 import com.signbridge.backend.entity.Translation;
 import com.signbridge.backend.repository.TranslationRepository;
 import org.springframework.stereotype.Service;
@@ -15,61 +16,71 @@ import java.util.List;
 @Service
 public class TranslationService {
 
-    // Repository used for database operations
     private final TranslationRepository translationRepository;
+    private final GeminiService geminiService;
+    private final GoogleTtsService googleTtsService;
 
-    /**
-     * Constructor Injection
-     *
-     * Spring automatically injects the repository bean.
-     */
-    public TranslationService(TranslationRepository translationRepository) {
+    public TranslationService(
+            TranslationRepository translationRepository,
+            GeminiService geminiService,
+            GoogleTtsService googleTtsService) {
+
         this.translationRepository = translationRepository;
+        this.geminiService = geminiService;
+        this.googleTtsService = googleTtsService;
     }
 
     /**
-     * Converts recognized ASL words into a Translation object.
+     * Workflow
      *
-     * Current behavior:
-     * - Joins ASL words into a gloss sentence
-     * - Uses placeholder English translation
-     * - Saves translation into PostgreSQL
-     *
-     * Future:
-     * - Call OpenAI to generate natural English
+     * Recognized Words
+     * ↓
+     * Build Gloss
+     * ↓
+     * Gemini
+     * ↓
+     * Google TTS
+     * ↓
+     * Save Translation
      */
-    public Translation translate(List<String> words) {
+    public TranslationResult translate(List<String> words) {
 
-        // Convert word list into ASL gloss
-        String gloss = String.join(" ", words);
+        // Step 1
+        String gloss = buildGloss(words);
 
-        // Placeholder English sentence
-        // Later this will come from OpenAI
-        String englishSentence = gloss;
+        // Step 2
+        TranslationResult result = geminiService.translate(gloss);
 
-        // Create Translation entity
+        // Step 3
+        String speechAudio = googleTtsService.synthesize(
+                result.getEnglishSentence());
+
+        result.setSpeechAudio(speechAudio);
+
+        // Step 4
         Translation translation = new Translation(
-                gloss,
-                englishSentence,
+                result.getAslGloss(),
+                result.getEnglishSentence(),
                 LocalDateTime.now());
 
-        // Save entity into PostgreSQL
-        return translationRepository.save(translation);
+        translationRepository.save(translation);
+
+        // Step 5
+        return result;
     }
 
     /**
-     * Returns all saved translations.
+     * Builds ASL Gloss.
      */
+    private String buildGloss(List<String> words) {
+
+        return String.join(" ", words);
+    }
+
     public List<Translation> getAllTranslations() {
         return translationRepository.findAll();
     }
 
-    /**
-     * Returns a translation by ID.
-     *
-     * @param id translation ID
-     * @return matching translation
-     */
     public Translation getTranslationById(Long id) {
 
         return translationRepository
@@ -78,21 +89,14 @@ public class TranslationService {
                         "Translation not found: " + id));
     }
 
-    /**
-     * Deletes a translation by ID.
-     *
-     * @param id translation ID
-     */
     public void deleteTranslation(Long id) {
 
-        // Verify translation exists
         if (!translationRepository.existsById(id)) {
 
             throw new RuntimeException(
                     "Translation not found: " + id);
         }
 
-        // Delete translation
         translationRepository.deleteById(id);
     }
 }

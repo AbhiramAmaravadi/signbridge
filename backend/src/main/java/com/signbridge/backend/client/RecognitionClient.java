@@ -1,7 +1,10 @@
 package com.signbridge.backend.client;
 
+import com.signbridge.backend.dto.PredictionDto;
 import com.signbridge.backend.dto.RecognitionRequest;
 import com.signbridge.backend.dto.RecognitionResponse;
+
+import java.util.List;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -66,8 +69,9 @@ public class RecognitionClient {
              */
 
             return new RecognitionResponse(
-                    "HELLO",
-                    0.97);
+                    1,
+                    1,
+                    List.of(new PredictionDto(1, 1, "HELLO", 0.97)));
         }
     }
 }

@@ -1,11 +1,13 @@
 package com.signbridge.backend.controller;
 
 import com.signbridge.backend.dto.TranslationRequest;
-import com.signbridge.backend.dto.TranslationResponse;
-import com.signbridge.backend.entity.Translation;
+import com.signbridge.backend.dto.TranslationResult;
+
 import com.signbridge.backend.service.TranslationService;
 import java.util.List;
 import org.springframework.web.bind.annotation.*;
+
+import com.signbridge.backend.entity.Translation;
 
 /**
  * TranslationController
@@ -73,14 +75,10 @@ public class TranslationController {
      * @return translated sentence
      */
     @PostMapping("/translate")
-    public TranslationResponse translate(
+    public TranslationResult translate(
             @RequestBody TranslationRequest request) {
 
-        // Call service layer
-        Translation translation = translationService.translate(request.words());
-
-        return new TranslationResponse(
-                translation.getEnglishSentence());
+        return translationService.translate(request.words());
     }
 
     /**

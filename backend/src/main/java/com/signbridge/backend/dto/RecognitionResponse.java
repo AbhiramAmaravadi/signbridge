@@ -7,11 +7,11 @@ import java.util.List;
  */
 public record RecognitionResponse(
 
-                Integer numClasses,
+        Integer numClasses,
 
-                Integer topK,
+        Integer topK,
 
-                List<PredictionDto> predictions
+        List<PredictionDto> predictions
 
 ) {
 }
