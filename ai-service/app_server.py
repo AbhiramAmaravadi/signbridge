@@ -14,7 +14,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from gemini_client import GeminiClient
+from gemini_prompts import build_scene_prompt, build_translation_prompt
 from mediapipe_pipeline import FeatureExtractor, HolisticConfig, HolisticDetector
+from sentence_state import SentenceState, SentenceStateConfig
 
 
 AI_SERVICE_DIR = Path(__file__).resolve().parent
@@ -48,6 +51,8 @@ class PredictRequest(BaseModel):
     sequence_length: int = Field(default=DEFAULT_SEQUENCE_LENGTH, ge=1, le=120)
     top_k: int = Field(default=5, ge=1, le=20)
     reset_buffer: bool = False
+    force_finalize: bool = False
+    scene_context: str | None = None
 
 
 class PredictionItem(BaseModel):
@@ -61,7 +66,40 @@ class PredictResponse(BaseModel):
     sequence_length: int
     buffer_length: int
     top_k: list[PredictionItem]
+    candidate: str | None = None
+    locked_word: str | None = None
+    words: list[str] = Field(default_factory=list)
+    raw_sentence: str = ""
+    finalized_sentence: str | None = None
+    eos_trigger: str | None = None
+    next_word: str | None = None
+    idle_seconds: float = 0.0
+    motion_score: float = 0.0
+    translation_prompt: str | None = None
     detail: str | None = None
+
+
+class TranslateRequest(BaseModel):
+    words: list[str]
+    scene_context: str | None = None
+
+
+class TranslateResponse(BaseModel):
+    raw_sentence: str
+    polished_sentence: str
+    prompt: str
+    used_gemini: bool
+
+
+class SceneRequest(BaseModel):
+    image_base64: str
+    mime_type: str = "image/jpeg"
+
+
+class SceneResponse(BaseModel):
+    scene_context: str
+    prompt: str
+    used_gemini: bool
 
 
 app = FastAPI(title="SignBridge AI Service", version="1.0.0")
@@ -78,6 +116,16 @@ _pipeline_lock = Lock()
 _detector: HolisticDetector | None = None
 _extractor: FeatureExtractor | None = None
 _frame_buffer: deque[np.ndarray] = deque(maxlen=DEFAULT_SEQUENCE_LENGTH)
+_sentence_state = SentenceState(
+    SentenceStateConfig(
+        confidence_threshold=0.30,
+        stable_prediction_count=3,
+        cooldown_seconds=1.0,
+        idle_seconds_to_finalize=5.0,
+        stillness_epsilon=0.003,
+    )
+)
+_gemini_client = GeminiClient.from_env()
 
 
 def _utc_now() -> str:
@@ -131,11 +179,122 @@ def _predict_sequence(sequence: np.ndarray, top_k: int) -> list[PredictionItem]:
     return _format_predictions(result)
 
 
+def _state_payload(
+    predictions: list[PredictionItem],
+    sequence: np.ndarray | None,
+    force_finalize: bool,
+    scene_context: str | None,
+) -> dict[str, Any]:
+    state = _sentence_state.process(
+        [prediction.model_dump() for prediction in predictions],
+        landmarks=sequence,
+        force_finalize=force_finalize,
+    )
+    finalized = state["finalized_sentence"]
+
+    return {
+        **state,
+        "translation_prompt": (
+            build_translation_prompt(finalized.split(), scene_context)
+            if finalized
+            else None
+        ),
+    }
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "signbridge-ai"}
 
 
+@app.get("/api/v1/gemini/scene-prompt")
+def gemini_scene_prompt() -> dict[str, str]:
+    return {"prompt": build_scene_prompt()}
+
+
+@app.post("/api/v1/gemini/translate", response_model=TranslateResponse)
+def gemini_translate(request: TranslateRequest) -> TranslateResponse:
+    prompt = build_translation_prompt(request.words, request.scene_context)
+    fallback = _fallback_polish(request.words)
+
+    if _gemini_client is None:
+        return TranslateResponse(
+            raw_sentence=" ".join(request.words),
+            polished_sentence=fallback,
+            prompt=prompt,
+            used_gemini=False,
+        )
+
+    try:
+        polished = _gemini_client.generate_text(prompt) or fallback
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Gemini translation failed: {exc}") from exc
+
+    return TranslateResponse(
+        raw_sentence=" ".join(request.words),
+        polished_sentence=polished,
+        prompt=prompt,
+        used_gemini=True,
+    )
+
+
+@app.post("/api/v1/gemini/scene", response_model=SceneResponse)
+def gemini_scene(request: SceneRequest) -> SceneResponse:
+    prompt = build_scene_prompt()
+
+    if _gemini_client is None:
+        return SceneResponse(
+            scene_context="Unknown scene",
+            prompt=prompt,
+            used_gemini=False,
+        )
+
+    try:
+        scene_context = _gemini_client.analyze_image(prompt, request.image_base64, request.mime_type)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Gemini scene analysis failed: {exc}") from exc
+
+    return SceneResponse(
+        scene_context=scene_context or "Unknown scene",
+        prompt=prompt,
+        used_gemini=True,
+    )
+
+
+@app.post("/api/v1/sentence/finalize", response_model=PredictResponse)
+def finalize_sentence(scene_context: str | None = None) -> PredictResponse:
+    finalized = _sentence_state.finalize("keypress")
+    words = finalized.split() if finalized else []
+
+    return PredictResponse(
+        timestamp=_utc_now(),
+        ready=True,
+        sequence_length=0,
+        buffer_length=len(_frame_buffer),
+        top_k=[],
+        words=[],
+        raw_sentence="",
+        finalized_sentence=finalized,
+        eos_trigger="keypress" if finalized else None,
+        translation_prompt=build_translation_prompt(words, scene_context) if finalized else None,
+        detail="Sentence finalized by keypress." if finalized else "No words were available to finalize.",
+    )
+
+
+@app.post("/api/v1/sentence/reset")
+def reset_sentence() -> dict[str, str]:
+    _sentence_state.reset()
+    return {"status": "reset"}
+
+
+def _fallback_polish(words: list[str]) -> str:
+    raw = " ".join(word.strip() for word in words if word.strip())
+    if not raw:
+        return ""
+    return raw[0].upper() + raw[1:] + ("." if raw[-1] not in ".!?" else "")
+
+
+@app.post("/predict", response_model=PredictResponse)
 @app.post("/api/v1/inference", response_model=PredictResponse)
 def predict(request: PredictRequest) -> PredictResponse:
     if request.landmarks is None and request.image_base64 is None:
@@ -145,6 +304,7 @@ def predict(request: PredictRequest) -> PredictResponse:
         try:
             sequence = normalize_landmark_sequence(np.asarray(request.landmarks, dtype=np.float32))
             top_k = _predict_sequence(sequence, request.top_k)
+            state = _state_payload(top_k, sequence, request.force_finalize, request.scene_context)
         except Exception as exc:
             raise HTTPException(status_code=400, detail=f"Landmark inference failed: {exc}") from exc
 
@@ -154,6 +314,16 @@ def predict(request: PredictRequest) -> PredictResponse:
             sequence_length=int(sequence.shape[0]),
             buffer_length=int(sequence.shape[0]),
             top_k=top_k,
+            candidate=state["candidate"],
+            locked_word=state["locked_word"],
+            words=state["words"],
+            raw_sentence=state["raw_sentence"],
+            finalized_sentence=state["finalized_sentence"],
+            eos_trigger=state["eos_trigger"],
+            next_word=state["next_word"],
+            idle_seconds=state["idle_seconds"],
+            motion_score=state["motion_score"],
+            translation_prompt=state["translation_prompt"],
         )
 
     try:
@@ -190,6 +360,7 @@ def predict(request: PredictRequest) -> PredictResponse:
         try:
             sequence = np.stack(tuple(_frame_buffer), axis=0).astype(np.float32, copy=False)
             top_k = _predict_sequence(sequence, request.top_k)
+            state = _state_payload(top_k, sequence, request.force_finalize, request.scene_context)
         except Exception as exc:
             raise HTTPException(status_code=500, detail=f"Model inference failed: {exc}") from exc
 
@@ -199,6 +370,16 @@ def predict(request: PredictRequest) -> PredictResponse:
         sequence_length=request.sequence_length,
         buffer_length=len(_frame_buffer),
         top_k=top_k,
+        candidate=state["candidate"],
+        locked_word=state["locked_word"],
+        words=state["words"],
+        raw_sentence=state["raw_sentence"],
+        finalized_sentence=state["finalized_sentence"],
+        eos_trigger=state["eos_trigger"],
+        next_word=state["next_word"],
+        idle_seconds=state["idle_seconds"],
+        motion_score=state["motion_score"],
+        translation_prompt=state["translation_prompt"],
     )
 
 
