@@ -59,11 +59,36 @@ type InferenceResponse = {
   timestamp: string;
   sequence_length: number;
   top_k: TopKResult[];
+  candidate?: string | null;
+  locked_word?: string | null;
+  lock_progress?: number;
+  words?: string[];
+  raw_sentence?: string;
+  finalized_sentence?: string | null;
+  eos_trigger?: string | null;
+  next_word?: string | null;
+  idle_seconds?: number;
+  motion_score?: number;
+  translation_prompt?: string | null;
 };
 
 type ConnectionState = 'idle' | 'loading' | 'connected' | 'disconnected' | 'error';
+type UiMode = 'idle' | 'listening' | 'word_locked' | 'processing' | 'speaking' | 'error';
 
-const API_URL = 'http://127.0.0.1:8000/api/v1/inference';
+type TranslateResponse = {
+  raw_sentence: string;
+  polished_sentence: string;
+  detected_emotion: string;
+  detected_scene: string;
+  prompt: string;
+  used_gemini: boolean;
+};
+
+const API_URL = 'http://127.0.0.1:8001/api/v1/inference';
+const FINALIZE_URL = 'http://127.0.0.1:8001/api/v1/sentence/finalize';
+const RESET_URL = 'http://127.0.0.1:8001/api/v1/sentence/reset';
+const TRANSLATE_URL = 'http://127.0.0.1:8001/api/v1/gemini/translate';
+const PAUSE_AFTER_FINALIZE_MS = 3000;
 const HOLISTIC_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js';
 const DRAWING_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js';
 const HOLISTIC_ASSET_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/holistic';
@@ -163,11 +188,70 @@ const formatError = (error: unknown): string => {
 };
 
 const statusColor = (status: ConnectionState): string => {
-  if (status === 'connected') return '#22c55e';
-  if (status === 'loading') return '#f59e0b';
-  if (status === 'error' || status === 'disconnected') return '#ef4444';
+  if (status === 'connected') return '#9ca3af';
+  if (status === 'loading') return '#a8a29e';
+  if (status === 'error' || status === 'disconnected') return '#b97a7a';
   return '#64748b';
 };
+
+const emotionBadge = (emotion: string): string => {
+  const normalized = emotion.toLowerCase();
+  if (normalized.includes('happy')) return '😊 Happy';
+  if (normalized.includes('excited')) return '✨ Excited';
+  if (normalized.includes('sad')) return '😔 Sad';
+  if (normalized.includes('anxious')) return '😟 Anxious';
+  return '😐 Neutral';
+};
+
+const sceneBadge = (scene: string): string => {
+  const normalized = scene.toLowerCase();
+  if (normalized.includes('hospital') || normalized.includes('clinic')) return '🏥 Hospital context';
+  if (normalized.includes('restaurant') || normalized.includes('cafe')) return '🍽️ Restaurant context';
+  if (normalized.includes('store') || normalized.includes('market')) return '🛒 Store context';
+  if (normalized.includes('class')) return '🏫 Classroom context';
+  if (normalized.includes('home')) return '🏠 Home context';
+  if (normalized === 'unknown') return '🌫️ Scene unknown';
+  return `${scene} context`;
+};
+
+function ProgressRing({ progress }: { progress: number }) {
+  const radius = 30;
+  const circumference = 2 * Math.PI * radius;
+  const clamped = Math.max(0, Math.min(1, progress));
+  const offset = circumference * (1 - clamped);
+
+  return (
+    <svg width="78" height="78" viewBox="0 0 78 78" style={styles.progressSvg}>
+      <circle cx="39" cy="39" r={radius} stroke="rgba(148, 163, 184, 0.22)" strokeWidth="7" fill="none" />
+      <circle
+        cx="39"
+        cy="39"
+        r={radius}
+        stroke="#7d8c99"
+        strokeWidth="7"
+        fill="none"
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        transform="rotate(-90 39 39)"
+        style={{ transition: 'stroke-dashoffset 180ms ease' }}
+      />
+      <text x="39" y="44" textAnchor="middle" style={styles.progressText}>
+        {Math.round(clamped * 100)}
+      </text>
+    </svg>
+  );
+}
+
+function MicIcon({ enabled }: { enabled: boolean }) {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z" stroke="currentColor" strokeWidth="2" />
+      <path d="M19 11a7 7 0 0 1-14 0M12 18v3M8 21h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      {!enabled && <path d="M4 4l16 16" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />}
+    </svg>
+  );
+}
 
 function App() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -179,6 +263,9 @@ function App() {
   const frameBufferRef = useRef<LandmarkFrame[]>([]);
   const framesSinceInferenceRef = useRef(0);
   const inFlightRef = useRef(false);
+  const lastSpokenSentenceRef = useRef<string | null>(null);
+  const pauseTimerRef = useRef<number | null>(null);
+  const isPausedRef = useRef(false);
   const lastFrameAtRef = useRef(0);
   const fpsFramesRef = useRef(0);
   const fpsStartedAtRef = useRef(performance.now());
@@ -189,17 +276,75 @@ function App() {
   const [status, setStatus] = useState<ConnectionState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [output, setOutput] = useState<InferenceResponse | null>(null);
+  const [finalizedSentence, setFinalizedSentence] = useState<string>('');
+  const [polishedSentence, setPolishedSentence] = useState<string>('');
+  const [usedGemini, setUsedGemini] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [detectedEmotion, setDetectedEmotion] = useState('neutral');
+  const [detectedScene, setDetectedScene] = useState('unknown');
+  const [isPaused, setIsPaused] = useState(false);
+  const [uiMode, setUiMode] = useState<UiMode>('idle');
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [fps, setFps] = useState(0);
   const [bufferLength, setBufferLength] = useState(0);
 
   const topPrediction = output?.top_k?.[0];
+  const liveWords = output?.words ?? [];
+  const nextWord = output?.next_word;
+  const lockProgress = output?.lock_progress ?? 0;
 
   const predictionLabel = useMemo(() => {
+    if (isPaused) return 'Processing translation...';
+    if (output?.locked_word) return output.locked_word;
     if (topPrediction) return topPrediction.label;
     if (isRunning) return 'Listening...';
     return 'Start camera';
-  }, [isRunning, topPrediction]);
+  }, [isPaused, isRunning, output?.locked_word, topPrediction]);
+
+  const pauseInference = useCallback(() => {
+    isPausedRef.current = true;
+    setIsPaused(true);
+    if (pauseTimerRef.current !== null) {
+      window.clearTimeout(pauseTimerRef.current);
+    }
+    pauseTimerRef.current = window.setTimeout(() => {
+      isPausedRef.current = false;
+      setIsPaused(false);
+      pauseTimerRef.current = null;
+      setUiMode(isRunning ? 'listening' : 'idle');
+    }, PAUSE_AFTER_FINALIZE_MS);
+  }, [isRunning]);
+
+  const speakSentence = useCallback((sentence: string, emotion = 'neutral') => {
+    if (!voiceEnabled || !('speechSynthesis' in window) || !sentence.trim()) {
+      setUiMode(isRunning ? 'listening' : 'idle');
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const normalizedEmotion = emotion.toLowerCase();
+    const utterance = new SpeechSynthesisUtterance(
+      normalizedEmotion === 'sad' || normalizedEmotion === 'anxious'
+        ? sentence.replace(/,\s/g, ', ... ')
+        : sentence,
+    );
+
+    if (normalizedEmotion === 'happy' || normalizedEmotion === 'excited') {
+      utterance.pitch = 1.2;
+      utterance.rate = 1.15;
+    } else if (normalizedEmotion === 'sad' || normalizedEmotion === 'anxious') {
+      utterance.pitch = 0.8;
+      utterance.rate = 0.85;
+    } else {
+      utterance.pitch = 1;
+      utterance.rate = 1;
+    }
+
+    utterance.onstart = () => setUiMode('speaking');
+    utterance.onend = () => setUiMode(isRunning ? 'listening' : 'idle');
+    utterance.onerror = () => setUiMode(isRunning ? 'listening' : 'idle');
+    window.speechSynthesis.speak(utterance);
+  }, [isRunning, voiceEnabled]);
 
   const drawResults = useCallback((results: HolisticResults) => {
     const canvas = canvasRef.current;
@@ -223,7 +368,7 @@ function App() {
       lineWidth: 1,
     });
     mediaPipe.drawConnectors(ctx, results.poseLandmarks, mediaPipe.POSE_CONNECTIONS, {
-      color: '#38bdf8',
+      color: '#7d8c99',
       lineWidth: 3,
     });
     mediaPipe.drawConnectors(ctx, results.leftHandLandmarks, mediaPipe.HAND_CONNECTIONS, {
@@ -252,7 +397,7 @@ function App() {
   }, []);
 
   const postInference = useCallback(async (landmarks: LandmarkFrame[]) => {
-    if (inFlightRef.current) return;
+    if (inFlightRef.current || isPausedRef.current) return;
 
     inFlightRef.current = true;
     const startedAt = performance.now();
@@ -260,21 +405,127 @@ function App() {
     try {
       const response = await axios.post<InferenceResponse>(API_URL, { landmarks }, { timeout: 8000 });
 
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || isPausedRef.current) return;
 
       setOutput(response.data);
+      if (response.data.locked_word) {
+        setUiMode('word_locked');
+        window.setTimeout(() => setUiMode('listening'), 650);
+      } else if (response.data.finalized_sentence) {
+        setUiMode('processing');
+      } else {
+        setUiMode('listening');
+      }
       setLatencyMs(Math.round(performance.now() - startedAt));
       setStatus('connected');
       setError(null);
     } catch (requestError) {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || isPausedRef.current) return;
 
+      setUiMode('error');
       setStatus('error');
       setError(formatError(requestError));
     } finally {
       inFlightRef.current = false;
     }
   }, []);
+
+  const finalizeSentence = useCallback(async () => {
+    pauseInference();
+    setUiMode('processing');
+    try {
+      const response = await axios.post<InferenceResponse>(FINALIZE_URL, null, { timeout: 5000 });
+      setOutput((current) => ({ ...(current ?? response.data), ...response.data }));
+      setStatus('connected');
+      setError(null);
+    } catch (requestError) {
+      setUiMode('error');
+      setStatus('error');
+      setError(formatError(requestError));
+    }
+  }, [pauseInference]);
+
+  const resetConversation = useCallback(async () => {
+    lastSpokenSentenceRef.current = null;
+    setOutput(null);
+    setFinalizedSentence('');
+    setPolishedSentence('');
+    setUsedGemini(false);
+    setDetectedEmotion('neutral');
+    setDetectedScene('unknown');
+    if (pauseTimerRef.current !== null) {
+      window.clearTimeout(pauseTimerRef.current);
+      pauseTimerRef.current = null;
+    }
+    isPausedRef.current = false;
+    setIsPaused(false);
+    setUiMode(isRunning ? 'listening' : 'idle');
+    setError(null);
+    frameBufferRef.current = [];
+    framesSinceInferenceRef.current = 0;
+    setBufferLength(0);
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+
+    try {
+      await axios.post(RESET_URL, null, { timeout: 4000 });
+    } catch (requestError) {
+      setError(formatError(requestError));
+    }
+  }, [isRunning]);
+
+  const captureSnapshot = useCallback((): string | null => {
+    const video = videoRef.current;
+    if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return null;
+
+    try {
+      const snapshot = document.createElement('canvas');
+      snapshot.width = video.videoWidth || 640;
+      snapshot.height = video.videoHeight || 360;
+      const context = snapshot.getContext('2d');
+      if (!context) return null;
+
+      context.drawImage(video, 0, 0, snapshot.width, snapshot.height);
+      return snapshot.toDataURL('image/jpeg', 0.82);
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const polishAndSpeak = useCallback(async (sentence: string) => {
+    const words = sentence.split(/\s+/).filter(Boolean);
+    const imageBase64 = captureSnapshot();
+    setUiMode('processing');
+    setFinalizedSentence(sentence);
+
+    try {
+      const response = await axios.post<TranslateResponse>(
+        TRANSLATE_URL,
+        {
+          words,
+          image_base64: imageBase64,
+          mime_type: 'image/jpeg',
+        },
+        { timeout: 15000 },
+      );
+      const polished = response.data.polished_sentence || sentence;
+
+      setPolishedSentence(polished);
+      setUsedGemini(response.data.used_gemini);
+      setDetectedEmotion(response.data.detected_emotion || 'neutral');
+      setDetectedScene(response.data.detected_scene || 'unknown');
+      speakSentence(polished, response.data.detected_emotion || 'neutral');
+    } catch {
+      const fallback = sentence ? `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.` : '';
+      setPolishedSentence(fallback);
+      setUsedGemini(false);
+      setDetectedEmotion('neutral');
+      setDetectedScene('unknown');
+      speakSentence(fallback, 'neutral');
+    }
+  }, [captureSnapshot, speakSentence]);
 
   const handleResults = useCallback(
     (results: HolisticResults) => {
@@ -287,12 +538,12 @@ function App() {
       framesSinceInferenceRef.current += 1;
       setBufferLength(nextBuffer.length);
 
-      if (nextBuffer.length >= WINDOW_SIZE && framesSinceInferenceRef.current >= STRIDE_FRAMES) {
+      if (!isPaused && nextBuffer.length >= WINDOW_SIZE && framesSinceInferenceRef.current >= STRIDE_FRAMES) {
         framesSinceInferenceRef.current = 0;
         void postInference(nextBuffer);
       }
     },
-    [drawResults, postInference],
+    [drawResults, isPaused, postInference],
   );
 
   const stopCamera = useCallback(() => {
@@ -317,10 +568,17 @@ function App() {
     frameBufferRef.current = [];
     framesSinceInferenceRef.current = 0;
     inFlightRef.current = false;
+    if (pauseTimerRef.current !== null) {
+      window.clearTimeout(pauseTimerRef.current);
+      pauseTimerRef.current = null;
+    }
+    setIsPaused(false);
+    isPausedRef.current = false;
     setIsRunning(false);
     setIsStarting(false);
     setBufferLength(0);
     setFps(0);
+    setUiMode('idle');
     setStatus((current) => (current === 'error' ? current : 'disconnected'));
   }, []);
 
@@ -410,6 +668,7 @@ function App() {
       setIsRunning(true);
       setIsStarting(false);
       setStatus('connected');
+      setUiMode('listening');
       startProcessingLoop();
     } catch (startError) {
       stopCamera();
@@ -435,6 +694,27 @@ function App() {
     };
   }, [stopCamera]);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        void finalizeSentence();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [finalizeSentence]);
+
+  useEffect(() => {
+    const sentence = output?.finalized_sentence;
+    if (!sentence || sentence === lastSpokenSentenceRef.current) return;
+
+    lastSpokenSentenceRef.current = sentence;
+    pauseInference();
+    void polishAndSpeak(sentence);
+  }, [output?.finalized_sentence, pauseInference, polishAndSpeak]);
+
   return (
     <main style={styles.page}>
       <section style={styles.header}>
@@ -444,7 +724,13 @@ function App() {
         </div>
         <div style={styles.statusPill}>
           <span style={{ ...styles.statusDot, background: statusColor(status) }} />
-          {status === 'idle' ? 'Idle' : status.charAt(0).toUpperCase() + status.slice(1)}
+          {uiMode === 'word_locked'
+            ? 'Word locked'
+            : uiMode === 'processing'
+              ? 'Processing sentence'
+              : uiMode === 'speaking'
+                ? 'Speaking'
+                : status === 'idle' ? 'Idle' : status.charAt(0).toUpperCase() + status.slice(1)}
         </div>
       </section>
 
@@ -496,64 +782,100 @@ function App() {
         </div>
 
         <aside style={styles.outputPanel}>
+          <div style={styles.sentencePanel}>
+            <p style={styles.panelKicker}>Live Sentence Buffer</p>
+            <div style={styles.sentenceLine}>
+              {liveWords.length ? liveWords.map((word, index) => (
+                <span key={`${word}-${index}`} style={styles.wordToken}>{word}</span>
+              )) : <span style={styles.emptySentence}>Waiting for stable signs</span>}
+              {nextWord && <span style={styles.nextWord}>{nextWord}</span>}
+            </div>
+            <div style={styles.sentenceActions}>
+              <button type="button" onClick={finalizeSentence} style={{ ...styles.button, ...styles.primaryButton }}>
+                Finalize
+              </button>
+              <button type="button" onClick={resetConversation} style={{ ...styles.button, ...styles.resetButton }}>
+                Reset
+              </button>
+              <span style={styles.hintText}>Press Enter to finish and speak</span>
+            </div>
+          </div>
+
           <div style={styles.predictionCard}>
             <p style={styles.panelKicker}>Top Prediction</p>
-            <div style={styles.wordBubble}>{predictionLabel}</div>
-            <p style={styles.confidenceText}>
-              {topPrediction ? `${(topPrediction.confidence * 100).toFixed(1)}% confidence` : 'Waiting for a full frame window'}
+            <div style={styles.lockRow}>
+              <div style={styles.wordBubble}>{predictionLabel}</div>
+              <ProgressRing progress={lockProgress} />
+            </div>
+            <p style={isPaused ? styles.pauseText : styles.confidenceText}>
+              {isPaused
+                ? 'Processing translation... Please lower your hands.'
+                : topPrediction
+                ? `${(topPrediction.confidence * 100).toFixed(1)}% confidence. Hold steady to lock.`
+                : 'Waiting for a full frame window'}
             </p>
           </div>
 
-          <div style={styles.metricsGrid}>
-            <div style={styles.metric}>
-              <span style={styles.metricLabel}>Latency</span>
-              <strong style={styles.metricValue}>{latencyMs === null ? '--' : `${latencyMs} ms`}</strong>
+          <div style={styles.translationPanel}>
+            <div style={styles.translationHeader}>
+              <p style={styles.panelKicker}>Final Translation</p>
+              <button
+                type="button"
+                aria-label={voiceEnabled ? 'Disable voice output' : 'Enable voice output'}
+                onClick={() => setVoiceEnabled((enabled) => !enabled)}
+                style={{
+                  ...styles.micButton,
+                  ...(voiceEnabled ? styles.micButtonActive : styles.micButtonMuted),
+                }}
+              >
+                <MicIcon enabled={voiceEnabled} />
+              </button>
             </div>
-            <div style={styles.metric}>
-              <span style={styles.metricLabel}>FPS</span>
-              <strong style={styles.metricValue}>{fps || '--'}</strong>
+            <div style={styles.translationText}>
+              {polishedSentence || finalizedSentence || 'A finalized sentence will appear here.'}
             </div>
-            <div style={styles.metric}>
-              <span style={styles.metricLabel}>Buffer</span>
-              <strong style={styles.metricValue}>
-                {bufferLength}/{WINDOW_SIZE}
-              </strong>
+            <div style={styles.badgeRow}>
+              <span style={styles.contextBadge}>{emotionBadge(detectedEmotion)}</span>
+              <span style={styles.contextBadge}>{sceneBadge(detectedScene)}</span>
             </div>
-            <div style={styles.metric}>
-              <span style={styles.metricLabel}>Landmarks</span>
-              <strong style={styles.metricValue}>{LANDMARKS_PER_FRAME}</strong>
-            </div>
-          </div>
-
-          <div style={styles.alternatives}>
-            <div style={styles.panelHeaderCompact}>
-              <p style={styles.panelKicker}>Top-K Alternatives</p>
-              <span style={styles.timestamp}>
-                {output?.timestamp ? new Date(output.timestamp).toLocaleTimeString() : 'No inference yet'}
-              </span>
-            </div>
-
-            <div style={styles.resultList}>
-              {(output?.top_k?.length ? output.top_k : [{ label: 'Awaiting signal', confidence: 0 }]).map((item, index) => (
-                <div key={`${item.label}-${index}`} style={styles.resultItem}>
-                  <div style={styles.resultTopline}>
-                    <span style={styles.resultLabel}>{item.label}</span>
-                    <span style={styles.resultPercent}>{(item.confidence * 100).toFixed(1)}%</span>
-                  </div>
-                  <div style={styles.barTrack}>
-                    <div
-                      style={{
-                        ...styles.barFill,
-                        width: `${Math.max(0, Math.min(100, item.confidence * 100))}%`,
-                        background: index === 0 ? '#22c55e' : '#38bdf8',
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <p style={styles.translationHint}>
+              {output?.eos_trigger
+                ? `Ended by ${output.eos_trigger}. ${usedGemini ? 'Gemini polished.' : 'Local polish fallback.'}`
+                : 'Idle for 5 seconds or press Enter to finalize.'}
+            </p>
           </div>
         </aside>
+      </section>
+
+      <section style={styles.developerDrawer}>
+        <div style={styles.drawerHeader}>Developer Console</div>
+        <div style={styles.drawerContent}>
+          <div style={styles.metricsGrid}>
+            <span style={styles.metricPill}>Latency {latencyMs === null ? '--' : `${latencyMs}ms`}</span>
+            <span style={styles.metricPill}>FPS {fps || '--'}</span>
+            <span style={styles.metricPill}>Buffer {bufferLength}/{WINDOW_SIZE}</span>
+            <span style={styles.metricPill}>Idle {(output?.idle_seconds ?? 0).toFixed(1)}s</span>
+            <span style={styles.metricPill}>Landmarks {LANDMARKS_PER_FRAME}</span>
+          </div>
+          <div style={styles.resultList}>
+            {(output?.top_k?.length ? output.top_k : [{ label: 'Awaiting signal', confidence: 0 }]).map((item, index) => (
+              <div key={`${item.label}-${index}`} style={styles.resultItem}>
+                <div style={styles.resultTopline}>
+                  <span style={styles.resultLabel}>{item.label}</span>
+                  <span style={styles.resultPercent}>{(item.confidence * 100).toFixed(1)}%</span>
+                </div>
+                <div style={styles.barTrack}>
+                  <div
+                    style={{
+                      ...styles.barFill,
+                      width: `${Math.max(0, Math.min(100, item.confidence * 100))}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
     </main>
   );
@@ -562,10 +884,9 @@ function App() {
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: '100vh',
-    padding: '32px',
+    padding: '40px',
     color: '#e5eefb',
-    background:
-      'radial-gradient(circle at top left, rgba(20, 184, 166, 0.18), transparent 34%), linear-gradient(135deg, #0f172a 0%, #111827 52%, #18181b 100%)',
+    background: '#0c0d0e',
     fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
   header: {
@@ -578,7 +899,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   eyebrow: {
     margin: '0 0 8px',
-    color: '#5eead4',
+    color: '#8f9aa3',
     fontSize: '13px',
     fontWeight: 700,
     letterSpacing: '0',
@@ -597,32 +918,33 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: '132px',
     justifyContent: 'center',
     padding: '10px 14px',
-    border: '1px solid rgba(148, 163, 184, 0.28)',
+    border: '1px solid rgba(64, 64, 64, 0.42)',
     borderRadius: '8px',
-    background: 'rgba(15, 23, 42, 0.78)',
-    color: '#cbd5e1',
+    background: 'rgba(23, 23, 23, 0.38)',
+    color: '#d4d4d4',
     fontWeight: 700,
   },
   statusDot: {
     width: '10px',
     height: '10px',
     borderRadius: '999px',
-    boxShadow: '0 0 18px currentColor',
+    boxShadow: 'none',
   },
   dashboard: {
     display: 'grid',
-    gridTemplateColumns: 'minmax(0, 1.45fr) minmax(360px, 0.7fr)',
-    gap: '24px',
+    gridTemplateColumns: 'minmax(0, 1.65fr) minmax(360px, 0.75fr)',
+    gap: '32px',
     maxWidth: '1440px',
     margin: '0 auto',
   },
   visionPanel: {
     minWidth: 0,
-    border: '1px solid rgba(148, 163, 184, 0.22)',
-    borderRadius: '8px',
-    padding: '20px',
-    background: 'rgba(15, 23, 42, 0.76)',
-    boxShadow: '0 24px 80px rgba(0, 0, 0, 0.28)',
+    border: '1px solid rgba(64, 64, 64, 0.4)',
+    borderRadius: '18px',
+    padding: '24px',
+    background: 'rgba(23, 23, 23, 0.3)',
+    backdropFilter: 'blur(14px)',
+    boxShadow: 'none',
   },
   panelHeader: {
     display: 'flex',
@@ -659,19 +981,27 @@ const styles: Record<string, React.CSSProperties> = {
   },
   button: {
     minWidth: '118px',
-    height: '42px',
+    minHeight: '40px',
+    padding: '8px 20px',
     border: 0,
     borderRadius: '8px',
     color: '#f8fafc',
-    fontWeight: 800,
+    fontWeight: 600,
     cursor: 'pointer',
+    transition: 'all 160ms ease',
   },
   primaryButton: {
-    background: '#0d9488',
-    boxShadow: '0 12px 28px rgba(13, 148, 136, 0.28)',
+    background: '#7d8c99',
+    color: '#0c0d0e',
+    boxShadow: 'none',
   },
   secondaryButton: {
-    background: '#334155',
+    background: '#292524',
+  },
+  resetButton: {
+    background: 'rgba(69, 26, 26, 0.08)',
+    border: '1px solid rgba(185, 122, 122, 0.3)',
+    color: '#d38b8b',
   },
   buttonDisabled: {
     background: '#475569',
@@ -683,8 +1013,8 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'relative',
     overflow: 'hidden',
     aspectRatio: '16 / 9',
-    borderRadius: '8px',
-    border: '1px solid rgba(148, 163, 184, 0.2)',
+    borderRadius: '14px',
+    border: '1px solid rgba(30, 41, 59, 0.55)',
     background: '#020617',
   },
   video: {
@@ -734,14 +1064,138 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: 0,
     display: 'flex',
     flexDirection: 'column',
-    gap: '16px',
+    gap: '24px',
   },
   predictionCard: {
+    border: '1px solid rgba(64, 64, 64, 0.4)',
+    borderRadius: '18px',
+    padding: '28px',
+    background: 'rgba(23, 23, 23, 0.3)',
+    backdropFilter: 'blur(14px)',
+    boxShadow: 'none',
+  },
+  sentencePanel: {
+    border: '1px solid rgba(64, 64, 64, 0.4)',
+    borderRadius: '18px',
+    padding: '30px',
+    background: 'rgba(23, 23, 23, 0.3)',
+    backdropFilter: 'blur(14px)',
+    boxShadow: 'none',
+  },
+  sentenceLine: {
+    minHeight: '72px',
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '10px',
+    padding: '14px 0',
+    fontSize: '22px',
+    fontWeight: 850,
+    lineHeight: 1.35,
+  },
+  wordToken: {
+    color: '#f8fafc',
+  },
+  nextWord: {
+    color: '#94a3b8',
+    opacity: 0.6,
+    fontSize: '22px',
+    fontWeight: 850,
+  },
+  emptySentence: {
+    color: '#64748b',
+    fontSize: '16px',
+    fontWeight: 700,
+  },
+  sentenceActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    flexWrap: 'wrap',
+  },
+  hintText: {
+    margin: 0,
+    color: '#cbd5e1',
+    fontSize: '14px',
+    fontWeight: 600,
+  },
+  translationHint: {
+    margin: 0,
+    color: '#94a3b8',
+    fontSize: '12px',
+    fontWeight: 600,
+  },
+  translationPanel: {
+    border: '1px solid rgba(64, 64, 64, 0.4)',
+    borderRadius: '18px',
+    padding: '30px',
+    background: 'rgba(23, 23, 23, 0.3)',
+    backdropFilter: 'blur(14px)',
+  },
+  translationHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '12px',
+  },
+  translationText: {
+    minHeight: '80px',
+    margin: '12px 0',
+    color: '#f1f5f9',
+    fontSize: '28px',
+    fontWeight: 650,
+    lineHeight: 1.35,
+  },
+  lockRow: {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr) 82px',
+    alignItems: 'center',
+    gap: '16px',
+    marginTop: '14px',
+  },
+  progressSvg: {
+    filter: 'none',
+  },
+  progressText: {
+    fill: '#e0f2fe',
+    fontSize: '13px',
+    fontWeight: 900,
+  },
+  micButton: {
+    width: '52px',
+    height: '52px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '999px',
     border: '1px solid rgba(148, 163, 184, 0.22)',
-    borderRadius: '8px',
-    padding: '22px',
-    background: 'rgba(15, 23, 42, 0.8)',
-    boxShadow: '0 24px 80px rgba(0, 0, 0, 0.24)',
+    cursor: 'pointer',
+    transition: 'all 160ms ease',
+  },
+  micButtonActive: {
+    color: '#d4d4d4',
+    background: 'rgba(125, 140, 153, 0.18)',
+    boxShadow: 'none',
+  },
+  micButtonMuted: {
+    color: '#64748b',
+    background: 'rgba(15, 23, 42, 0.72)',
+  },
+  badgeRow: {
+    display: 'flex',
+    gap: '8px',
+    flexWrap: 'wrap',
+    marginBottom: '12px',
+  },
+  contextBadge: {
+    padding: '7px 10px',
+    borderRadius: '999px',
+    border: '1px solid rgba(148, 163, 184, 0.18)',
+    background: 'rgba(30, 41, 59, 0.56)',
+    color: '#cbd5e1',
+    fontSize: '12px',
+    fontWeight: 800,
+    textTransform: 'capitalize',
   },
   wordBubble: {
     marginTop: '14px',
@@ -751,8 +1205,8 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     padding: '20px',
     borderRadius: '8px',
-    background: 'linear-gradient(135deg, rgba(20, 184, 166, 0.22), rgba(59, 130, 246, 0.18))',
-    border: '1px solid rgba(94, 234, 212, 0.22)',
+    background: 'rgba(38, 38, 38, 0.48)',
+    border: '1px solid rgba(115, 115, 115, 0.2)',
     color: '#f8fafc',
     fontSize: 'clamp(30px, 5vw, 54px)',
     fontWeight: 950,
@@ -761,13 +1215,22 @@ const styles: Record<string, React.CSSProperties> = {
   },
   confidenceText: {
     margin: '12px 0 0',
-    color: '#94a3b8',
-    fontWeight: 700,
+    color: '#cbd5e1',
+    fontSize: '14px',
+    fontWeight: 600,
   },
   metricsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    gap: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '8px',
+  },
+  pauseText: {
+    margin: '14px 0 0',
+    color: '#cbd5e1',
+    fontSize: '16px',
+    fontWeight: 600,
+    lineHeight: 1.45,
   },
   metric: {
     minHeight: '86px',
@@ -795,6 +1258,41 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '18px',
     background: 'rgba(15, 23, 42, 0.78)',
   },
+  developerDrawer: {
+    maxWidth: '1440px',
+    margin: '24px auto 0',
+    border: '1px solid rgba(64, 64, 64, 0.34)',
+    borderRadius: '18px',
+    background: 'rgba(23, 23, 23, 0.18)',
+    backdropFilter: 'blur(10px)',
+    overflow: 'hidden',
+  },
+  drawerHeader: {
+    padding: '12px 18px 4px',
+    color: '#737373',
+    fontSize: '11px',
+    fontWeight: 800,
+    textTransform: 'uppercase',
+  },
+  drawerToggle: {
+    width: '100%',
+    minHeight: '54px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '0 18px',
+    border: 0,
+    background: 'transparent',
+    color: '#cbd5e1',
+    cursor: 'pointer',
+    fontWeight: 900,
+  },
+  drawerContent: {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(420px, 0.85fr) minmax(0, 1.15fr)',
+    gap: '18px',
+    padding: '8px 18px 18px',
+  },
   timestamp: {
     color: '#64748b',
     fontSize: '12px',
@@ -803,36 +1301,56 @@ const styles: Record<string, React.CSSProperties> = {
   resultList: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '14px',
+    gap: '8px',
+    padding: '6px 0',
   },
   resultItem: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '8px',
+    gap: '5px',
   },
   resultTopline: {
     display: 'flex',
     justifyContent: 'space-between',
     gap: '12px',
     color: '#e2e8f0',
-    fontWeight: 800,
+    fontSize: '14px',
+    fontWeight: 700,
   },
   resultLabel: {
     overflowWrap: 'anywhere',
   },
   resultPercent: {
     color: '#cbd5e1',
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
+    fontSize: '14px',
+    fontWeight: 700,
   },
   barTrack: {
-    height: '10px',
+    height: '3px',
     overflow: 'hidden',
     borderRadius: '999px',
-    background: 'rgba(51, 65, 85, 0.9)',
+    background: 'rgba(64, 64, 64, 0.55)',
   },
   barFill: {
     height: '100%',
     borderRadius: '999px',
+    background: 'linear-gradient(90deg, #525252, #7d8c99)',
     transition: 'width 180ms ease',
+  },
+  metricPill: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '28px',
+    padding: '0 10px',
+    borderRadius: '999px',
+    border: '1px solid rgba(115, 115, 115, 0.24)',
+    color: '#cbd5e1',
+    background: 'rgba(23, 23, 23, 0.26)',
+    fontSize: '12px',
+    fontWeight: 500,
+    whiteSpace: 'nowrap',
   },
 };
 

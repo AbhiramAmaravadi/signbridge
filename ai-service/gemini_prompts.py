@@ -10,7 +10,8 @@ Guidelines:
 - Do not add facts that are not implied by the signs or scene context.
 - Prefer clear, everyday language suitable for face-to-face conversation.
 - If the raw words are ambiguous, choose the most helpful likely meaning from context.
-- Return one polished sentence only."""
+- If an image is provided, infer only broad emotion and broad environment context from visible cues.
+- Return strict JSON only. Do not wrap it in Markdown."""
 
 
 SCENE_SYSTEM_PROMPT = """Analyze the webcam snapshot for communication context.
@@ -27,7 +28,12 @@ def build_translation_prompt(raw_words: list[str], scene_context: str | None = N
 Scene context: {scene}
 Raw sign gloss stream: {raw_stream}
 
-Polished English sentence:"""
+Return this exact JSON shape:
+{{
+  "polished_sentence": "natural spoken English sentence",
+  "detected_emotion": "happy|excited|sad|anxious|neutral|unknown",
+  "detected_scene": "short lowercase scene label"
+}}"""
 
 
 def build_scene_prompt() -> str:

@@ -68,6 +68,7 @@ class PredictResponse(BaseModel):
     top_k: list[PredictionItem]
     candidate: str | None = None
     locked_word: str | None = None
+    lock_progress: float = 0.0
     words: list[str] = Field(default_factory=list)
     raw_sentence: str = ""
     finalized_sentence: str | None = None
@@ -82,11 +83,15 @@ class PredictResponse(BaseModel):
 class TranslateRequest(BaseModel):
     words: list[str]
     scene_context: str | None = None
+    image_base64: str | None = None
+    mime_type: str = "image/jpeg"
 
 
 class TranslateResponse(BaseModel):
     raw_sentence: str
     polished_sentence: str
+    detected_emotion: str = "neutral"
+    detected_scene: str = "unknown"
     prompt: str
     used_gemini: bool
 
@@ -120,12 +125,17 @@ _sentence_state = SentenceState(
     SentenceStateConfig(
         confidence_threshold=0.30,
         stable_prediction_count=3,
+        stable_prediction_seconds=2.75,
         cooldown_seconds=1.0,
         idle_seconds_to_finalize=5.0,
         stillness_epsilon=0.003,
     )
 )
 _gemini_client = GeminiClient.from_env()
+print(
+    f"[GEMINI] Runtime mode: {'remote Gemini enabled' if _gemini_client else 'local fallback only'}",
+    flush=True,
+)
 
 
 def _utc_now() -> str:
@@ -221,18 +231,38 @@ def gemini_translate(request: TranslateRequest) -> TranslateResponse:
         return TranslateResponse(
             raw_sentence=" ".join(request.words),
             polished_sentence=fallback,
+            detected_emotion="neutral",
+            detected_scene=request.scene_context or "unknown",
             prompt=prompt,
             used_gemini=False,
         )
 
     try:
-        polished = _gemini_client.generate_text(prompt) or fallback
+        payload = _gemini_client.generate_json_with_optional_image(
+            prompt,
+            image_base64=request.image_base64,
+            mime_type=request.mime_type,
+        )
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Gemini translation failed: {exc}") from exc
+        print(
+            f"[GEMINI] Translation multimodal call failed. Falling back locally. "
+            f"{type(exc).__name__}: {exc}",
+            flush=True,
+        )
+        return TranslateResponse(
+            raw_sentence=" ".join(request.words),
+            polished_sentence=fallback,
+            detected_emotion="neutral",
+            detected_scene=request.scene_context or "unknown",
+            prompt=prompt,
+            used_gemini=False,
+        )
 
     return TranslateResponse(
         raw_sentence=" ".join(request.words),
-        polished_sentence=polished,
+        polished_sentence=str(payload.get("polished_sentence") or fallback),
+        detected_emotion=str(payload.get("detected_emotion") or "neutral").lower(),
+        detected_scene=str(payload.get("detected_scene") or request.scene_context or "unknown").lower(),
         prompt=prompt,
         used_gemini=True,
     )
@@ -252,7 +282,12 @@ def gemini_scene(request: SceneRequest) -> SceneResponse:
     try:
         scene_context = _gemini_client.analyze_image(prompt, request.image_base64, request.mime_type)
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Gemini scene analysis failed: {exc}") from exc
+        print(f"[GEMINI] Scene analysis failed: {type(exc).__name__}: {exc}", flush=True)
+        return SceneResponse(
+            scene_context="Unknown scene",
+            prompt=prompt,
+            used_gemini=False,
+        )
 
     return SceneResponse(
         scene_context=scene_context or "Unknown scene",
@@ -316,6 +351,7 @@ def predict(request: PredictRequest) -> PredictResponse:
             top_k=top_k,
             candidate=state["candidate"],
             locked_word=state["locked_word"],
+            lock_progress=state["lock_progress"],
             words=state["words"],
             raw_sentence=state["raw_sentence"],
             finalized_sentence=state["finalized_sentence"],
@@ -372,6 +408,7 @@ def predict(request: PredictRequest) -> PredictResponse:
         top_k=top_k,
         candidate=state["candidate"],
         locked_word=state["locked_word"],
+        lock_progress=state["lock_progress"],
         words=state["words"],
         raw_sentence=state["raw_sentence"],
         finalized_sentence=state["finalized_sentence"],

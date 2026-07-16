@@ -26,6 +26,7 @@ NEXT_WORD_HINTS: dict[str, list[str]] = {
 class SentenceStateConfig:
     confidence_threshold: float = 0.30
     stable_prediction_count: int = 3
+    stable_prediction_seconds: float = 2.75
     cooldown_seconds: float = 1.0
     idle_seconds_to_finalize: float = 5.0
     stillness_epsilon: float = 0.003
@@ -41,6 +42,7 @@ class SentenceState:
     candidate_label: str | None = None
     candidate_confidence: float = 0.0
     candidate_hits: int = 0
+    candidate_started_at: float | None = None
     last_locked_at: float = 0.0
     last_frame: np.ndarray | None = None
     idle_started_at: float | None = None
@@ -72,6 +74,7 @@ class SentenceState:
             "candidate": self.candidate_label,
             "candidate_confidence": self.candidate_confidence,
             "candidate_hits": self.candidate_hits,
+            "lock_progress": self._lock_progress(now),
             "locked_word": locked_word,
             "words": list(self.words),
             "raw_sentence": self.raw_sentence,
@@ -94,6 +97,7 @@ class SentenceState:
         self.candidate_label = None
         self.candidate_hits = 0
         self.candidate_confidence = 0.0
+        self.candidate_started_at = None
         self.idle_started_at = None
         return sentence
 
@@ -103,6 +107,7 @@ class SentenceState:
         self.candidate_label = None
         self.candidate_confidence = 0.0
         self.candidate_hits = 0
+        self.candidate_started_at = None
         self.last_locked_at = 0.0
         self.last_frame = None
         self.idle_started_at = None
@@ -142,12 +147,17 @@ class SentenceState:
             self.candidate_label = label
             self.candidate_confidence = confidence
             self.candidate_hits = 1
+            self.candidate_started_at = now
             return None
 
         self.candidate_hits += 1
         self.candidate_confidence = max(self.candidate_confidence, confidence)
 
-        if self.candidate_hits < self.config.stable_prediction_count:
+        stable_duration = now - (self.candidate_started_at or now)
+        if (
+            self.candidate_hits < self.config.stable_prediction_count
+            or stable_duration < self.config.stable_prediction_seconds
+        ):
             return None
 
         if now - self.last_locked_at < self.config.cooldown_seconds:
@@ -159,6 +169,7 @@ class SentenceState:
         self.words.append(label)
         self.last_locked_at = now
         self.candidate_hits = 0
+        self.candidate_started_at = None
         return label
 
     def _update_motion(self, landmarks: np.ndarray | None, now: float) -> float:
@@ -192,6 +203,16 @@ class SentenceState:
         self.candidate_label = None
         self.candidate_confidence = 0.0
         self.candidate_hits = 0
+        self.candidate_started_at = None
+
+    def _lock_progress(self, now: float) -> float:
+        if not self.candidate_label or self.candidate_started_at is None:
+            return 0.0
+
+        elapsed = now - self.candidate_started_at
+        duration_progress = elapsed / self.config.stable_prediction_seconds
+        count_progress = self.candidate_hits / max(1, self.config.stable_prediction_count)
+        return max(0.0, min(1.0, min(duration_progress, count_progress)))
 
     @staticmethod
     def _status(locked_word: str | None, finalized_sentence: str | None) -> str:

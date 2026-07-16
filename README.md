@@ -90,6 +90,7 @@ Prediction endpoint:
 
 ```text
 POST http://127.0.0.1:8001/predict
+POST http://127.0.0.1:8001/api/v1/inference
 ```
 
 The endpoint accepts either:
@@ -112,6 +113,25 @@ or:
 ```
 
 For image frames, the server fills an in-memory rolling buffer and returns `ready: false` until enough frames have arrived.
+
+Sentence and Gemini endpoints:
+
+```text
+POST http://127.0.0.1:8001/api/v1/sentence/finalize
+POST http://127.0.0.1:8001/api/v1/sentence/reset
+POST http://127.0.0.1:8001/api/v1/gemini/translate
+POST http://127.0.0.1:8001/api/v1/gemini/scene
+GET  http://127.0.0.1:8001/api/v1/gemini/scene-prompt
+```
+
+Set `GEMINI_API_KEY` to enable Gemini translation and scene perception. Without a key, the API returns a safe local fallback so the webcam flow still works.
+
+```powershell
+$env:GEMINI_API_KEY="your_api_key_here"
+uvicorn app_server:app --host 127.0.0.1 --port 8001 --reload
+```
+
+The frontend uses the browser Web Speech API for text-to-speech. When a sentence is finalized by Enter, idle detection, or a dedicated done/period sign, the final text is polished and spoken automatically.
 
 ### Terminal 2: Java Backend
 
