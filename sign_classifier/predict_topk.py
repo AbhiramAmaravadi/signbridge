@@ -14,7 +14,7 @@ import tensorflow as tf
 ROWS_PER_FRAME = 543
 DIMS = 3
 MODEL_DIR = Path(__file__).resolve().parent
-MODEL_PATH = MODEL_DIR / "model2.tflite"
+MODEL_PATH = MODEL_DIR / "sign_classifier.tflite"
 LABEL_MAP_PATH = MODEL_DIR / "sign_to_prediction_index_map.json"
 
 _interpreter: tf.lite.Interpreter | None = None

@@ -9,7 +9,7 @@ signbridge/
   frontend/      React + Vite web app
   backend/       Java 21 Spring Boot API
   ai-service/    Python MediaPipe webcam/API service
-  transformer/   TensorFlow Lite sign recognition model and inference helpers
+  sign_classifier/   TensorFlow Lite Transformer sign classification model and inference helpers
   dataset/       Local landmark parquet dataset
 ```
 
@@ -181,26 +181,30 @@ python main.py
 
 The desktop script opens an OpenCV webcam window and saves rolling landmark sequences. Press `q` to quit.
 
-## Transformer Benchmarking
+## Sign Classification Model and Benchmarking
+
+For details about the model architecture, input and output format, preprocessing, and held-out validation results, see `sign_classifier/README.md`.
 
 Run latency benchmarks without changing model inference logic:
 
 ```powershell
 cd signbridge
-python transformer\benchmark.py --samples 500 --shuffle
+python sign_classifier\benchmark.py --samples 500 --shuffle
 ```
 
 Full dataset:
 
 ```powershell
-python transformer\benchmark.py
+python sign_classifier\benchmark.py
 ```
 
 Benchmark CSV output is written under:
 
 ```text
-transformer/benchmark_results/
+sign_classifier/benchmark_results/
 ```
+
+Historical model versions and benchmark outputs are available under `sign_classifier/legacy/`.
 
 ## Import Path Notes
 
@@ -233,5 +237,5 @@ This keeps `uvicorn app_server:app` and `python main.py` on the same clean impor
 Frontend      http://127.0.0.1:5173
 Java backend  http://127.0.0.1:8080
 AI service    http://127.0.0.1:8001
-Transformer   http://127.0.0.1:8000/api/v1/inference, if transformer/app.py is run separately
+Sign Classification   http://127.0.0.1:8000/api/v1/inference, if sign_classifier/app.py is run separately
 ```
