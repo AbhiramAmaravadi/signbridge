@@ -1,0 +1,11 @@
+metric,value
+files_evaluated,94477
+average_latency_ms,11.589889428222838
+median_latency_ms,10.566400014795363
+min_latency_ms,6.22280000243336
+max_latency_ms,352.6251000002958
+std_deviation_ms,3.9959137691641136
+p95_latency_ms,18.427160003921017
+total_runtime_sec,1096.0687988999998
+samples_per_second,86.1962315639455
+accuracy,0.23265980079807783
