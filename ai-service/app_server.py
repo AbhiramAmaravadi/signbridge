@@ -22,17 +22,22 @@ from sentence_state import SentenceState, SentenceStateConfig
 
 AI_SERVICE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = AI_SERVICE_DIR.parent
-TRANSFORMER_DIR = PROJECT_ROOT / "transformer"
+TRANSFORMER_DIR = PROJECT_ROOT / "sign_classifier"
 
 if str(TRANSFORMER_DIR) not in sys.path:
     sys.path.insert(0, str(TRANSFORMER_DIR))
 
-from predict_topk import normalize_landmark_sequence, predict_topk_from_array  # noqa: E402
+from predict_topk import (  # noqa: E402
+    DIMS as MODEL_VALUES_PER_LANDMARK,
+    ROWS_PER_FRAME as MODEL_LANDMARKS_PER_FRAME,
+    normalize_landmark_sequence,
+    predict_topk_from_array,
+)
 
 
 DEFAULT_SEQUENCE_LENGTH = 45
-LANDMARKS_PER_FRAME = 543
-VALUES_PER_LANDMARK = 3
+LANDMARKS_PER_FRAME = MODEL_LANDMARKS_PER_FRAME
+VALUES_PER_LANDMARK = MODEL_VALUES_PER_LANDMARK
 
 
 class PredictRequest(BaseModel):
@@ -70,6 +75,7 @@ class PredictResponse(BaseModel):
     locked_word: str | None = None
     lock_progress: float = 0.0
     words: list[str] = Field(default_factory=list)
+    next_words: list[str] = Field(default_factory=list)
     raw_sentence: str = ""
     finalized_sentence: str | None = None
     eos_trigger: str | None = None
@@ -77,6 +83,7 @@ class PredictResponse(BaseModel):
     idle_seconds: float = 0.0
     motion_score: float = 0.0
     translation_prompt: str | None = None
+    status: str = "searching"
     detail: str | None = None
 
 
@@ -107,12 +114,19 @@ class SceneResponse(BaseModel):
     used_gemini: bool
 
 
+class AppendWordRequest(BaseModel):
+    word: str = Field(min_length=1, max_length=40)
+
+
 app = FastAPI(title="SignBridge AI Service", version="1.0.0")
+
+DEFAULT_HOST = "127.0.0.1"
+DEFAULT_PORT = 8001
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -123,9 +137,11 @@ _extractor: FeatureExtractor | None = None
 _frame_buffer: deque[np.ndarray] = deque(maxlen=DEFAULT_SEQUENCE_LENGTH)
 _sentence_state = SentenceState(
     SentenceStateConfig(
-        confidence_threshold=0.30,
-        stable_prediction_count=3,
-        stable_prediction_seconds=2.75,
+        confidence_threshold=0.35,
+        stable_prediction_count=8,
+        stable_prediction_seconds=0.0,
+        confidence_std_threshold=0.045,
+        release_idle_seconds=0.7,
         cooldown_seconds=1.0,
         idle_seconds_to_finalize=5.0,
         stillness_epsilon=0.003,
@@ -184,8 +200,10 @@ def _format_predictions(result: dict) -> list[PredictionItem]:
 
 
 def _predict_sequence(sequence: np.ndarray, top_k: int) -> list[PredictionItem]:
-    normalized = normalize_landmark_sequence(sequence)
-    result = predict_topk_from_array(normalized, k=top_k)
+    # ``predict_topk_from_array`` owns the same validation/NaN sanitization
+    # used by its CLI path.  Keeping one normalization point prevents API and
+    # CLI preprocessing from drifting apart.
+    result = predict_topk_from_array(sequence, k=top_k)
     return _format_predictions(result)
 
 
@@ -226,13 +244,20 @@ def gemini_scene_prompt() -> dict[str, str]:
 def gemini_translate(request: TranslateRequest) -> TranslateResponse:
     prompt = build_translation_prompt(request.words, request.scene_context)
     fallback = _fallback_polish(request.words)
+    fallback_emotion, fallback_scene = _context_fallback(request.words)
+    requested_scene = (request.scene_context or "").strip().lower()
+    resolved_scene = (
+        request.scene_context.strip()
+        if requested_scene not in {"", "unknown", "none", "null"}
+        else fallback_scene
+    )
 
     if _gemini_client is None:
         return TranslateResponse(
             raw_sentence=" ".join(request.words),
             polished_sentence=fallback,
-            detected_emotion="neutral",
-            detected_scene=request.scene_context or "unknown",
+            detected_emotion=fallback_emotion,
+            detected_scene=resolved_scene,
             prompt=prompt,
             used_gemini=False,
         )
@@ -252,17 +277,24 @@ def gemini_translate(request: TranslateRequest) -> TranslateResponse:
         return TranslateResponse(
             raw_sentence=" ".join(request.words),
             polished_sentence=fallback,
-            detected_emotion="neutral",
-            detected_scene=request.scene_context or "unknown",
+            detected_emotion=fallback_emotion,
+            detected_scene=resolved_scene,
             prompt=prompt,
             used_gemini=False,
         )
 
+    detected_emotion = str(payload.get("detected_emotion") or "").strip().lower()
+    detected_scene = str(payload.get("detected_scene") or "").strip().lower()
+    if detected_emotion in {"", "unknown", "none", "null"}:
+        detected_emotion = fallback_emotion
+    if detected_scene in {"", "unknown", "none", "null"}:
+        detected_scene = resolved_scene
+
     return TranslateResponse(
         raw_sentence=" ".join(request.words),
         polished_sentence=str(payload.get("polished_sentence") or fallback),
-        detected_emotion=str(payload.get("detected_emotion") or "neutral").lower(),
-        detected_scene=str(payload.get("detected_scene") or request.scene_context or "unknown").lower(),
+        detected_emotion=detected_emotion,
+        detected_scene=detected_scene,
         prompt=prompt,
         used_gemini=True,
     )
@@ -322,6 +354,23 @@ def reset_sentence() -> dict[str, str]:
     return {"status": "reset"}
 
 
+@app.post("/api/v1/sentence/append", response_model=PredictResponse)
+def append_sentence_word(request: AppendWordRequest) -> PredictResponse:
+    appended = _sentence_state.append_word(request.word)
+    return PredictResponse(
+        timestamp=_utc_now(),
+        ready=True,
+        sequence_length=0,
+        buffer_length=len(_frame_buffer),
+        top_k=[],
+        words=list(_sentence_state.words),
+        raw_sentence=_sentence_state.raw_sentence,
+        next_words=_sentence_state.predict_next_words([]),
+        next_word=_sentence_state.predict_next_word([]),
+        detail=f"Appended suggestion: {appended}" if appended else "Suggestion already present or empty.",
+    )
+
+
 def _fallback_polish(words: list[str]) -> str:
     raw = " ".join(word.strip() for word in words if word.strip())
     if not raw:
@@ -329,8 +378,20 @@ def _fallback_polish(words: list[str]) -> str:
     return raw[0].upper() + raw[1:] + ("." if raw[-1] not in ".!?" else "")
 
 
+def _context_fallback(words: list[str]) -> tuple[str, str]:
+    normalized = {word.strip().lower() for word in words}
+    if normalized.intersection({"look", "shhh", "quiet", "listen"}):
+        return "attentive / focused", "classroom / quiet area"
+    if normalized.intersection({"happy", "flower", "beautiful", "smile"}):
+        return "joyful", "park / outdoors"
+    if normalized.intersection({"sad", "cry", "hurt"}):
+        return "empathetic", "supportive setting"
+    return "neutral", "unknown"
+
+
 @app.post("/predict", response_model=PredictResponse)
 @app.post("/api/v1/inference", response_model=PredictResponse)
+@app.post("/inference", response_model=PredictResponse)
 def predict(request: PredictRequest) -> PredictResponse:
     if request.landmarks is None and request.image_base64 is None:
         raise HTTPException(status_code=400, detail="Provide either 'landmarks' or 'image_base64'.")
@@ -353,6 +414,7 @@ def predict(request: PredictRequest) -> PredictResponse:
             locked_word=state["locked_word"],
             lock_progress=state["lock_progress"],
             words=state["words"],
+            next_words=state["next_words"],
             raw_sentence=state["raw_sentence"],
             finalized_sentence=state["finalized_sentence"],
             eos_trigger=state["eos_trigger"],
@@ -360,6 +422,7 @@ def predict(request: PredictRequest) -> PredictResponse:
             idle_seconds=state["idle_seconds"],
             motion_score=state["motion_score"],
             translation_prompt=state["translation_prompt"],
+            status=state["status"],
         )
 
     try:
@@ -410,6 +473,7 @@ def predict(request: PredictRequest) -> PredictResponse:
         locked_word=state["locked_word"],
         lock_progress=state["lock_progress"],
         words=state["words"],
+        next_words=state["next_words"],
         raw_sentence=state["raw_sentence"],
         finalized_sentence=state["finalized_sentence"],
         eos_trigger=state["eos_trigger"],
@@ -417,6 +481,7 @@ def predict(request: PredictRequest) -> PredictResponse:
         idle_seconds=state["idle_seconds"],
         motion_score=state["motion_score"],
         translation_prompt=state["translation_prompt"],
+        status=state["status"],
     )
 
 
@@ -424,3 +489,9 @@ def predict(request: PredictRequest) -> PredictResponse:
 def shutdown() -> None:
     if _detector is not None:
         _detector.close()
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host=DEFAULT_HOST, port=DEFAULT_PORT)

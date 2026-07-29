@@ -1,13 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios, { AxiosError } from 'axios';
 
-type Landmark = {
-  x: number;
-  y: number;
-  z: number;
-  visibility?: number;
-};
-
+type Landmark = { x: number; y: number; z: number; visibility?: number };
 type LandmarkFrame = number[][];
 
 type HolisticResults = {
@@ -25,9 +19,7 @@ type HolisticInstance = {
   close: () => void;
 };
 
-type HolisticConstructor = new (config: {
-  locateFile: (file: string) => string;
-}) => HolisticInstance;
+type HolisticConstructor = new (config: { locateFile: (file: string) => string }) => HolisticInstance;
 
 type DrawingUtils = {
   drawConnectors: (
@@ -50,30 +42,31 @@ type MediaPipeGlobals = DrawingUtils & {
   FACEMESH_TESSELATION: unknown;
 };
 
-type TopKResult = {
-  label: string;
-  confidence: number;
-};
+type TopKResult = { label: string; confidence: number };
 
 type InferenceResponse = {
   timestamp: string;
+  ready: boolean;
   sequence_length: number;
+  buffer_length: number;
   top_k: TopKResult[];
   candidate?: string | null;
+  candidate_confidence?: number;
+  candidate_hits?: number;
   locked_word?: string | null;
   lock_progress?: number;
   words?: string[];
+  next_word?: string | null;
+  next_words?: string[];
   raw_sentence?: string;
   finalized_sentence?: string | null;
   eos_trigger?: string | null;
-  next_word?: string | null;
   idle_seconds?: number;
   motion_score?: number;
   translation_prompt?: string | null;
+  status?: string;
+  detail?: string | null;
 };
-
-type ConnectionState = 'idle' | 'loading' | 'connected' | 'disconnected' | 'error';
-type UiMode = 'idle' | 'listening' | 'word_locked' | 'processing' | 'speaking' | 'error';
 
 type TranslateResponse = {
   raw_sentence: string;
@@ -84,10 +77,15 @@ type TranslateResponse = {
   used_gemini: boolean;
 };
 
-const API_URL = 'http://127.0.0.1:8001/api/v1/inference';
-const FINALIZE_URL = 'http://127.0.0.1:8001/api/v1/sentence/finalize';
-const RESET_URL = 'http://127.0.0.1:8001/api/v1/sentence/reset';
-const TRANSLATE_URL = 'http://127.0.0.1:8001/api/v1/gemini/translate';
+type ConnectionState = 'idle' | 'loading' | 'connected' | 'disconnected' | 'error';
+type UiMode = 'idle' | 'listening' | 'word_locked' | 'processing' | 'speaking' | 'error';
+
+const API_BASE_URL = 'http://127.0.0.1:8001';
+const API_URL = `${API_BASE_URL}/api/v1/inference`;
+const FINALIZE_URL = `${API_BASE_URL}/api/v1/sentence/finalize`;
+const RESET_URL = `${API_BASE_URL}/api/v1/sentence/reset`;
+const APPEND_WORD_URL = `${API_BASE_URL}/api/v1/sentence/append`;
+const TRANSLATE_URL = `${API_BASE_URL}/api/v1/gemini/translate`;
 const PAUSE_AFTER_FINALIZE_MS = 3000;
 const HOLISTIC_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js';
 const DRAWING_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js';
@@ -115,7 +113,6 @@ declare global {
 const loadScript = (src: string): Promise<void> =>
   new Promise((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
-
     if (existing?.dataset.loaded === 'true') {
       resolve();
       return;
@@ -130,15 +127,11 @@ const loadScript = (src: string): Promise<void> =>
       resolve();
     };
     script.onerror = () => reject(new Error(`Unable to load ${src}`));
-
-    if (!existing) {
-      document.head.appendChild(script);
-    }
+    if (!existing) document.head.appendChild(script);
   });
 
 const loadMediaPipe = async (): Promise<MediaPipeGlobals> => {
   await Promise.all([loadScript(HOLISTIC_CDN), loadScript(DRAWING_CDN)]);
-
   if (
     !window.Holistic ||
     !window.drawConnectors ||
@@ -181,74 +174,103 @@ const formatError = (error: unknown): string => {
     const axiosError = error as AxiosError;
     return axiosError.response
       ? `Backend responded with ${axiosError.response.status}.`
-      : 'Backend network error. Confirm FastAPI is running at 127.0.0.1:8000.';
+      : 'Backend network error. Confirm FastAPI is running at 127.0.0.1:8001.';
   }
-
   return error instanceof Error ? error.message : 'Unexpected camera or inference error.';
 };
 
-const statusColor = (status: ConnectionState): string => {
-  if (status === 'connected') return '#9ca3af';
-  if (status === 'loading') return '#a8a29e';
-  if (status === 'error' || status === 'disconnected') return '#b97a7a';
-  return '#64748b';
+const contextFallback = (sentence: string): { emotion: string; scene: string } => {
+  const words = sentence.toLowerCase().split(/\s+/);
+  if (words.some((word) => ['look', 'shhh', 'quiet', 'listen'].includes(word))) {
+    return { emotion: 'attentive / focused', scene: 'classroom / quiet area' };
+  }
+  if (words.some((word) => ['happy', 'flower', 'beautiful', 'smile'].includes(word))) {
+    return { emotion: 'joyful', scene: 'park / outdoors' };
+  }
+  return { emotion: 'neutral', scene: 'unknown' };
 };
 
-const emotionBadge = (emotion: string): string => {
-  const normalized = emotion.toLowerCase();
-  if (normalized.includes('happy')) return '😊 Happy';
-  if (normalized.includes('excited')) return '✨ Excited';
-  if (normalized.includes('sad')) return '😔 Sad';
-  if (normalized.includes('anxious')) return '😟 Anxious';
-  return '😐 Neutral';
+const resolveContext = (emotion: string | null | undefined, scene: string | null | undefined, sentence: string) => {
+  const fallback = contextFallback(sentence);
+  const normalizedEmotion = emotion?.trim().toLowerCase();
+  const normalizedScene = scene?.trim().toLowerCase();
+  return {
+    emotion: !normalizedEmotion || ['unknown', 'none', 'null'].includes(normalizedEmotion)
+      ? fallback.emotion
+      : normalizedEmotion,
+    scene: !normalizedScene || ['unknown', 'none', 'null'].includes(normalizedScene)
+      ? fallback.scene
+      : normalizedScene,
+  };
 };
 
-const sceneBadge = (scene: string): string => {
-  const normalized = scene.toLowerCase();
-  if (normalized.includes('hospital') || normalized.includes('clinic')) return '🏥 Hospital context';
-  if (normalized.includes('restaurant') || normalized.includes('cafe')) return '🍽️ Restaurant context';
-  if (normalized.includes('store') || normalized.includes('market')) return '🛒 Store context';
-  if (normalized.includes('class')) return '🏫 Classroom context';
-  if (normalized.includes('home')) return '🏠 Home context';
-  if (normalized === 'unknown') return '🌫️ Scene unknown';
-  return `${scene} context`;
+const emotionLabel = (emotion: string): string => {
+  if (emotion.includes('joy') || emotion.includes('happy')) return '😄 Joyful';
+  if (emotion.includes('attentive') || emotion.includes('focused')) return '😊 Attentive';
+  if (emotion.includes('empathetic') || emotion.includes('sad')) return '💙 Empathetic';
+  if (emotion.includes('excited')) return '✨ Excited';
+  return '😌 Neutral';
+};
+
+const sceneLabel = (scene: string): string => {
+  if (scene.includes('classroom') || scene.includes('quiet')) return '🏫 Classroom';
+  if (scene.includes('park') || scene.includes('outdoors')) return '🌸 Park / Outdoors';
+  if (scene.includes('supportive')) return '🤝 Supportive setting';
+  if (scene.includes('restaurant') || scene.includes('cafe')) return '🍽 Restaurant';
+  return '◌ Scene pending';
+};
+
+const statusText = (status: ConnectionState, mode: UiMode): string => {
+  if (mode === 'word_locked') return 'Word locked';
+  if (mode === 'processing') return 'Translating';
+  if (mode === 'speaking') return 'Speaking';
+  if (mode === 'error' || status === 'error') return 'Attention needed';
+  if (status === 'connected') return 'Live and listening';
+  if (status === 'loading') return 'Warming up';
+  if (status === 'disconnected') return 'Camera paused';
+  return 'Ready to begin';
+};
+
+const scrollToSection = (id: string) => {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
 function ProgressRing({ progress }: { progress: number }) {
-  const radius = 30;
+  const radius = 31;
   const circumference = 2 * Math.PI * radius;
   const clamped = Math.max(0, Math.min(1, progress));
-  const offset = circumference * (1 - clamped);
-
   return (
-    <svg width="78" height="78" viewBox="0 0 78 78" style={styles.progressSvg}>
-      <circle cx="39" cy="39" r={radius} stroke="rgba(148, 163, 184, 0.22)" strokeWidth="7" fill="none" />
-      <circle
-        cx="39"
-        cy="39"
-        r={radius}
-        stroke="#7d8c99"
-        strokeWidth="7"
-        fill="none"
-        strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        transform="rotate(-90 39 39)"
-        style={{ transition: 'stroke-dashoffset 180ms ease' }}
-      />
-      <text x="39" y="44" textAnchor="middle" style={styles.progressText}>
-        {Math.round(clamped * 100)}
-      </text>
-    </svg>
+    <div className="progress-ring" aria-label={`${Math.round(clamped * 100)}% lock confidence`}>
+      <svg viewBox="0 0 78 78" role="img">
+        <circle className="progress-ring-track" cx="39" cy="39" r={radius} />
+        <circle
+          className="progress-ring-value"
+          cx="39"
+          cy="39"
+          r={radius}
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - clamped)}
+        />
+      </svg>
+      <strong>{Math.round(clamped * 100)}</strong>
+    </div>
   );
 }
 
 function MicIcon({ enabled }: { enabled: boolean }) {
   return (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z" stroke="currentColor" strokeWidth="2" />
       <path d="M19 11a7 7 0 0 1-14 0M12 18v3M8 21h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       {!enabled && <path d="M4 4l16 16" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />}
+    </svg>
+  );
+}
+
+function ArrowIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -268,7 +290,7 @@ function App() {
   const isPausedRef = useRef(false);
   const lastFrameAtRef = useRef(0);
   const fpsFramesRef = useRef(0);
-  const fpsStartedAtRef = useRef(performance.now());
+  const fpsStartedAtRef = useRef(0);
   const mountedRef = useRef(true);
 
   const [isRunning, setIsRunning] = useState(false);
@@ -276,8 +298,8 @@ function App() {
   const [status, setStatus] = useState<ConnectionState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [output, setOutput] = useState<InferenceResponse | null>(null);
-  const [finalizedSentence, setFinalizedSentence] = useState<string>('');
-  const [polishedSentence, setPolishedSentence] = useState<string>('');
+  const [finalizedSentence, setFinalizedSentence] = useState('');
+  const [polishedSentence, setPolishedSentence] = useState('');
   const [usedGemini, setUsedGemini] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [detectedEmotion, setDetectedEmotion] = useState('neutral');
@@ -288,25 +310,29 @@ function App() {
   const [fps, setFps] = useState(0);
   const [bufferLength, setBufferLength] = useState(0);
 
-  const topPrediction = output?.top_k?.[0];
   const liveWords = output?.words ?? [];
-  const nextWord = output?.next_word;
+  const nextWords = output?.finalized_sentence
+    ? []
+    : output?.next_words?.length
+      ? output.next_words
+      : output?.next_word
+        ? [output.next_word]
+        : [];
+  const topPrediction = output?.top_k?.[0];
   const lockProgress = output?.lock_progress ?? 0;
-
-  const predictionLabel = useMemo(() => {
-    if (isPaused) return 'Processing translation...';
-    if (output?.locked_word) return output.locked_word;
-    if (topPrediction) return topPrediction.label;
-    if (isRunning) return 'Listening...';
-    return 'Start camera';
-  }, [isPaused, isRunning, output?.locked_word, topPrediction]);
+  const displaySentence = polishedSentence || finalizedSentence || liveWords.join(' ');
+  const context = useMemo(
+    () => resolveContext(detectedEmotion, detectedScene, displaySentence),
+    [detectedEmotion, detectedScene, displaySentence],
+  );
+  const predictionLabel = isPaused
+    ? 'Translating…'
+    : output?.locked_word || output?.candidate || topPrediction?.label || (isRunning ? 'Listening' : 'Ready');
 
   const pauseInference = useCallback(() => {
     isPausedRef.current = true;
     setIsPaused(true);
-    if (pauseTimerRef.current !== null) {
-      window.clearTimeout(pauseTimerRef.current);
-    }
+    if (pauseTimerRef.current !== null) window.clearTimeout(pauseTimerRef.current);
     pauseTimerRef.current = window.setTimeout(() => {
       isPausedRef.current = false;
       setIsPaused(false);
@@ -320,26 +346,16 @@ function App() {
       setUiMode(isRunning ? 'listening' : 'idle');
       return;
     }
-
     window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(sentence);
     const normalizedEmotion = emotion.toLowerCase();
-    const utterance = new SpeechSynthesisUtterance(
-      normalizedEmotion === 'sad' || normalizedEmotion === 'anxious'
-        ? sentence.replace(/,\s/g, ', ... ')
-        : sentence,
-    );
-
-    if (normalizedEmotion === 'happy' || normalizedEmotion === 'excited') {
+    if (normalizedEmotion.includes('joy') || normalizedEmotion.includes('happy')) {
       utterance.pitch = 1.2;
-      utterance.rate = 1.15;
-    } else if (normalizedEmotion === 'sad' || normalizedEmotion === 'anxious') {
-      utterance.pitch = 0.8;
-      utterance.rate = 0.85;
-    } else {
-      utterance.pitch = 1;
-      utterance.rate = 1;
+      utterance.rate = 1.1;
+    } else if (normalizedEmotion.includes('sad') || normalizedEmotion.includes('empathetic')) {
+      utterance.pitch = 0.85;
+      utterance.rate = 0.9;
     }
-
     utterance.onstart = () => setUiMode('speaking');
     utterance.onend = () => setUiMode(isRunning ? 'listening' : 'idle');
     utterance.onerror = () => setUiMode(isRunning ? 'listening' : 'idle');
@@ -351,77 +367,49 @@ function App() {
     const video = videoRef.current;
     const mediaPipe = mediaPipeRef.current;
     const ctx = canvas?.getContext('2d');
-
     if (!canvas || !video || !ctx || !mediaPipe) return;
 
     const width = video.videoWidth || 1280;
     const height = video.videoHeight || 720;
-
     if (canvas.width !== width || canvas.height !== height) {
       canvas.width = width;
       canvas.height = height;
     }
-
     ctx.clearRect(0, 0, width, height);
     mediaPipe.drawConnectors(ctx, results.faceLandmarks, mediaPipe.FACEMESH_TESSELATION, {
-      color: 'rgba(96, 165, 250, 0.22)',
+      color: 'rgba(129, 140, 248, 0.25)',
       lineWidth: 1,
     });
     mediaPipe.drawConnectors(ctx, results.poseLandmarks, mediaPipe.POSE_CONNECTIONS, {
-      color: '#7d8c99',
-      lineWidth: 3,
+      color: '#93c5fd',
+      lineWidth: 2.5,
     });
     mediaPipe.drawConnectors(ctx, results.leftHandLandmarks, mediaPipe.HAND_CONNECTIONS, {
       color: '#34d399',
       lineWidth: 3,
     });
     mediaPipe.drawConnectors(ctx, results.rightHandLandmarks, mediaPipe.HAND_CONNECTIONS, {
-      color: '#f97316',
+      color: '#fbbf24',
       lineWidth: 3,
     });
-    mediaPipe.drawLandmarks(ctx, results.poseLandmarks, {
-      color: '#e0f2fe',
-      lineWidth: 1,
-      radius: 2,
-    });
-    mediaPipe.drawLandmarks(ctx, results.leftHandLandmarks, {
-      color: '#bbf7d0',
-      lineWidth: 1,
-      radius: 2,
-    });
-    mediaPipe.drawLandmarks(ctx, results.rightHandLandmarks, {
-      color: '#fed7aa',
-      lineWidth: 1,
-      radius: 2,
-    });
+    mediaPipe.drawLandmarks(ctx, results.leftHandLandmarks, { color: '#d1fae5', lineWidth: 1, radius: 2 });
+    mediaPipe.drawLandmarks(ctx, results.rightHandLandmarks, { color: '#fef3c7', lineWidth: 1, radius: 2 });
   }, []);
 
   const postInference = useCallback(async (landmarks: LandmarkFrame[]) => {
     if (inFlightRef.current || isPausedRef.current) return;
-
     inFlightRef.current = true;
     const startedAt = performance.now();
-
     try {
       const response = await axios.post<InferenceResponse>(API_URL, { landmarks }, { timeout: 8000 });
-
       if (!mountedRef.current || isPausedRef.current) return;
-
       setOutput(response.data);
-      if (response.data.locked_word) {
-        setUiMode('word_locked');
-        window.setTimeout(() => setUiMode('listening'), 650);
-      } else if (response.data.finalized_sentence) {
-        setUiMode('processing');
-      } else {
-        setUiMode('listening');
-      }
       setLatencyMs(Math.round(performance.now() - startedAt));
       setStatus('connected');
       setError(null);
+      setUiMode(response.data.locked_word ? 'word_locked' : response.data.finalized_sentence ? 'processing' : 'listening');
     } catch (requestError) {
       if (!mountedRef.current || isPausedRef.current) return;
-
       setUiMode('error');
       setStatus('error');
       setError(formatError(requestError));
@@ -435,7 +423,11 @@ function App() {
     setUiMode('processing');
     try {
       const response = await axios.post<InferenceResponse>(FINALIZE_URL, null, { timeout: 5000 });
-      setOutput((current) => ({ ...(current ?? response.data), ...response.data }));
+      setOutput((current) => ({
+        ...(current ?? response.data),
+        ...response.data,
+        top_k: current?.top_k ?? response.data.top_k,
+      }));
       setStatus('connected');
       setError(null);
     } catch (requestError) {
@@ -445,6 +437,22 @@ function App() {
     }
   }, [pauseInference]);
 
+  const appendSuggestion = useCallback(async (word: string) => {
+    try {
+      const response = await axios.post<InferenceResponse>(APPEND_WORD_URL, { word }, { timeout: 4000 });
+      setOutput((current) => ({
+        ...(current ?? response.data),
+        ...response.data,
+        top_k: current?.top_k ?? response.data.top_k,
+      }));
+      setError(null);
+      setStatus('connected');
+    } catch (requestError) {
+      setStatus('error');
+      setError(formatError(requestError));
+    }
+  }, []);
+
   const resetConversation = useCallback(async () => {
     lastSpokenSentenceRef.current = null;
     setOutput(null);
@@ -453,22 +461,15 @@ function App() {
     setUsedGemini(false);
     setDetectedEmotion('neutral');
     setDetectedScene('unknown');
-    if (pauseTimerRef.current !== null) {
-      window.clearTimeout(pauseTimerRef.current);
-      pauseTimerRef.current = null;
-    }
-    isPausedRef.current = false;
-    setIsPaused(false);
-    setUiMode(isRunning ? 'listening' : 'idle');
-    setError(null);
     frameBufferRef.current = [];
     framesSinceInferenceRef.current = 0;
     setBufferLength(0);
-
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
-
+    setError(null);
+    setUiMode(isRunning ? 'listening' : 'idle');
+    if (pauseTimerRef.current !== null) window.clearTimeout(pauseTimerRef.current);
+    isPausedRef.current = false;
+    setIsPaused(false);
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     try {
       await axios.post(RESET_URL, null, { timeout: 4000 });
     } catch (requestError) {
@@ -479,15 +480,13 @@ function App() {
   const captureSnapshot = useCallback((): string | null => {
     const video = videoRef.current;
     if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return null;
-
     try {
       const snapshot = document.createElement('canvas');
       snapshot.width = video.videoWidth || 640;
       snapshot.height = video.videoHeight || 360;
-      const context = snapshot.getContext('2d');
-      if (!context) return null;
-
-      context.drawImage(video, 0, 0, snapshot.width, snapshot.height);
+      const context2d = snapshot.getContext('2d');
+      if (!context2d) return null;
+      context2d.drawImage(video, 0, 0, snapshot.width, snapshot.height);
       return snapshot.toDataURL('image/jpeg', 0.82);
     } catch {
       return null;
@@ -496,82 +495,56 @@ function App() {
 
   const polishAndSpeak = useCallback(async (sentence: string) => {
     const words = sentence.split(/\s+/).filter(Boolean);
-    const imageBase64 = captureSnapshot();
     setUiMode('processing');
     setFinalizedSentence(sentence);
-
     try {
       const response = await axios.post<TranslateResponse>(
         TRANSLATE_URL,
-        {
-          words,
-          image_base64: imageBase64,
-          mime_type: 'image/jpeg',
-        },
+        { words, image_base64: captureSnapshot(), mime_type: 'image/jpeg' },
         { timeout: 15000 },
       );
       const polished = response.data.polished_sentence || sentence;
-
+      const resolved = resolveContext(response.data.detected_emotion, response.data.detected_scene, sentence);
       setPolishedSentence(polished);
       setUsedGemini(response.data.used_gemini);
-      setDetectedEmotion(response.data.detected_emotion || 'neutral');
-      setDetectedScene(response.data.detected_scene || 'unknown');
-      speakSentence(polished, response.data.detected_emotion || 'neutral');
+      setDetectedEmotion(resolved.emotion);
+      setDetectedScene(resolved.scene);
+      speakSentence(polished, resolved.emotion);
     } catch {
-      const fallback = sentence ? `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.` : '';
-      setPolishedSentence(fallback);
+      const fallbackSentence = sentence ? `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.` : '';
+      const resolved = resolveContext(null, null, sentence);
+      setPolishedSentence(fallbackSentence);
       setUsedGemini(false);
-      setDetectedEmotion('neutral');
-      setDetectedScene('unknown');
-      speakSentence(fallback, 'neutral');
+      setDetectedEmotion(resolved.emotion);
+      setDetectedScene(resolved.scene);
+      speakSentence(fallbackSentence, resolved.emotion);
     }
   }, [captureSnapshot, speakSentence]);
 
-  const handleResults = useCallback(
-    (results: HolisticResults) => {
-      drawResults(results);
-
-      const frame = resultsToFrame(results);
-      const nextBuffer = [...frameBufferRef.current, frame].slice(-WINDOW_SIZE);
-
-      frameBufferRef.current = nextBuffer;
-      framesSinceInferenceRef.current += 1;
-      setBufferLength(nextBuffer.length);
-
-      if (!isPaused && nextBuffer.length >= WINDOW_SIZE && framesSinceInferenceRef.current >= STRIDE_FRAMES) {
-        framesSinceInferenceRef.current = 0;
-        void postInference(nextBuffer);
-      }
-    },
-    [drawResults, isPaused, postInference],
-  );
+  const handleResults = useCallback((results: HolisticResults) => {
+    drawResults(results);
+    const frame = resultsToFrame(results);
+    const nextBuffer = [...frameBufferRef.current, frame].slice(-WINDOW_SIZE);
+    frameBufferRef.current = nextBuffer;
+    framesSinceInferenceRef.current += 1;
+    setBufferLength(nextBuffer.length);
+    if (!isPausedRef.current && nextBuffer.length >= WINDOW_SIZE && framesSinceInferenceRef.current >= STRIDE_FRAMES) {
+      framesSinceInferenceRef.current = 0;
+      void postInference(nextBuffer);
+    }
+  }, [drawResults, postInference]);
 
   const stopCamera = useCallback(() => {
-    if (animationRef.current !== null) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-    }
-
+    if (animationRef.current !== null) cancelAnimationFrame(animationRef.current);
+    animationRef.current = null;
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
-
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (canvas && ctx) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-
+    if (videoRef.current) videoRef.current.srcObject = null;
+    const ctx = canvasRef.current?.getContext('2d');
+    if (canvasRef.current && ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     frameBufferRef.current = [];
     framesSinceInferenceRef.current = 0;
     inFlightRef.current = false;
-    if (pauseTimerRef.current !== null) {
-      window.clearTimeout(pauseTimerRef.current);
-      pauseTimerRef.current = null;
-    }
     setIsPaused(false);
     isPausedRef.current = false;
     setIsRunning(false);
@@ -586,19 +559,15 @@ function App() {
     const processFrame = async (now: number) => {
       const video = videoRef.current;
       const holistic = holisticRef.current;
-
       if (!video || !holistic || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
         animationRef.current = requestAnimationFrame(processFrame);
         return;
       }
-
       if (now - lastFrameAtRef.current >= FRAME_INTERVAL_MS) {
         lastFrameAtRef.current = now;
-
         try {
           await holistic.send({ image: video });
           fpsFramesRef.current += 1;
-
           const elapsed = now - fpsStartedAtRef.current;
           if (elapsed >= 1000) {
             setFps(Math.round((fpsFramesRef.current * 1000) / elapsed));
@@ -610,32 +579,23 @@ function App() {
           setError(formatError(sendError));
         }
       }
-
       animationRef.current = requestAnimationFrame(processFrame);
     };
-
     animationRef.current = requestAnimationFrame(processFrame);
   }, []);
 
   const startCamera = useCallback(async () => {
     if (isRunning || isStarting) return;
-
     setIsStarting(true);
     setStatus('loading');
     setError(null);
-
     try {
       const video = videoRef.current;
       if (!video) throw new Error('Video element is not ready.');
-
       const mediaPipe = await loadMediaPipe();
       mediaPipeRef.current = mediaPipe;
-
       if (!holisticRef.current) {
-        const holistic = new mediaPipe.Holistic({
-          locateFile: (file) => `${HOLISTIC_ASSET_BASE}/${file}`,
-        });
-
+        const holistic = new mediaPipe.Holistic({ locateFile: (file) => `${HOLISTIC_ASSET_BASE}/${file}` });
         holistic.setOptions({
           modelComplexity: 1,
           smoothLandmarks: true,
@@ -647,21 +607,13 @@ function App() {
         holistic.onResults(handleResults);
         holisticRef.current = holistic;
       }
-
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: TARGET_FPS, max: TARGET_FPS },
-          facingMode: 'user',
-        },
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: TARGET_FPS, max: TARGET_FPS }, facingMode: 'user' },
         audio: false,
       });
-
       streamRef.current = stream;
       video.srcObject = stream;
       await video.play();
-
       lastFrameAtRef.current = 0;
       fpsStartedAtRef.current = performance.now();
       fpsFramesRef.current = 0;
@@ -685,7 +637,6 @@ function App() {
 
   useEffect(() => {
     mountedRef.current = true;
-
     return () => {
       mountedRef.current = false;
       stopCamera();
@@ -696,12 +647,11 @@ function App() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Enter') {
+      if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
         void finalizeSentence();
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [finalizeSentence]);
@@ -709,649 +659,180 @@ function App() {
   useEffect(() => {
     const sentence = output?.finalized_sentence;
     if (!sentence || sentence === lastSpokenSentenceRef.current) return;
-
     lastSpokenSentenceRef.current = sentence;
     pauseInference();
     void polishAndSpeak(sentence);
   }, [output?.finalized_sentence, pauseInference, polishAndSpeak]);
 
+  const topFive = output?.top_k?.length ? output.top_k.slice(0, 5) : [];
+
   return (
-    <main style={styles.page}>
-      <section style={styles.header}>
-        <div>
-          <p style={styles.eyebrow}>SignBridge Vision Console</p>
-          <h1 style={styles.title}>Real-time Sign Language Recognition</h1>
+    <main className="app-shell">
+      <nav className="top-nav" aria-label="Primary navigation">
+        <a className="brand-lockup" href="#top" aria-label="SignBridge home">
+          <span className="brand-mark"><span /></span>
+          <span>
+            <strong>SignBridge</strong>
+            <small><i /> v2.5 Hybrid Model Active</small>
+          </span>
+        </a>
+        <div className="nav-links">
+          <a href="#demo">Interactive Demo</a>
+          <a href="#capabilities">Capabilities</a>
+          <a href="#ecosystem">Ecosystem</a>
+          <a href="#architecture">Architecture</a>
         </div>
-        <div style={styles.statusPill}>
-          <span style={{ ...styles.statusDot, background: statusColor(status) }} />
-          {uiMode === 'word_locked'
-            ? 'Word locked'
-            : uiMode === 'processing'
-              ? 'Processing sentence'
-              : uiMode === 'speaking'
-                ? 'Speaking'
-                : status === 'idle' ? 'Idle' : status.charAt(0).toUpperCase() + status.slice(1)}
+        <button className="pill-button nav-cta" type="button" onClick={() => { scrollToSection('demo'); if (!isRunning) void startCamera(); }}>
+          Launch Live Demo <ArrowIcon />
+        </button>
+      </nav>
+
+      <section className="hero-section" id="top">
+        <div className="hero-copy">
+          <div className="hero-kicker"><span className="live-dot" /> Spatial AI for human connection</div>
+          <h1>Bridging silence with <em>spatial AI</em> &amp; multimodal LLMs.</h1>
+          <p>Real-time sign language recognition, enhanced by facial expression analysis and predictive next-word intelligence.</p>
+          <div className="hero-actions">
+            <button className="pill-button hero-primary" type="button" onClick={() => { scrollToSection('demo'); if (!isRunning) void startCamera(); }}>
+              Try the interactive demo <ArrowIcon />
+            </button>
+            <a className="text-link" href="#architecture">Explore the system <ArrowIcon /></a>
+          </div>
+          <div className="hero-proof">
+            <span><b>543</b> landmarks / frame</span>
+            <span><b>30</b> FPS target</span>
+            <span><b>∞</b> context-aware</span>
+          </div>
+        </div>
+        <div className="hero-visual" aria-hidden="true">
+          <div className="hero-grid" />
+          <div className="hero-orbit orbit-one" />
+          <div className="hero-orbit orbit-two" />
+          <div className="hero-signal-card">
+            <div className="signal-card-top"><span className="eyebrow">Live spatial signal</span><span className="signal-ping" /></div>
+            <div className="signal-word">{predictionLabel}</div>
+            <div className="signal-bars"><i /><i /><i /><i /><i /></div>
+            <div className="signal-footer"><span>Motion engine</span><strong>On-device</strong></div>
+          </div>
+          <div className="hero-chip chip-blue">Face + pose context</div>
+          <div className="hero-chip chip-cyan">Gemini multimodal</div>
         </div>
       </section>
 
-      <section style={styles.dashboard}>
-        <div style={styles.visionPanel}>
-          <div style={styles.panelHeader}>
-            <div>
-              <p style={styles.panelKicker}>Vision Input</p>
-              <h2 style={styles.panelTitle}>Holistic Landmark Stream</h2>
-            </div>
-            <div style={styles.buttonRow}>
-              <button
-                type="button"
-                onClick={startCamera}
-                disabled={isRunning || isStarting}
-                style={{
-                  ...styles.button,
-                  ...(isRunning || isStarting ? styles.buttonDisabled : styles.primaryButton),
-                }}
-              >
-                {isStarting ? 'Starting...' : 'Start Camera'}
-              </button>
-              <button
-                type="button"
-                onClick={stopCamera}
-                disabled={!isRunning && !isStarting}
-                style={{
-                  ...styles.button,
-                  ...(!isRunning && !isStarting ? styles.buttonDisabled : styles.secondaryButton),
-                }}
-              >
-                Stop Camera
-              </button>
-            </div>
-          </div>
+      <section className="demo-section section-shell" id="demo">
+        <div className="section-intro demo-intro">
+          <div><span className="eyebrow">01 / Interactive workspace</span><h2>A clearer signal, from first gesture to final thought.</h2></div>
+          <div className="connection-state"><span className={`state-dot state-${status}`} /> {statusText(status, uiMode)} <span className="state-divider" /> <code>127.0.0.1:8001</code></div>
+        </div>
 
-          <div style={styles.videoShell}>
-            <video ref={videoRef} playsInline muted style={styles.video} />
-            <canvas ref={canvasRef} style={styles.canvas} />
-            {!isRunning && (
-              <div style={styles.videoEmpty}>
-                <span style={styles.videoEmptyTitle}>Camera offline</span>
-                <span style={styles.videoEmptyText}>Start the camera to begin landmark capture.</span>
+        <div className="workspace-grid">
+          <section className="camera-card glass-card">
+            <div className="card-heading">
+              <div><span className="eyebrow">Vision input</span><h3>Holistic landmark stream</h3></div>
+              <div className="heading-meta"><span className="meta-tag"><span className="mini-pulse" /> {isRunning ? 'Capturing' : 'Standby'}</span><span className="meta-tag">543 points</span></div>
+            </div>
+            <div className="video-shell">
+              <video ref={videoRef} playsInline muted />
+              <canvas ref={canvasRef} />
+              <div className="video-scanline" />
+              <div className="video-corner video-corner-tl" /><div className="video-corner video-corner-tr" /><div className="video-corner video-corner-bl" /><div className="video-corner video-corner-br" />
+              {!isRunning && <div className="camera-empty"><span className="camera-icon">◎</span><strong>Camera is ready</strong><p>Start a session to see spatial landmarks and live recognition.</p></div>}
+              <div className="video-overlay-top"><span>MEDIAPIPE HOLISTIC</span><span>30 FPS / LOCAL</span></div>
+              <div className="video-overlay-bottom"><span className="overlay-status"><i /> {isRunning ? 'Signal detected' : 'Awaiting signal'}</span><span>Face · Hands · Pose</span></div>
+            </div>
+            <div className="camera-controls">
+              <button className="pill-button control-primary" type="button" onClick={startCamera} disabled={isRunning || isStarting}>{isStarting ? 'Initializing…' : isRunning ? 'Session active' : 'Start camera'} {!isRunning && <ArrowIcon />}</button>
+              <button className="control-ghost" type="button" onClick={stopCamera} disabled={!isRunning && !isStarting}>Stop session</button>
+              {error && <span className="error-inline">{error}</span>}
+              {isStarting && <div className="skeleton-stack" aria-label="Loading spatial engine"><i /><i /><i /></div>}
+            </div>
+            <div className="feature-chips" aria-label="Active SignBridge features">
+              <span className="feature-chip"><i /> LLM Facial Expression Active</span>
+              <span className="feature-chip"><i /> Background Context Engine</span>
+              <span className="feature-chip"><i /> Smart Next-Word Prediction</span>
+            </div>
+          </section>
+
+          <aside className="insight-rail">
+            <section className="sentence-card glass-card">
+              <div className="card-heading compact"><div><span className="eyebrow">Live sentence</span><h3>Meaning in motion</h3></div><span className="shortcut">⌘ ↵</span></div>
+              <div className="sentence-buffer">
+                {liveWords.length ? liveWords.map((word, index) => <span className="word-token" key={`${word}-${index}`}>{word}</span>) : <span className="sentence-placeholder">Your live sentence will build here.</span>}
+                {output?.candidate && <span className="candidate-token">{output.candidate}<i /></span>}
               </div>
-            )}
-          </div>
+              <div className="suggestion-block"><div className="suggestion-label"><span>Suggested next words</span><small>Context-aware</small></div><div className="suggestion-chips">{nextWords.length ? nextWords.map((word) => <button type="button" key={word} onClick={() => void appendSuggestion(word)}>+ {word}</button>) : <span className="suggestion-empty">Keep signing to unlock suggestions</span>}</div></div>
+              <div className="sentence-actions"><button className="pill-button control-primary small" type="button" onClick={finalizeSentence}>Finalize thought <ArrowIcon /></button><button className="control-ghost small" type="button" onClick={resetConversation}>Reset</button></div>
+            </section>
 
-          {error && <div style={styles.errorBox}>{error}</div>}
+            <section className="prediction-card glass-card">
+              <div className="card-heading compact"><div><span className="eyebrow">Top prediction</span><h3>{output?.locked_word ? 'Gesture locked' : 'Reading the room'}</h3></div><span className={`confidence-orb ${topPrediction && topPrediction.confidence >= 0.4 ? 'orb-hot' : ''}`} /></div>
+              <div className="prediction-main"><div><strong className="prediction-word">{predictionLabel}</strong><p>{topPrediction ? `${(topPrediction.confidence * 100).toFixed(1)}% model confidence` : 'Start the camera to begin'}</p></div><ProgressRing progress={lockProgress} /></div>
+              <div className="lock-meter"><span style={{ width: `${Math.max(0, Math.min(100, lockProgress * 100))}%` }} /></div><div className="meter-caption"><span>Agreement window</span><span>{output?.candidate_hits ?? 0} / 8 stable</span></div>
+            </section>
+
+            <section className="translation-card glass-card">
+              <div className="card-heading compact"><div><span className="eyebrow">Final translation</span><h3>Human-readable output</h3></div><button className={`voice-button ${voiceEnabled ? 'active' : ''}`} type="button" aria-label={voiceEnabled ? 'Disable voice output' : 'Enable voice output'} onClick={() => setVoiceEnabled((enabled) => !enabled)}><MicIcon enabled={voiceEnabled} /></button></div>
+              <div className="translation-copy">{displaySentence || 'A finished thought will appear here.'}</div>
+              <div className="context-tags"><span>{emotionLabel(context.emotion)}</span><span>{sceneLabel(context.scene)}</span></div>
+              <div className="translation-foot"><span>{usedGemini ? 'Gemini multimodal polish' : 'Local safety-net polish'}</span><span>{output?.eos_trigger ? `Ended by ${output.eos_trigger}` : '⌘ ↵ to finish'}</span></div>
+            </section>
+          </aside>
         </div>
 
-        <aside style={styles.outputPanel}>
-          <div style={styles.sentencePanel}>
-            <p style={styles.panelKicker}>Live Sentence Buffer</p>
-            <div style={styles.sentenceLine}>
-              {liveWords.length ? liveWords.map((word, index) => (
-                <span key={`${word}-${index}`} style={styles.wordToken}>{word}</span>
-              )) : <span style={styles.emptySentence}>Waiting for stable signs</span>}
-              {nextWord && <span style={styles.nextWord}>{nextWord}</span>}
-            </div>
-            <div style={styles.sentenceActions}>
-              <button type="button" onClick={finalizeSentence} style={{ ...styles.button, ...styles.primaryButton }}>
-                Finalize
-              </button>
-              <button type="button" onClick={resetConversation} style={{ ...styles.button, ...styles.resetButton }}>
-                Reset
-              </button>
-              <span style={styles.hintText}>Press Enter to finish and speak</span>
-            </div>
-          </div>
-
-          <div style={styles.predictionCard}>
-            <p style={styles.panelKicker}>Top Prediction</p>
-            <div style={styles.lockRow}>
-              <div style={styles.wordBubble}>{predictionLabel}</div>
-              <ProgressRing progress={lockProgress} />
-            </div>
-            <p style={isPaused ? styles.pauseText : styles.confidenceText}>
-              {isPaused
-                ? 'Processing translation... Please lower your hands.'
-                : topPrediction
-                ? `${(topPrediction.confidence * 100).toFixed(1)}% confidence. Hold steady to lock.`
-                : 'Waiting for a full frame window'}
-            </p>
-          </div>
-
-          <div style={styles.translationPanel}>
-            <div style={styles.translationHeader}>
-              <p style={styles.panelKicker}>Final Translation</p>
-              <button
-                type="button"
-                aria-label={voiceEnabled ? 'Disable voice output' : 'Enable voice output'}
-                onClick={() => setVoiceEnabled((enabled) => !enabled)}
-                style={{
-                  ...styles.micButton,
-                  ...(voiceEnabled ? styles.micButtonActive : styles.micButtonMuted),
-                }}
-              >
-                <MicIcon enabled={voiceEnabled} />
-              </button>
-            </div>
-            <div style={styles.translationText}>
-              {polishedSentence || finalizedSentence || 'A finalized sentence will appear here.'}
-            </div>
-            <div style={styles.badgeRow}>
-              <span style={styles.contextBadge}>{emotionBadge(detectedEmotion)}</span>
-              <span style={styles.contextBadge}>{sceneBadge(detectedScene)}</span>
-            </div>
-            <p style={styles.translationHint}>
-              {output?.eos_trigger
-                ? `Ended by ${output.eos_trigger}. ${usedGemini ? 'Gemini polished.' : 'Local polish fallback.'}`
-                : 'Idle for 5 seconds or press Enter to finalize.'}
-            </p>
-          </div>
-        </aside>
+        <section className="developer-console" aria-label="Developer console">
+          <div className="console-heading"><div><span className="eyebrow">Developer console / observability</span><h3>Every prediction, in the open.</h3></div><span className="console-chip"><i /> streaming telemetry</span></div>
+          <div className="telemetry-grid"><div><span>Latency</span><strong>{latencyMs === null ? '—' : `${latencyMs}ms`}</strong></div><div><span>FPS</span><strong>{fps || '—'}</strong></div><div><span>Active buffer</span><strong>{bufferLength}<small> / {WINDOW_SIZE}</small></strong></div><div><span>Idle time</span><strong>{(output?.idle_seconds ?? 0).toFixed(1)}<small>s</small></strong></div><div><span>Total landmarks</span><strong>{LANDMARKS_PER_FRAME}</strong></div></div>
+          <div className="matrix-layout"><div className="console-note"><span className="matrix-label">Pipeline readout</span><p>The model compares temporal agreement, confidence variance, and release posture before committing a word.</p><div className="console-status"><span className="state-dot state-connected" /> confidence gate <b>≥ 35%</b><span className="state-dot state-loading" /> variance gate <b>&lt; 4.5%</b></div></div><div className="probability-matrix"><div className="matrix-header"><span className="matrix-label">Top 5 probability matrix</span><span>Live output</span></div>{topFive.length ? topFive.map((item, index) => <div className="probability-row" key={`${item.label}-${index}`}><div className="probability-label"><span className={`rank rank-${index + 1}`}>{String(index + 1).padStart(2, '0')}</span><strong>{item.label}</strong><span className="probability-value">{(item.confidence * 100).toFixed(1)}%</span></div><div className="probability-track"><span className={item.confidence >= 0.4 ? 'bar-green' : item.confidence >= 0.2 ? 'bar-yellow' : 'bar-blue'} style={{ width: `${Math.max(0, Math.min(100, item.confidence * 100))}%` }} /></div></div>) : <div className="matrix-empty">No predictions yet. The probability matrix will animate as soon as a frame window is ready.</div>}</div></div>
+        </section>
       </section>
 
-      <section style={styles.developerDrawer}>
-        <div style={styles.drawerHeader}>Developer Console</div>
-        <div style={styles.drawerContent}>
-          <div style={styles.metricsGrid}>
-            <span style={styles.metricPill}>Latency {latencyMs === null ? '--' : `${latencyMs}ms`}</span>
-            <span style={styles.metricPill}>FPS {fps || '--'}</span>
-            <span style={styles.metricPill}>Buffer {bufferLength}/{WINDOW_SIZE}</span>
-            <span style={styles.metricPill}>Idle {(output?.idle_seconds ?? 0).toFixed(1)}s</span>
-            <span style={styles.metricPill}>Landmarks {LANDMARKS_PER_FRAME}</span>
-          </div>
-          <div style={styles.resultList}>
-            {(output?.top_k?.length ? output.top_k : [{ label: 'Awaiting signal', confidence: 0 }]).map((item, index) => (
-              <div key={`${item.label}-${index}`} style={styles.resultItem}>
-                <div style={styles.resultTopline}>
-                  <span style={styles.resultLabel}>{item.label}</span>
-                  <span style={styles.resultPercent}>{(item.confidence * 100).toFixed(1)}%</span>
-                </div>
-                <div style={styles.barTrack}>
-                  <div
-                    style={{
-                      ...styles.barFill,
-                      width: `${Math.max(0, Math.min(100, item.confidence * 100))}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+      <section className="feature-section section-shell" id="context">
+        <div className="section-intro centered"><span className="eyebrow">02 / The context engine</span><h2>Recognition is only the beginning.</h2><p>SignBridge fuses movement, expression, and environment into a richer layer of meaning — locally first, intelligently assisted when it matters.</p></div>
+        <div className="feature-grid"><article className="feature-card feature-blue"><div className="feature-number">01</div><div className="feature-icon">◈</div><h3>On-device TFLite motion engine</h3><p>543 spatial landmarks are processed through a low-latency temporal window, keeping the most sensitive part of the interaction close to the user.</p><div className="feature-meta"><span>Low latency</span><span>Private by design</span></div></article><article className="feature-card feature-cyan"><div className="feature-number">02</div><div className="feature-icon">✦</div><h3>Multimodal context, made visible</h3><p>Facial landmarks, pose, and an optional camera snapshot give Gemini 2.5 Flash the context to read micro-expressions and scene cues.</p><div className="feature-meta"><span>Face + scene</span><span>Gemini 2.5 Flash</span></div></article><article className="feature-card feature-amber"><div className="feature-number">03</div><div className="feature-icon">⌁</div><h3>Smart word prediction</h3><p>A compact context map turns a live sentence into useful next-word suggestions, while confidence gates keep accidental lock-ins out.</p><div className="feature-meta"><span>N-gram hints</span><span>Human-confirmed</span></div></article></div>
+      </section>
+
+      <section className="bento-section section-shell" id="capabilities">
+        <div className="section-intro centered">
+          <span className="eyebrow">03 / Capability system</span>
+          <h2>Three layers. One human-first signal.</h2>
+          <p>SignBridge turns spatial motion into a useful, private, and context-rich conversation layer.</p>
+        </div>
+        <div className="bento-grid">
+          <article className="bento-card bento-context-card">
+            <div className="bento-copy"><span className="bento-index">01 / multimodal</span><h3>Context that understands the moment.</h3><p>Hand landmarks, facial expression, and room context fuse into a translation that reads beyond the gesture.</p><div className="bento-tags"><span>Face cues</span><span>Scene aware</span><span>Gemini ready</span></div></div>
+            <div className="context-radar" aria-hidden="true"><div className="radar-ring ring-a" /><div className="radar-ring ring-b" /><div className="radar-sweep" /><span className="radar-node node-face">face</span><span className="radar-node node-hands">hands</span><span className="radar-node node-scene">scene</span><div className="radar-core">◎</div></div>
+          </article>
+          <article className="bento-card bento-local-card">
+            <div className="bento-card-top"><span className="bento-index">02 / on-device</span><span className="bento-metric">&lt; 30ms</span></div><h3>Fast where it matters.</h3><p>543 spatial landmarks run locally through a TFLite-ready motion path, keeping feedback immediate and data close.</p><div className="landmark-visual"><span /><span /><span /><span /><span /><span /><span /></div><div className="bento-footer"><span>Local inference</span><strong>Privacy by default</strong></div>
+          </article>
+          <article className="bento-card bento-predict-card">
+            <div className="bento-card-top"><span className="bento-index">03 / prediction</span><span className="prediction-live"><i /> live</span></div><h3>Finish the thought, naturally.</h3><p>Context-aware suggestions stay one tap away, so the person signing stays in control of the sentence.</p><div className="bento-suggestion-demo"><span>look</span><i>→</i><b>here</b><b>at me</b><b>there</b></div><div className="bento-footer"><span>Human-confirmed</span><strong>Next-word intelligence</strong></div>
+          </article>
         </div>
       </section>
+
+      <section className="roadmap-section section-shell" id="ecosystem">
+        <div className="section-intro roadmap-intro"><div><span className="eyebrow">04 / Future ecosystem</span><h2>From the browser to everywhere people connect.</h2></div><p>Designed as an adaptable intelligence layer for meetings, wearables, and better training data.</p></div>
+        <div className="roadmap-grid">
+          <article className="roadmap-card roadmap-wide"><div className="roadmap-image"><img src="https://sorenson.com/wp-content/uploads/2024/07/featured-how-to-easily-make-zoom-meetings-deaf-inclusive-two-ways-to-get-zoom-interpreter-service.jpg" alt="Inclusive video meeting concept" loading="lazy" referrerPolicy="no-referrer" /><span className="image-overlay-label">Virtual meeting layer</span></div><div className="roadmap-copy"><span className="bento-index">Coming next / 01</span><h3>Meetings that include every voice.</h3><p>Overlay SignBridge in Zoom, Google Meet, and Teams for dual subtitles plus natural TTS speech — without breaking the flow of the call.</p><div className="roadmap-tags"><span>Zoom</span><span>Google Meet</span><span>Teams</span></div></div></article>
+          <article className="roadmap-card"><div className="roadmap-image"><img src="https://images.stockcake.com/public/8/5/8/858e4c23-3a38-4319-a413-e7a9e1ad822a_large/futuristic-smart-glasses-stockcake.jpg" alt="Futuristic smart glasses concept" loading="lazy" referrerPolicy="no-referrer" /><span className="image-overlay-label">Ambient HUD</span></div><div className="roadmap-copy"><span className="bento-index">Coming next / 02</span><h3>Spatial AI, in your line of sight.</h3><p>Hands-free translation for face-to-face conversations through next-gen smart glasses.</p></div></article>
+          <article className="roadmap-card"><div className="roadmap-image"><img src="https://physicsworld.com/wp-content/uploads/2024/02/5-2-2024-Stretchy-glove.jpeg" alt="Stretchy smart glove concept" loading="lazy" referrerPolicy="no-referrer" /><span className="image-overlay-label">Training signal</span></div><div className="roadmap-copy"><span className="bento-index">Coming next / 03</span><h3>Train with a richer signal.</h3><p>Haptic stretch gloves capture 3D joint coordinates to continuously improve landmark accuracy.</p></div></article>
+        </div>
+      </section>
+
+      <section className="gallery-section section-shell" id="community">
+        <div className="gallery-heading"><div><span className="eyebrow">05 / Human connection</span><h2>Technology should feel more human.</h2></div><p>Built around the people who make language visible, expressive, and shared.</p></div>
+        <div className="gallery-row"><figure className="gallery-item gallery-large"><img src="https://a.storyblok.com/f/259811/1814x1209/25cb65fa1e/gebardensprache_website.jpg" alt="Sign language performer connecting through expression" loading="lazy" referrerPolicy="no-referrer" /><figcaption><strong>Expression is information.</strong><span>Every movement carries more than a word.</span></figcaption></figure><figure className="gallery-item"><img src="https://www.eastcentral.edu/community/wp-content/uploads/sites/78/2023/01/American-Sign-Language-1.jpg" alt="American Sign Language conversation" loading="lazy" referrerPolicy="no-referrer" /><figcaption><strong>Connection is the product.</strong><span>A more expressive web for everyone.</span></figcaption></figure></div>
+      </section>
+
+      <section className="architecture-section section-shell" id="architecture">
+        <div className="architecture-copy"><span className="eyebrow">03 / Architecture</span><h2>Local signal. Shared meaning.</h2><p>Every layer has a job: understand movement at the edge, stabilize decisions in the service, and add language and scene intelligence only where it improves the conversation.</p><a className="text-link" href="#demo">Open the workspace <ArrowIcon /></a></div>
+        <div className="architecture-flow"><div className="flow-node"><small>01 / input</small><strong>Camera + Holistic</strong><span>Face · hands · pose</span></div><div className="flow-line"><i /></div><div className="flow-node"><small>02 / intelligence</small><strong>Temporal state</strong><span>8-frame agreement</span></div><div className="flow-line cyan"><i /></div><div className="flow-node"><small>03 / output</small><strong>Gemini context</strong><span>Speech + translation</span></div></div>
+      </section>
+
+      <footer className="footer section-shell"><a className="brand-lockup" href="#top"><span className="brand-mark"><span /></span><span><strong>SignBridge</strong><small>Spatial AI for human connection</small></span></a><span>Built for a more expressive web.</span><a href="#top">Back to top ↑</a></footer>
     </main>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: '100vh',
-    padding: '40px',
-    color: '#e5eefb',
-    background: '#0c0d0e',
-    fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: '20px',
-    margin: '0 auto 24px',
-    maxWidth: '1440px',
-  },
-  eyebrow: {
-    margin: '0 0 8px',
-    color: '#8f9aa3',
-    fontSize: '13px',
-    fontWeight: 700,
-    letterSpacing: '0',
-    textTransform: 'uppercase',
-  },
-  title: {
-    margin: 0,
-    fontSize: 'clamp(28px, 4vw, 48px)',
-    lineHeight: 1.05,
-    letterSpacing: '0',
-  },
-  statusPill: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '10px',
-    minWidth: '132px',
-    justifyContent: 'center',
-    padding: '10px 14px',
-    border: '1px solid rgba(64, 64, 64, 0.42)',
-    borderRadius: '8px',
-    background: 'rgba(23, 23, 23, 0.38)',
-    color: '#d4d4d4',
-    fontWeight: 700,
-  },
-  statusDot: {
-    width: '10px',
-    height: '10px',
-    borderRadius: '999px',
-    boxShadow: 'none',
-  },
-  dashboard: {
-    display: 'grid',
-    gridTemplateColumns: 'minmax(0, 1.65fr) minmax(360px, 0.75fr)',
-    gap: '32px',
-    maxWidth: '1440px',
-    margin: '0 auto',
-  },
-  visionPanel: {
-    minWidth: 0,
-    border: '1px solid rgba(64, 64, 64, 0.4)',
-    borderRadius: '18px',
-    padding: '24px',
-    background: 'rgba(23, 23, 23, 0.3)',
-    backdropFilter: 'blur(14px)',
-    boxShadow: 'none',
-  },
-  panelHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '16px',
-    alignItems: 'center',
-    marginBottom: '16px',
-  },
-  panelHeaderCompact: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '12px',
-    alignItems: 'center',
-    marginBottom: '14px',
-  },
-  panelKicker: {
-    margin: 0,
-    color: '#94a3b8',
-    fontSize: '12px',
-    fontWeight: 700,
-    letterSpacing: '0',
-    textTransform: 'uppercase',
-  },
-  panelTitle: {
-    margin: '4px 0 0',
-    fontSize: '22px',
-    letterSpacing: '0',
-  },
-  buttonRow: {
-    display: 'flex',
-    gap: '10px',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-end',
-  },
-  button: {
-    minWidth: '118px',
-    minHeight: '40px',
-    padding: '8px 20px',
-    border: 0,
-    borderRadius: '8px',
-    color: '#f8fafc',
-    fontWeight: 600,
-    cursor: 'pointer',
-    transition: 'all 160ms ease',
-  },
-  primaryButton: {
-    background: '#7d8c99',
-    color: '#0c0d0e',
-    boxShadow: 'none',
-  },
-  secondaryButton: {
-    background: '#292524',
-  },
-  resetButton: {
-    background: 'rgba(69, 26, 26, 0.08)',
-    border: '1px solid rgba(185, 122, 122, 0.3)',
-    color: '#d38b8b',
-  },
-  buttonDisabled: {
-    background: '#475569',
-    color: '#94a3b8',
-    cursor: 'not-allowed',
-    boxShadow: 'none',
-  },
-  videoShell: {
-    position: 'relative',
-    overflow: 'hidden',
-    aspectRatio: '16 / 9',
-    borderRadius: '14px',
-    border: '1px solid rgba(30, 41, 59, 0.55)',
-    background: '#020617',
-  },
-  video: {
-    position: 'absolute',
-    inset: 0,
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    transform: 'scaleX(-1)',
-  },
-  canvas: {
-    position: 'absolute',
-    inset: 0,
-    width: '100%',
-    height: '100%',
-    pointerEvents: 'none',
-    transform: 'scaleX(-1)',
-  },
-  videoEmpty: {
-    position: 'absolute',
-    inset: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    background: 'linear-gradient(135deg, rgba(2, 6, 23, 0.82), rgba(15, 23, 42, 0.92))',
-    textAlign: 'center',
-  },
-  videoEmptyTitle: {
-    fontSize: '24px',
-    fontWeight: 900,
-  },
-  videoEmptyText: {
-    color: '#94a3b8',
-  },
-  errorBox: {
-    marginTop: '14px',
-    padding: '12px 14px',
-    borderRadius: '8px',
-    border: '1px solid rgba(248, 113, 113, 0.35)',
-    background: 'rgba(127, 29, 29, 0.32)',
-    color: '#fecaca',
-    fontWeight: 700,
-  },
-  outputPanel: {
-    minWidth: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px',
-  },
-  predictionCard: {
-    border: '1px solid rgba(64, 64, 64, 0.4)',
-    borderRadius: '18px',
-    padding: '28px',
-    background: 'rgba(23, 23, 23, 0.3)',
-    backdropFilter: 'blur(14px)',
-    boxShadow: 'none',
-  },
-  sentencePanel: {
-    border: '1px solid rgba(64, 64, 64, 0.4)',
-    borderRadius: '18px',
-    padding: '30px',
-    background: 'rgba(23, 23, 23, 0.3)',
-    backdropFilter: 'blur(14px)',
-    boxShadow: 'none',
-  },
-  sentenceLine: {
-    minHeight: '72px',
-    display: 'flex',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: '10px',
-    padding: '14px 0',
-    fontSize: '22px',
-    fontWeight: 850,
-    lineHeight: 1.35,
-  },
-  wordToken: {
-    color: '#f8fafc',
-  },
-  nextWord: {
-    color: '#94a3b8',
-    opacity: 0.6,
-    fontSize: '22px',
-    fontWeight: 850,
-  },
-  emptySentence: {
-    color: '#64748b',
-    fontSize: '16px',
-    fontWeight: 700,
-  },
-  sentenceActions: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    flexWrap: 'wrap',
-  },
-  hintText: {
-    margin: 0,
-    color: '#cbd5e1',
-    fontSize: '14px',
-    fontWeight: 600,
-  },
-  translationHint: {
-    margin: 0,
-    color: '#94a3b8',
-    fontSize: '12px',
-    fontWeight: 600,
-  },
-  translationPanel: {
-    border: '1px solid rgba(64, 64, 64, 0.4)',
-    borderRadius: '18px',
-    padding: '30px',
-    background: 'rgba(23, 23, 23, 0.3)',
-    backdropFilter: 'blur(14px)',
-  },
-  translationHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: '12px',
-  },
-  translationText: {
-    minHeight: '80px',
-    margin: '12px 0',
-    color: '#f1f5f9',
-    fontSize: '28px',
-    fontWeight: 650,
-    lineHeight: 1.35,
-  },
-  lockRow: {
-    display: 'grid',
-    gridTemplateColumns: 'minmax(0, 1fr) 82px',
-    alignItems: 'center',
-    gap: '16px',
-    marginTop: '14px',
-  },
-  progressSvg: {
-    filter: 'none',
-  },
-  progressText: {
-    fill: '#e0f2fe',
-    fontSize: '13px',
-    fontWeight: 900,
-  },
-  micButton: {
-    width: '52px',
-    height: '52px',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '999px',
-    border: '1px solid rgba(148, 163, 184, 0.22)',
-    cursor: 'pointer',
-    transition: 'all 160ms ease',
-  },
-  micButtonActive: {
-    color: '#d4d4d4',
-    background: 'rgba(125, 140, 153, 0.18)',
-    boxShadow: 'none',
-  },
-  micButtonMuted: {
-    color: '#64748b',
-    background: 'rgba(15, 23, 42, 0.72)',
-  },
-  badgeRow: {
-    display: 'flex',
-    gap: '8px',
-    flexWrap: 'wrap',
-    marginBottom: '12px',
-  },
-  contextBadge: {
-    padding: '7px 10px',
-    borderRadius: '999px',
-    border: '1px solid rgba(148, 163, 184, 0.18)',
-    background: 'rgba(30, 41, 59, 0.56)',
-    color: '#cbd5e1',
-    fontSize: '12px',
-    fontWeight: 800,
-    textTransform: 'capitalize',
-  },
-  wordBubble: {
-    marginTop: '14px',
-    minHeight: '98px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '20px',
-    borderRadius: '8px',
-    background: 'rgba(38, 38, 38, 0.48)',
-    border: '1px solid rgba(115, 115, 115, 0.2)',
-    color: '#f8fafc',
-    fontSize: 'clamp(30px, 5vw, 54px)',
-    fontWeight: 950,
-    textAlign: 'center',
-    overflowWrap: 'anywhere',
-  },
-  confidenceText: {
-    margin: '12px 0 0',
-    color: '#cbd5e1',
-    fontSize: '14px',
-    fontWeight: 600,
-  },
-  metricsGrid: {
-    display: 'flex',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: '8px',
-  },
-  pauseText: {
-    margin: '14px 0 0',
-    color: '#cbd5e1',
-    fontSize: '16px',
-    fontWeight: 600,
-    lineHeight: 1.45,
-  },
-  metric: {
-    minHeight: '86px',
-    padding: '14px',
-    borderRadius: '8px',
-    border: '1px solid rgba(148, 163, 184, 0.18)',
-    background: 'rgba(30, 41, 59, 0.72)',
-  },
-  metricLabel: {
-    display: 'block',
-    color: '#94a3b8',
-    fontSize: '12px',
-    fontWeight: 800,
-    textTransform: 'uppercase',
-  },
-  metricValue: {
-    display: 'block',
-    marginTop: '10px',
-    color: '#f8fafc',
-    fontSize: '24px',
-  },
-  alternatives: {
-    border: '1px solid rgba(148, 163, 184, 0.22)',
-    borderRadius: '8px',
-    padding: '18px',
-    background: 'rgba(15, 23, 42, 0.78)',
-  },
-  developerDrawer: {
-    maxWidth: '1440px',
-    margin: '24px auto 0',
-    border: '1px solid rgba(64, 64, 64, 0.34)',
-    borderRadius: '18px',
-    background: 'rgba(23, 23, 23, 0.18)',
-    backdropFilter: 'blur(10px)',
-    overflow: 'hidden',
-  },
-  drawerHeader: {
-    padding: '12px 18px 4px',
-    color: '#737373',
-    fontSize: '11px',
-    fontWeight: 800,
-    textTransform: 'uppercase',
-  },
-  drawerToggle: {
-    width: '100%',
-    minHeight: '54px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '0 18px',
-    border: 0,
-    background: 'transparent',
-    color: '#cbd5e1',
-    cursor: 'pointer',
-    fontWeight: 900,
-  },
-  drawerContent: {
-    display: 'grid',
-    gridTemplateColumns: 'minmax(420px, 0.85fr) minmax(0, 1.15fr)',
-    gap: '18px',
-    padding: '8px 18px 18px',
-  },
-  timestamp: {
-    color: '#64748b',
-    fontSize: '12px',
-    fontWeight: 700,
-  },
-  resultList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-    padding: '6px 0',
-  },
-  resultItem: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '5px',
-  },
-  resultTopline: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '12px',
-    color: '#e2e8f0',
-    fontSize: '14px',
-    fontWeight: 700,
-  },
-  resultLabel: {
-    overflowWrap: 'anywhere',
-  },
-  resultPercent: {
-    color: '#cbd5e1',
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
-    fontSize: '14px',
-    fontWeight: 700,
-  },
-  barTrack: {
-    height: '3px',
-    overflow: 'hidden',
-    borderRadius: '999px',
-    background: 'rgba(64, 64, 64, 0.55)',
-  },
-  barFill: {
-    height: '100%',
-    borderRadius: '999px',
-    background: 'linear-gradient(90deg, #525252, #7d8c99)',
-    transition: 'width 180ms ease',
-  },
-  metricPill: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '28px',
-    padding: '0 10px',
-    borderRadius: '999px',
-    border: '1px solid rgba(115, 115, 115, 0.24)',
-    color: '#cbd5e1',
-    background: 'rgba(23, 23, 23, 0.26)',
-    fontSize: '12px',
-    fontWeight: 500,
-    whiteSpace: 'nowrap',
-  },
-};
 
 export default App;
