@@ -1,3 +1,11 @@
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), 'sign_classifier'))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'signclassifier'))
+
+from predict_topk import ...  # noqa: E402
+
 from __future__ import annotations
 
 import base64
@@ -18,10 +26,6 @@ from gemini_client import GeminiClient
 from gemini_prompts import build_scene_prompt, build_translation_prompt
 from mediapipe_pipeline import FeatureExtractor, HolisticConfig, HolisticDetector
 from sentence_state import SentenceState, SentenceStateConfig
-
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), 'sign_classifier'))
 
 
 AI_SERVICE_DIR = Path(__file__).resolve().parent
