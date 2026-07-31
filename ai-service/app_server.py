@@ -1,18 +1,10 @@
-import sys
-import os
-
-sys.path.append(os.path.join(os.path.dirname(__file__), 'sign_classifier'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'signclassifier'))
-
-from predict_topk import ...  # noqa: E402
-
 from __future__ import annotations
 
 import base64
+import os
 import sys
 from collections import deque
 from datetime import datetime, timezone
-from pathlib import Path
 from threading import Lock
 from typing import Any
 
@@ -27,13 +19,15 @@ from gemini_prompts import build_scene_prompt, build_translation_prompt
 from mediapipe_pipeline import FeatureExtractor, HolisticConfig, HolisticDetector
 from sentence_state import SentenceState, SentenceStateConfig
 
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sign_classifier_dir = os.path.join(current_dir, "sign_classifier")
+if sign_classifier_dir not in sys.path:
+    sys.path.insert(0, sign_classifier_dir)
 
-AI_SERVICE_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = AI_SERVICE_DIR.parent
-TRANSFORMER_DIR = PROJECT_ROOT / "sign_classifier"
-
-if str(TRANSFORMER_DIR) not in sys.path:
-    sys.path.insert(0, str(TRANSFORMER_DIR))
+# Local monorepo layout: sign_classifier lives next to ai-service/
+_monorepo_classifier = os.path.join(os.path.dirname(current_dir), "sign_classifier")
+if _monorepo_classifier not in sys.path:
+    sys.path.insert(0, _monorepo_classifier)
 
 from predict_topk import (  # noqa: E402
     DIMS as MODEL_VALUES_PER_LANDMARK,
