@@ -1,3 +1,10 @@
+# Build from the repository root so sibling sign_classifier/ is available:
+#   docker build -f ai-service/Dockerfile .
+#
+# Cloud Run / gcloud example:
+#   gcloud builds submit --config=<(echo '...')  OR
+#   docker build -f ai-service/Dockerfile -t SIGNBRIDGE_AI .
+
 FROM python:3.10-slim
 
 RUN apt-get update && apt-get install -y libgl1 libglib2.0-0 && rm -rf /var/lib/apt/lists/*
@@ -5,11 +12,16 @@ RUN apt-get update && apt-get install -y libgl1 libglib2.0-0 && rm -rf /var/lib/
 WORKDIR /app
 
 ENV PYTHONPATH="/app:/app/sign_classifier:/app/signclassifier"
+ENV PYTHONUNBUFFERED=1
 
-COPY requirements.txt .
+COPY ai-service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Application code
+COPY ai-service/ .
+
+# Classifier module + TFLite assets (predict_topk.py lives here, not under ai-service/)
+COPY sign_classifier/ ./sign_classifier/
 
 EXPOSE 8080
 

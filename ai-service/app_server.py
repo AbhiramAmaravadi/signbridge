@@ -1,8 +1,17 @@
-from __future__ import annotations
-
-import base64
 import os
 import sys
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Add candidate directories to sys.path (Docker: /app/sign_classifier; local monorepo: ../sign_classifier)
+for path in [
+    BASE_DIR,
+    os.path.join(BASE_DIR, "sign_classifier"),
+    os.path.join(os.path.dirname(BASE_DIR), "sign_classifier"),
+]:
+    if path not in sys.path and os.path.exists(path):
+        sys.path.insert(0, path)
+
+import base64
 from collections import deque
 from datetime import datetime, timezone
 from threading import Lock
@@ -18,16 +27,6 @@ from gemini_client import GeminiClient
 from gemini_prompts import build_scene_prompt, build_translation_prompt
 from mediapipe_pipeline import FeatureExtractor, HolisticConfig, HolisticDetector
 from sentence_state import SentenceState, SentenceStateConfig
-
-current_dir = os.path.dirname(os.path.abspath(__file__))
-sign_classifier_dir = os.path.join(current_dir, "sign_classifier")
-if sign_classifier_dir not in sys.path:
-    sys.path.insert(0, sign_classifier_dir)
-
-# Local monorepo layout: sign_classifier lives next to ai-service/
-_monorepo_classifier = os.path.join(os.path.dirname(current_dir), "sign_classifier")
-if _monorepo_classifier not in sys.path:
-    sys.path.insert(0, _monorepo_classifier)
 
 from predict_topk import (  # noqa: E402
     DIMS as MODEL_VALUES_PER_LANDMARK,

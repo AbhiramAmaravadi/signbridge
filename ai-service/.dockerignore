@@ -1,0 +1,15 @@
+# Used when building with context=ai-service.
+# Do NOT ignore Python sources or a local sign_classifier/ copy.
+
+.git
+.gitignore
+**/__pycache__
+**/*.py[cod]
+**/*$py.class
+**/.pytest_cache
+
+venv/
+.venv/
+.env
+.env.*
+saved_sequences/
