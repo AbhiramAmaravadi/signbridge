@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ImgHTMLAttributes, type PointerEvent, type SyntheticEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import axios, { AxiosError } from 'axios';
+import {
+  API_HOST_LABEL,
+  APPEND_WORD_URL,
+  FINALIZE_URL,
+  INFERENCE_URL,
+  JSON_HEADERS,
+  RESET_URL,
+  TRANSLATE_URL,
+} from './config';
 
 type Landmark = { x: number; y: number; z: number; visibility?: number };
 type LandmarkFrame = number[][];
@@ -81,12 +90,6 @@ type TranslateResponse = {
 type ConnectionState = 'idle' | 'loading' | 'connected' | 'disconnected' | 'error';
 type UiMode = 'idle' | 'listening' | 'word_locked' | 'processing' | 'speaking' | 'error';
 
-const API_BASE_URL = 'http://127.0.0.1:8001';
-const API_URL = `${API_BASE_URL}/api/v1/inference`;
-const FINALIZE_URL = `${API_BASE_URL}/api/v1/sentence/finalize`;
-const RESET_URL = `${API_BASE_URL}/api/v1/sentence/reset`;
-const APPEND_WORD_URL = `${API_BASE_URL}/api/v1/sentence/append`;
-const TRANSLATE_URL = `${API_BASE_URL}/api/v1/gemini/translate`;
 const PAUSE_AFTER_FINALIZE_MS = 3000;
 const HOLISTIC_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js';
 const DRAWING_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js';
@@ -175,7 +178,7 @@ const formatError = (error: unknown): string => {
     const axiosError = error as AxiosError;
     return axiosError.response
       ? `Backend responded with ${axiosError.response.status}.`
-      : 'Backend network error. Confirm FastAPI is running at 127.0.0.1:8001.';
+      : `Backend network error. Confirm the API is reachable at ${API_HOST_LABEL}.`;
   }
   return error instanceof Error ? error.message : 'Unexpected camera or inference error.';
 };
@@ -1328,7 +1331,11 @@ function App() {
     inFlightRef.current = true;
     const startedAt = performance.now();
     try {
-      const response = await axios.post<InferenceResponse>(API_URL, { landmarks }, { timeout: 8000 });
+      const response = await axios.post<InferenceResponse>(
+        INFERENCE_URL,
+        { landmarks },
+        { timeout: 8000, headers: JSON_HEADERS },
+      );
       if (!mountedRef.current || isPausedRef.current) return;
       setOutput(response.data);
       setLatencyMs(Math.round(performance.now() - startedAt));
@@ -1349,7 +1356,7 @@ function App() {
     pauseInference();
     setUiMode('processing');
     try {
-      const response = await axios.post<InferenceResponse>(FINALIZE_URL, null, { timeout: 5000 });
+      const response = await axios.post<InferenceResponse>(FINALIZE_URL, {}, { timeout: 5000, headers: JSON_HEADERS });
       setOutput((current) => ({
         ...(current ?? response.data),
         ...response.data,
@@ -1366,7 +1373,11 @@ function App() {
 
   const appendSuggestion = useCallback(async (word: string) => {
     try {
-      const response = await axios.post<InferenceResponse>(APPEND_WORD_URL, { word }, { timeout: 4000 });
+      const response = await axios.post<InferenceResponse>(
+        APPEND_WORD_URL,
+        { word },
+        { timeout: 4000, headers: JSON_HEADERS },
+      );
       setOutput((current) => ({
         ...(current ?? response.data),
         ...response.data,
@@ -1398,7 +1409,7 @@ function App() {
     setIsPaused(false);
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     try {
-      await axios.post(RESET_URL, null, { timeout: 4000 });
+      await axios.post(RESET_URL, {}, { timeout: 4000, headers: JSON_HEADERS });
     } catch (requestError) {
       setError(formatError(requestError));
     }
@@ -1428,7 +1439,7 @@ function App() {
       const response = await axios.post<TranslateResponse>(
         TRANSLATE_URL,
         { words, image_base64: captureSnapshot(), mime_type: 'image/jpeg' },
-        { timeout: 15000 },
+        { timeout: 15000, headers: JSON_HEADERS },
       );
       const polished = response.data.polished_sentence || sentence;
       const resolved = resolveContext(response.data.detected_emotion, response.data.detected_scene, sentence);
@@ -1656,7 +1667,7 @@ function App() {
       <section className="demo-section section-shell" id="demo">
         <div className="section-intro demo-intro">
           <div><span className="eyebrow">01 / Interactive workspace</span><h2>A clearer signal, from first gesture to final thought.</h2></div>
-          <div className="connection-state"><span className={`state-dot state-${status}`} /> {statusText(status, uiMode)} <span className="state-divider" /> <code>127.0.0.1:8001</code></div>
+          <div className="connection-state"><span className={`state-dot state-${status}`} /> {statusText(status, uiMode)} <span className="state-divider" /> <code>{API_HOST_LABEL}</code></div>
         </div>
 
         <div className="workspace-grid">

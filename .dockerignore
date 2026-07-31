@@ -1,0 +1,35 @@
+# Build context should be the repository root:
+#   docker build -f ai-service/Dockerfile .
+# Do NOT ignore Python sources or sign_classifier/.
+
+.git
+.gitignore
+**/.git
+**/.gitignore
+
+**/__pycache__
+**/*.py[cod]
+**/*$py.class
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+
+**/.venv
+**/venv
+**/env
+**/.env
+**/.env.*
+
+frontend/
+backend/
+dataset/
+**/.idea
+**/.vscode
+**/node_modules
+
+# Keep model/benchmark artifacts out of the image, but never ignore .py or sign_classifier source
+sign_classifier/legacy/
+sign_classifier/__pycache__/
+ai-service/venv/
+ai-service/__pycache__/
+ai-service/saved_sequences/
