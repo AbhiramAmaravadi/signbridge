@@ -19,6 +19,10 @@ from gemini_prompts import build_scene_prompt, build_translation_prompt
 from mediapipe_pipeline import FeatureExtractor, HolisticConfig, HolisticDetector
 from sentence_state import SentenceState, SentenceStateConfig
 
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), 'sign_classifier'))
+
 
 AI_SERVICE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = AI_SERVICE_DIR.parent
