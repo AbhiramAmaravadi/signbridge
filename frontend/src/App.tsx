@@ -10,6 +10,7 @@ import {
   RESET_URL,
   TRANSLATE_URL,
 } from './config';
+import { CapsuleNav, PAGE_IDS, SectionIndex, scrollToSection } from './layout/SiteChrome';
 
 type Landmark = { x: number; y: number; z: number; visibility?: number };
 type LandmarkFrame = number[][];
@@ -235,9 +236,6 @@ const statusText = (status: ConnectionState, mode: UiMode): string => {
   return 'Ready to begin';
 };
 
-const scrollToSection = (id: string) => {
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-};
 
 function ProgressRing({ progress }: { progress: number }) {
   const radius = 31;
@@ -722,7 +720,7 @@ function SponsorTeamShowcaseV3() {
   ];
   const team = [['Siqi Dai', 'sdai66@wisc.edu'], ['Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['Jianhong Shi', 'jshi296@wisc.edu'], ['Nithya Krishna', 'nkrishna5@wisc.edu']];
   return (
-    <section className="acknowledgments-section section-shell">
+    <section className="acknowledgments-section section-shell" id="team">
       <div className="acknowledgments-intro">
         <span className="eyebrow">[ ACKNOWLEDGMENTS ]</span>
         <h2>Acknowledgments</h2>
@@ -822,6 +820,29 @@ function SamArchitectureDiagram() {
   return <section className={`sam-architecture section-shell ${isPlaying ? 'is-playing' : 'is-paused'}`} aria-label="SignBridge spatial multimodal system architecture"><div className="sam-architecture-panel"><div className="sam-architecture-heading"><span className="sam-eyebrow">[ SYSTEM ARCHITECTURE ]</span><h2>SignBridge Spatial-Multimodal Pipeline</h2><p>From live spatial signals to natural language, continuously aligned in motion.</p></div><div className="sam-diagram"><svg className="sam-flow-lines" viewBox="0 0 1200 420" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="samBeam" x1="0" x2="1"><stop stopColor="#34d399" /><stop offset=".52" stopColor="#22d3ee" /><stop offset="1" stopColor="#a5f3fc" /></linearGradient><marker id="samArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#67e8f9" /></marker></defs><g className="sam-flow-base" markerEnd="url(#samArrow)"><path d="M150 105H250M150 315H250M350 105H450M350 315H450M550 105H625L700 210M550 315H625L700 210M800 210H1025" /><path className="sam-feedback-line" d="M700 315H610V360H500V315" /></g><g className="sam-flow-beams" markerEnd="url(#samArrow)"><path d="M150 105H250M150 315H250M350 105H450M350 315H450M550 105H625L700 210M550 315H625L700 210M800 210H1025" /><path className="sam-feedback-beam" d="M700 315H610V360H500V315" /></g></svg><div className="sam-diagram-grid"><motion.article className={nodeClass(inputActive, 'input')}><span className="sam-node-kicker">INPUT / VIDEO FRAME</span><strong>Live Webcam Frame</strong><span className="sam-frame-label">frame t</span><svg className="sam-hand-skeleton" viewBox="0 0 120 62" aria-hidden="true"><path d="M58 53 51 35 39 27 29 17M58 53 60 29 60 9M61 31 74 18 79 5M64 35 84 28 96 17M67 40 91 39 105 32" /><circle cx="58" cy="53" r="3" /><circle cx="51" cy="35" r="2" /><circle cx="39" cy="27" r="2" /><circle cx="29" cy="17" r="2" /><circle cx="60" cy="29" r="2" /><circle cx="60" cy="9" r="2" /><circle cx="74" cy="18" r="2" /><circle cx="79" cy="5" r="2" /><circle cx="84" cy="28" r="2" /><circle cx="96" cy="17" r="2" /><circle cx="91" cy="39" r="2" /><circle cx="105" cy="32" r="2" /></svg></motion.article><motion.article className={nodeClass(inputActive, 'input')}><span className="sam-node-kicker">INPUT / CONTEXT</span><strong>Context Prompt</strong><span className="sam-context-copy">“Dining / Ordering Water”</span></motion.article><motion.article className={nodeClass(processingActive, 'encoder')}><span className="sam-node-kicker">ENCODER / 01</span><strong>Spatial Mesh Encoder</strong><span>Processes 3D coordinates</span></motion.article><motion.article className={nodeClass(processingActive, 'encoder')}><span className="sam-node-kicker">ENCODER / 02</span><strong>Context Tokenizer</strong><span>Embeds scene meaning</span></motion.article><motion.article className={nodeClass(processingActive, 'core')}><span className="sam-node-kicker">CORE / DETECTOR</span><strong>Token Detector &amp; Sequence Align</strong><span className="sam-tokens">“I” · “WANT” · “WATER”</span></motion.article><motion.article className={nodeClass(processingActive, 'core')}><span className="sam-node-kicker">CORE / TRACKER</span><strong>Temporal Tracker</strong><span>Aggregates frames over time</span></motion.article><div className={`sam-convergence ${processingActive ? 'is-active' : ''}`} aria-label="Convergence node">+</div><motion.article className={nodeClass(processingActive, 'fusion')}><span className="sam-node-kicker">FUSION / MEMORY</span><strong>Gemini LLM Refinement Module</strong><span>Grammar · context · intent</span></motion.article><motion.article className={nodeClass(processingActive, 'memory')}><span className="sam-node-kicker">LOOP / MEMORY BANK</span><strong>Temporal Context Bank</strong><div className="sam-memory-stack"><i /><i /><i /></div><span>Feedback into tracker</span></motion.article><motion.article className={nodeClass(outputActive, 'output')}><span className="sam-node-kicker">OUTPUT / VOICE</span><strong className={outputActive ? 'is-revealed' : ''}>Could I please get a glass of water?</strong><span>Natural sentence stream</span></motion.article></div></div><button className="sam-play-toggle" type="button" onClick={() => setIsPlaying((playing) => !playing)} aria-label={isPlaying ? 'Pause architecture animation' : 'Play architecture animation'}>{isPlaying ? 'Ⅱ' : '▶'}</button><span className="sam-phase-readout">{isPlaying ? 'LIVE FLOW' : 'FLOW PAUSED'} · {String(Math.floor(phase / 1000)).padStart(2, '0')}s</span></div></section>;
 }
 
+function OverviewVisionStrip() {
+  return (
+    <section className="overview-vision-strip section-shell" id="overview-vision" aria-label="The Vision Evolution">
+      <div className="overview-vision-strip__intro">
+        <span>The vision evolution</span>
+        <h2>From tethered gloves to vision-native AI.</h2>
+      </div>
+      <div className="overview-vision-grid">
+        <article className="overview-vision-card overview-vision-card--past">
+          <span className="ov-era">2016 · Hardware era</span>
+          <h3>MIT proof of concept</h3>
+          <p>Specialized flex sensors and tethered gloves.</p>
+        </article>
+        <article className="overview-vision-card overview-vision-card--now">
+          <span className="ov-era">Present · Vision-native</span>
+          <h3>SignBridge + Gemini 2.5</h3>
+          <p>Zero gloves, zero hardware. 100% web-based spatial AI powered by Gemini multimodal LLMs.</p>
+        </article>
+      </div>
+    </section>
+  );
+}
+
 function SamArchitectureDiagramV2() {
   const [isPlaying, setIsPlaying] = useState(true);
   const [elapsed, setElapsed] = useState(0);
@@ -858,12 +879,12 @@ function SamArchitectureDiagramV2() {
 
   return (
     <section
-      className={`sam-architecture section-shell ${isPlaying ? 'is-playing' : 'is-paused'}`}
-      aria-label="SignBridge spatial multimodal system architecture"
+      className={`sam-architecture ${isPlaying ? 'is-playing' : 'is-paused'}`}
+      aria-label="SignBridge spatial multimodal system architecture detail"
     >
       <div className="sam-architecture-panel">
         <div className="sam-architecture-heading">
-          <span className="sam-eyebrow">[ SYSTEM ARCHITECTURE ]</span>
+          <span className="sam-eyebrow">System architecture</span>
           <h2>SignBridge Spatial-Multimodal Pipeline</h2>
           <p>From live spatial signals to natural language, continuously aligned in motion.</p>
         </div>
@@ -896,7 +917,7 @@ function SamArchitectureDiagramV2() {
 
           <div className="sam-diagram-grid">
             <motion.article className={nodeClass(1, 'input')} initial={false} animate={{ opacity: visible(1) ? 1 : 0, y: visible(1) ? 0 : 8 }}>
-              <span className="sam-node-kicker">INPUT / VIDEO FRAME</span>
+            <span className="sam-node-kicker">Input · Video frame</span>
               <strong>Live Webcam Frame</strong>
               <span className="sam-frame-label">frame t</span>
               <svg className="sam-hand-skeleton" viewBox="0 0 120 62" aria-hidden="true">
@@ -908,31 +929,31 @@ function SamArchitectureDiagramV2() {
             </motion.article>
 
             <motion.article className={nodeClass(4, 'input')} initial={false} animate={{ opacity: visible(4) ? 1 : 0, y: visible(4) ? 0 : 8 }}>
-              <span className="sam-node-kicker">INPUT / CONTEXT</span>
+              <span className="sam-node-kicker">Input · Context</span>
               <strong>Context Prompt</strong>
               <span className="sam-context-copy">&quot;Dining / Ordering Water&quot;</span>
             </motion.article>
 
             <motion.article className={nodeClass(2, 'encoder')} initial={false} animate={{ opacity: visible(2) ? 1 : 0, y: visible(2) ? 0 : 8 }}>
-              <span className="sam-node-kicker">ENCODER / 01</span>
+              <span className="sam-node-kicker">Encoder · Spatial mesh</span>
               <strong>Spatial Mesh Encoder</strong>
               <span>Processes 3D coordinates</span>
             </motion.article>
 
             <motion.article className={nodeClass(5, 'encoder')} initial={false} animate={{ opacity: visible(5) ? 1 : 0, y: visible(5) ? 0 : 8 }}>
-              <span className="sam-node-kicker">ENCODER / 02</span>
+              <span className="sam-node-kicker">Encoder · Context</span>
               <strong>Context Tokenizer</strong>
               <span>Embeds scene meaning</span>
             </motion.article>
 
             <motion.article className={nodeClass(3, 'core')} initial={false} animate={{ opacity: visible(3) ? 1 : 0, y: visible(3) ? 0 : 8 }}>
-              <span className="sam-node-kicker">CORE / DETECTOR</span>
+              <span className="sam-node-kicker">Core · Detector</span>
               <strong>Token Detector &amp; Sequence Align</strong>
               <span className="sam-tokens">&quot;I&quot; · &quot;WANT&quot; · &quot;WATER&quot;</span>
             </motion.article>
 
             <motion.article className={nodeClass(6, 'core')} initial={false} animate={{ opacity: visible(6) ? 1 : 0, y: visible(6) ? 0 : 8 }}>
-              <span className="sam-node-kicker">CORE / TRACKER</span>
+              <span className="sam-node-kicker">Core · Tracker</span>
               <strong>Temporal Tracker</strong>
               <span>Aggregates frames over time</span>
             </motion.article>
@@ -940,20 +961,20 @@ function SamArchitectureDiagramV2() {
             <div className={`sam-convergence ${visible(7) ? 'is-active sam-step-visible' : 'sam-step-hidden'}`} aria-label="Convergence node">+</div>
 
             <motion.article className={nodeClass(9, 'fusion')} initial={false} animate={{ opacity: visible(9) ? 1 : 0, y: visible(9) ? 0 : 8 }}>
-              <span className="sam-node-kicker">FUSION / GEMINI</span>
+              <span className="sam-node-kicker">Fusion · Gemini</span>
               <strong>Gemini LLM Refinement Module</strong>
               <span>Grammar · context · intent</span>
             </motion.article>
 
             <motion.article className={nodeClass(8, 'memory')} initial={false} animate={{ opacity: visible(8) ? 1 : 0, y: visible(8) ? 0 : 8 }}>
-              <span className="sam-node-kicker">LOOP / MEMORY BANK</span>
+              <span className="sam-node-kicker">Memory bank</span>
               <strong>Temporal Context Bank</strong>
               <div className="sam-memory-stack"><i /><i /><i /></div>
               <span>Feedback into tracker</span>
             </motion.article>
 
             <motion.article className={nodeClass(10, 'output')} initial={false} animate={{ opacity: visible(10) ? 1 : 0, y: visible(10) ? 0 : 8 }}>
-              <span className="sam-node-kicker">OUTPUT / VOICE</span>
+              <span className="sam-node-kicker">Output · Voice</span>
               <strong className={visible(10) ? 'is-revealed' : ''}>Could I please get a glass of water?</strong>
               <span>Natural sentence stream</span>
             </motion.article>
@@ -968,7 +989,7 @@ function SamArchitectureDiagramV2() {
           {isPlaying ? 'Ⅱ' : '▶'}
         </button>
         <span className="sam-phase-readout">
-          {isPlaying ? 'LIVE FLOW' : 'FLOW PAUSED'} · {String(Math.floor(phase / 1000)).padStart(2, '0')}s · STEP {String(step).padStart(2, '0')}
+          {isPlaying ? 'Live' : 'Paused'} · {String(Math.floor(phase / 1000)).padStart(2, '0')}s · Step {String(step).padStart(2, '0')}
         </span>
       </div>
     </section>
@@ -1603,6 +1624,24 @@ function App() {
   }, [output?.finalized_sentence, pauseInference, polishAndSpeak]);
 
   const topFive = output?.top_k?.length ? output.top_k.slice(0, 5) : [];
+  const [activePage, setActivePage] = useState('overview');
+
+  const goToPage = useCallback((pageId: string) => {
+    if (!PAGE_IDS.includes(pageId)) return;
+    setActivePage(pageId);
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    window.history.replaceState(null, '', `#${pageId}`);
+  }, []);
+
+  useEffect(() => {
+    const syncFromHash = () => {
+      const hash = window.location.hash.replace(/^#/, '');
+      if (PAGE_IDS.includes(hash)) setActivePage(hash);
+    };
+    syncFromHash();
+    window.addEventListener('hashchange', syncFromHash);
+    return () => window.removeEventListener('hashchange', syncFromHash);
+  }, []);
   const handleImageFallback = useCallback((event: SyntheticEvent<HTMLElement>) => {
     const image = event.target;
     if (!(image instanceof HTMLImageElement) || image.dataset.fallbackApplied) return;
@@ -1613,35 +1652,45 @@ function App() {
 
   return (
     <main className={`app-shell ${devMode ? 'dev-mode-active' : ''}`} onErrorCapture={handleImageFallback}>
-      <nav className="top-nav" aria-label="Primary navigation">
-        <a className="brand-lockup" href="#top" aria-label="SignBridge home">
-          <img className="brand-logo" src="/logo.png" alt="SignBridge logo" />
-          <span>
-            <strong>SignBridge</strong>
-            <small><i /> v2.5 Hybrid Model Active</small>
-          </span>
-        </a>
-        <div className="nav-links">
-          <a href="#demo">Interactive Demo</a>
-          <a href="#capabilities">Capabilities</a>
-          <a href="#ecosystem">Ecosystem</a>
-          <a href="#architecture">Architecture</a>
-        </div>
-        <button className="pill-button nav-cta" type="button" onClick={() => { scrollToSection('demo'); if (!isRunning) void startCamera(); }}>
-          Launch Live Demo <ArrowIcon />
-        </button>
-      </nav>
+      <CapsuleNav
+        activePage={activePage}
+        onNavigate={goToPage}
+        onLaunchDemo={() => {
+          if (!isRunning) void startCamera();
+        }}
+      />
+      <SectionIndex activePage={activePage} />
 
+      <div className="sb-page-view overview-page" hidden={activePage !== 'overview'}>
       <section className="hero-section" id="top">
         <div className="hero-copy">
           <div className="hero-kicker"><span className="live-dot" /> Spatial AI for human connection</div>
           <h1>Bridging silence with <em>spatial AI</em> &amp; multimodal LLMs.</h1>
           <p>Real-time sign language recognition, enhanced by facial expression analysis and predictive next-word intelligence.</p>
+
+          <div className="overview-capability-grid" aria-label="Context engine summary">
+            <article className="overview-capability-badge">
+              <span className="ov-badge-kicker">Expression</span>
+              <strong>Facial &amp; Expression Mesh</strong>
+              <p>Real-time expression analysis for tone, question signals, and emotional emphasis.</p>
+            </article>
+            <article className="overview-capability-badge">
+              <span className="ov-badge-kicker">Scene</span>
+              <strong>Ambient Scene Intelligence</strong>
+              <p>Dynamically adapts vocabulary based on location (e.g., Coffee Shop, Hospital/Medical context).</p>
+            </article>
+            <article className="overview-capability-badge">
+              <span className="ov-badge-kicker">Fusion</span>
+              <strong>Gemini Multimodal LLM Fusion</strong>
+              <p>Converts raw sign tokens (&quot;I&quot; · &quot;WANT&quot; · &quot;WATER&quot;) into natural spoken sentences (&quot;Could I please get a glass of water?&quot;).</p>
+            </article>
+          </div>
+
           <div className="hero-actions">
-            <button className="pill-button hero-primary" type="button" onClick={() => { scrollToSection('demo'); if (!isRunning) void startCamera(); }}>
+            <button className="pill-button hero-primary" type="button" onClick={() => { goToPage('demo'); if (!isRunning) void startCamera(); }}>
               Try the interactive demo <ArrowIcon />
             </button>
-            <a className="text-link" href="#architecture">Explore the system <ArrowIcon /></a>
+            <a className="text-link" href="#architecture" onClick={(e) => { e.preventDefault(); scrollToSection('architecture'); }}>Explore the system <ArrowIcon /></a>
           </div>
           <div className="hero-proof">
             <span><b>543</b> landmarks / frame</span>
@@ -1657,20 +1706,28 @@ function App() {
         </div>
       </section>
 
+      <div className="overview-pipeline-block section-shell" id="architecture">
+        <SamArchitectureDiagramV2 />
+      </div>
+
+      <OverviewVisionStrip />
+
       <section className="hero-stats section-shell" aria-label="SignBridge platform statistics">
         <div className="hero-stat"><strong>543</strong><span>Spatial landmarks</span></div>
         <div className="hero-stat"><strong>&lt;30ms</strong><span>Local inference</span></div>
         <div className="hero-stat"><strong>100%</strong><span>Privacy-first on-device</span></div>
         <div className="hero-stat-status"><i /> Hybrid spatial model active</div>
       </section>
+      </div>
 
+      <div className="sb-page-view" hidden={activePage !== 'demo'}>
       <section className="demo-section section-shell" id="demo">
         <div className="section-intro demo-intro">
           <div><span className="eyebrow">01 / Interactive workspace</span><h2>A clearer signal, from first gesture to final thought.</h2></div>
           <div className="connection-state"><span className={`state-dot state-${status}`} /> {statusText(status, uiMode)} <span className="state-divider" /> <code>{API_HOST_LABEL}</code></div>
         </div>
 
-        <div className="workspace-grid">
+        <div className="workspace-grid" id="demo-camera">
           <section className="camera-card glass-card">
             <div className="card-heading">
               <div><span className="eyebrow">Vision input</span><h3>Holistic landmark stream</h3></div>
@@ -1698,7 +1755,7 @@ function App() {
             </div>
           </section>
 
-          <aside className="insight-rail">
+          <aside className="insight-rail" id="demo-output">
             <section className="sentence-card glass-card">
               <div className="card-heading compact"><div><span className="eyebrow">Live sentence</span><h3>Meaning in motion</h3></div><span className="shortcut">⌘ ↵</span></div>
               <div className="sentence-buffer">
@@ -1724,16 +1781,16 @@ function App() {
           </aside>
         </div>
 
-        <section className="developer-console" aria-label="Developer console">
+        <section className="developer-console" id="demo-console" aria-label="Developer console">
           <div className="console-heading"><div><span className="eyebrow">Developer console / observability</span><h3>Every prediction, in the open.</h3></div><span className="console-chip"><i /> streaming telemetry</span></div>
           <div className="telemetry-grid"><div><span>Latency</span><strong>{latencyMs === null ? '—' : `${latencyMs}ms`}</strong></div><div><span>FPS</span><strong>{fps || '—'}</strong></div><div><span>Active buffer</span><strong>{bufferLength}<small> / {WINDOW_SIZE}</small></strong></div><div><span>Idle time</span><strong>{(output?.idle_seconds ?? 0).toFixed(1)}<small>s</small></strong></div><div><span>Total landmarks</span><strong>{LANDMARKS_PER_FRAME}</strong></div></div>
           <div className="matrix-layout"><div className="console-note"><span className="matrix-label">Pipeline readout</span><p>The model compares temporal agreement, confidence variance, and release posture before committing a word.</p><div className="console-status"><span className="state-dot state-connected" /> confidence gate <b>≥ 35%</b><span className="state-dot state-loading" /> variance gate <b>&lt; 4.5%</b></div></div><div className="probability-matrix"><div className="matrix-header"><span className="matrix-label">Top 5 probability matrix</span><span>Live output</span></div>{topFive.length ? topFive.map((item, index) => <div className="probability-row" key={`${item.label}-${index}`}><div className="probability-label"><span className={`rank rank-${index + 1}`}>{String(index + 1).padStart(2, '0')}</span><strong>{item.label}</strong><span className="probability-value">{(item.confidence * 100).toFixed(1)}%</span></div><div className="probability-track"><span className={item.confidence >= 0.4 ? 'bar-green' : item.confidence >= 0.2 ? 'bar-yellow' : 'bar-blue'} style={{ width: `${Math.max(0, Math.min(100, item.confidence * 100))}%` }} /></div></div>) : <div className="matrix-empty">No predictions yet. The probability matrix will animate as soon as a frame window is ready.</div>}</div></div>
         </section>
       </section>
+      </div>
 
+      <div className="sb-page-view" hidden={activePage !== 'features'}>
       <ContextBentoGrid />
-
-      <SamArchitectureDiagramV2 />
 
       <section className="feature-section section-shell" id="context" aria-hidden="true">
         <div className="section-intro centered"><span className="eyebrow">02 / The context engine</span><h2>Recognition is only the beginning.</h2><p>SignBridge fuses movement, expression, and environment into a richer layer of meaning — locally first, intelligently assisted when it matters.</p></div>
@@ -1780,15 +1837,20 @@ function App() {
       <ScenarioDial />
 
       <section className="architecture-section section-shell" id="legacy-architecture" aria-hidden="true">
-        <div className="architecture-copy"><span className="eyebrow">03 / Architecture</span><h2>Local signal. Shared meaning.</h2><p>Every layer has a job: understand movement at the edge, stabilize decisions in the service, and add language and scene intelligence only where it improves the conversation.</p><a className="text-link" href="#demo">Open the workspace <ArrowIcon /></a></div>
+        <div className="architecture-copy"><span className="eyebrow">03 / Architecture</span><h2>Local signal. Shared meaning.</h2><p>Every layer has a job: understand movement at the edge, stabilize decisions in the service, and add language and scene intelligence only where it improves the conversation.</p><a className="text-link" href="#demo" onClick={(e) => { e.preventDefault(); goToPage('demo'); }}>Open the workspace <ArrowIcon /></a></div>
         <div className="architecture-flow"><div className="flow-node"><small>01 / input</small><strong>Camera + Holistic</strong><span>Face · hands · pose</span></div><div className="flow-line"><i /></div><div className="flow-node"><small>02 / intelligence</small><strong>Temporal state</strong><span>8-frame agreement</span></div><div className="flow-line cyan"><i /></div><div className="flow-node"><small>03 / output</small><strong>Gemini context</strong><span>Speech + translation</span></div></div>
       </section>
+      </div>
 
+      <div className="sb-page-view" hidden={activePage !== 'team'}>
       <SponsorTeamShowcaseV3 />
-      <footer className="footer section-shell"><a className="brand-lockup" href="#top"><span className="brand-mark"><span /></span><span><strong>SignBridge</strong><small>Spatial AI for human connection</small></span></a><span>Built for a more expressive web.</span><a href="#top">Back to top ↑</a></footer>
+      </div>
+
+      <footer className="footer section-shell"><a className="brand-lockup" href="#overview" onClick={(e) => { e.preventDefault(); goToPage('overview'); }}><span className="brand-mark"><span /></span><span><strong>SignBridge</strong><small>Spatial AI for human connection</small></span></a><span>Built for a more expressive web.</span><a href="#overview" onClick={(e) => { e.preventDefault(); goToPage('overview'); }}>Back to top ↑</a></footer>
       <DeveloperModeToggle active={devMode} onToggle={() => setDevMode((active) => !active)} />
     </main>
   );
+
 }
 
 export default App;

@@ -32,3 +32,6 @@ export const API_HOST_LABEL = (() => {
     return API_BASE_URL;
   }
 })();
+
+/** OpenAPI / Swagger docs on Cloud Run */
+export const API_DOCS_URL = `${API_BASE_URL}/docs`;
