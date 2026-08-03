@@ -355,7 +355,6 @@ function HandHelloVisual({ devMode }: { devMode: boolean }) {
   const [activeNode, setActiveNode] = useState<number | null>(null);
   const [rippleNode, setRippleNode] = useState<number | null>(null);
   const [status, setStatus] = useState('Spatial landmark stream active');
-  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
 
   const coordinatesFor = useCallback((index: number) => {
     const [x, y] = HELLO_HAND_POINTS[index];
@@ -384,7 +383,7 @@ function HandHelloVisual({ devMode }: { devMode: boolean }) {
 
   return (
     <motion.div
-      className={`hand-hello-visual ${viewMode === '3d' ? 'mode-3d-spatial' : ''}`}
+      className="hand-hello-visual"
       onPointerMove={handlePointerMove}
       onPointerLeave={() => { setTilt({ x: 0, y: 0 }); setMagnet({ x: 0, y: 0 }); setActiveNode(null); setStatus('Spatial landmark stream active'); }}
       animate={{ rotateX: tilt.y * 1.5, rotateY: tilt.x * 1.5 }}
@@ -395,7 +394,7 @@ function HandHelloVisual({ devMode }: { devMode: boolean }) {
     >
       {devMode && (
         <div className="dev-node-telemetry">
-          SPATIAL RENDER: {viewMode === '3d' ? '3D_SPATIAL' : '2D_GRID'} | FPS: 60.0
+          SPATIAL RENDER: 2D_GRID | FPS: 60.0
         </div>
       )}
       <svg viewBox="0 0 600 520" role="presentation" style={{ transformStyle: "preserve-3d" }}>
@@ -479,23 +478,6 @@ function HandHelloVisual({ devMode }: { devMode: boolean }) {
         <path className="hello-wave-trail" d="M420 124C500 154 507 228 458 282" />
         <path className="hello-wave-arrow" d="M454 271l8 12-14 1" />
       </svg>
-
-      <div className="mode-toggle-pill">
-        <button
-          className={viewMode === '2d' ? 'is-active' : ''}
-          type="button"
-          onClick={(e) => { e.stopPropagation(); setViewMode('2d'); }}
-        >
-          2D GRID
-        </button>
-        <button
-          className={viewMode === '3d' ? 'is-active' : ''}
-          type="button"
-          onClick={(e) => { e.stopPropagation(); setViewMode('3d'); }}
-        >
-          3D SPATIAL
-        </button>
-      </div>
 
       <motion.div className="hello-hud hello-hud-confidence magnetic-tag" style={{ x: magnet.x, y: magnet.y }} whileHover={{ scale: 1.1 }} onPointerEnter={() => hoverNode(8)}><span>CONFIDENCE</span><strong>99.4%</strong></motion.div>
       <motion.div className="hello-hud hello-hud-coordinate magnetic-tag" style={{ x: -magnet.x, y: -magnet.y }} whileHover={{ scale: 1.1 }} onPointerEnter={() => hoverNode(activeNode ?? 0)}><span>{activeNode === null ? 'X: 0.42, Y: 0.81, Z: -0.12' : coordinatesFor(activeNode)}</span><small>LIVE 3D VECTOR</small></motion.div>
