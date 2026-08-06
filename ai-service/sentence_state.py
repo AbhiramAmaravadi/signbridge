@@ -32,11 +32,11 @@ class SentenceStateConfig:
     # A prediction must be both confident and sustained before it can affect the
     # sentence.  This filters the noisy outputs commonly produced while a hand
     # is entering or leaving the camera frame.
-    confidence_threshold: float = 0.35
-    stable_prediction_count: int = 8
+    confidence_threshold: float = 0.25
+    stable_prediction_count: int = 2
     confidence_std_threshold: float = 0.045
     stable_prediction_seconds: float = 0.0
-    cooldown_seconds: float = 1.0
+    cooldown_seconds: float = 0.4
     idle_seconds_to_finalize: float = 5.0
     release_idle_seconds: float = 0.7
     stillness_epsilon: float = 0.003
@@ -92,6 +92,8 @@ class SentenceState:
 
         finalized_sentence = self.finalize(eos_trigger) if eos_trigger else None
 
+        suggested_next_words = self.predict_next_words(top_predictions, hands_present)
+
         return {
             "candidate": self.candidate_label,
             "candidate_confidence": self.candidate_confidence,
@@ -105,8 +107,9 @@ class SentenceState:
             "eos_trigger": eos_trigger,
             "idle_seconds": idle_duration,
             "motion_score": self.last_motion_score,
-            "next_words": self.predict_next_words(top_predictions, hands_present),
-            "next_word": self.predict_next_word(top_predictions, hands_present),
+            "next_words": suggested_next_words,
+            "suggested_next_words": suggested_next_words,
+            "next_word": suggested_next_words[0] if suggested_next_words else None,
             "status": self._status(locked_word, finalized_sentence, hands_present),
         }
 
@@ -189,6 +192,15 @@ class SentenceState:
         self.idle_started_at = None
         return normalized
 
+    def remove_last_word(self) -> str | None:
+        """Remove the most recently committed word from the live sentence."""
+        if not self.words:
+            return None
+        removed = self.words.pop()
+        self._clear_candidate()
+        self.idle_started_at = None
+        return removed
+
     def _process_prediction(
         self,
         top_predictions: list[dict[str, Any]],
@@ -233,11 +245,10 @@ class SentenceState:
         if now - self.last_locked_at < self.config.cooldown_seconds:
             return None
 
-        if self.words and self.words[-1] == label:
-            return None
-
         self.words.append(label)
         self.last_locked_at = now
+        self.candidate_label = None
+        self.candidate_confidence = 0.0
         self.candidate_hits = 0
         self.candidate_started_at = None
         self.confidence_history.clear()
@@ -281,15 +292,18 @@ class SentenceState:
         if landmarks is None:
             return None
 
-        frame = np.asarray(landmarks, dtype=np.float32)
-        if frame.ndim == 3:
-            frame = frame[-1]
-        if frame.shape != (543, 3):
+        frames = np.asarray(landmarks, dtype=np.float32)
+        if frames.ndim == 2:
+            frames = frames[None, ...]
+        if frames.ndim != 3 or frames.shape[1:] != (543, 3):
             return None
 
-        left_hand = frame[468:489]
-        right_hand = frame[522:543]
-        return bool(np.any(np.abs(left_hand) > 1e-6) or np.any(np.abs(right_hand) > 1e-6))
+        left_hand = frames[:, 468:489]
+        right_hand = frames[:, 522:543]
+        return bool(
+            np.any(np.abs(left_hand) > 1e-6)
+            or np.any(np.abs(right_hand) > 1e-6)
+        )
 
     @staticmethod
     def _hands_resting(landmarks: np.ndarray | None) -> bool | None:
