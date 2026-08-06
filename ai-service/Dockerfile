@@ -22,6 +22,8 @@ COPY ai-service/ .
 
 # Classifier module + TFLite assets (predict_topk.py lives here, not under ai-service/)
 COPY sign_classifier/ ./sign_classifier/
+# Facial-landmark emotion classifier used to provide Gemini context.
+COPY emotion_classifier/ ./emotion_classifier/
 
 EXPOSE 8080
 
