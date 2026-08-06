@@ -13,6 +13,8 @@ import tensorflow as tf
 
 ROWS_PER_FRAME = 543
 DIMS = 3
+TARGET_SEQUENCE_LENGTH = 64
+MODEL_INPUT_SHAPE = (1, TARGET_SEQUENCE_LENGTH, ROWS_PER_FRAME * DIMS)
 MODEL_DIR = Path(__file__).resolve().parent
 MODEL_PATH = MODEL_DIR / "sign_classifier.tflite"
 LABEL_MAP_PATH = MODEL_DIR / "sign_to_prediction_index_map.json"
@@ -20,7 +22,7 @@ LABEL_MAP_PATH = MODEL_DIR / "sign_to_prediction_index_map.json"
 _interpreter: tf.lite.Interpreter | None = None
 _input_detail: dict | None = None
 _output_detail: dict | None = None
-_ord2sign: dict[int, str] | None = None
+_index_to_label: dict[int, str] | None = None
 _interpreter_lock = Lock()
 
 
@@ -64,15 +66,30 @@ def load_parquet_sequence(path: Path) -> np.ndarray:
     return normalize_landmark_sequence(df.to_numpy(dtype=np.float32))
 
 
-def _get_labels() -> dict[int, str]:
-    global _ord2sign
+def interpolate_sequence(sequence: np.ndarray) -> np.ndarray:
+    """Linearly resample a landmark sequence to the v2 model's 64 frames."""
+    sequence = normalize_landmark_sequence(sequence)
+    if sequence.shape[0] == TARGET_SEQUENCE_LENGTH:
+        return sequence
 
-    if _ord2sign is None:
+    source_positions = np.linspace(0, sequence.shape[0] - 1, TARGET_SEQUENCE_LENGTH)
+    lower = np.floor(source_positions).astype(np.int64)
+    upper = np.ceil(source_positions).astype(np.int64)
+    weights = (source_positions - lower).astype(np.float32)[:, None, None]
+    return (
+        sequence[lower] * (1.0 - weights) + sequence[upper] * weights
+    ).astype(np.float32, copy=False)
+
+
+def _get_labels() -> dict[int, str]:
+    global _index_to_label
+
+    if _index_to_label is None:
         with LABEL_MAP_PATH.open("r", encoding="utf-8") as f:
             sign2ord = json.load(f)
-        _ord2sign = {int(v): label for label, v in sign2ord.items()}
+        _index_to_label = {int(index): label for label, index in sign2ord.items()}
 
-    return _ord2sign
+    return _index_to_label
 
 
 def _get_interpreter() -> tuple[tf.lite.Interpreter, dict, dict]:
@@ -83,6 +100,12 @@ def _get_interpreter() -> tuple[tf.lite.Interpreter, dict, dict]:
         _interpreter.allocate_tensors()
         _input_detail = _interpreter.get_input_details()[0]
         _output_detail = _interpreter.get_output_details()[0]
+        input_shape = tuple(int(value) for value in _input_detail["shape"])
+        if input_shape != MODEL_INPUT_SHAPE:
+            raise RuntimeError(
+                "v2 sign model must expose a fixed input shape "
+                f"{MODEL_INPUT_SHAPE}; received {input_shape}."
+            )
 
     if _input_detail is None or _output_detail is None:
         raise RuntimeError("TFLite interpreter details were not initialized.")
@@ -91,25 +114,28 @@ def _get_interpreter() -> tuple[tf.lite.Interpreter, dict, dict]:
 
 
 def predict_topk_from_array(sequence: np.ndarray, k: int = 5) -> dict:
-    ord2sign = _get_labels()
-    x = normalize_landmark_sequence(sequence)
+    index_to_label = _get_labels()
+    x = interpolate_sequence(sequence).reshape(MODEL_INPUT_SHAPE)
 
     with _interpreter_lock:
         interpreter, input_detail, output_detail = _get_interpreter()
-        interpreter.resize_tensor_input(input_detail["index"], x.shape, strict=False)
-        interpreter.allocate_tensors()
-        input_detail = interpreter.get_input_details()[0]
-        output_detail = interpreter.get_output_details()[0]
         interpreter.set_tensor(input_detail["index"], x)
         interpreter.invoke()
         probs = interpreter.get_tensor(output_detail["index"]).reshape(-1)
 
+    if len(index_to_label) != probs.shape[0]:
+        raise ValueError(
+            f"v2 label map has {len(index_to_label)} classes but the model "
+            f"returned {probs.shape[0]} output values."
+        )
+
+    k = min(k, probs.shape[0])
     top_idx = np.argsort(probs)[-k:][::-1]
 
     predictions = [
         {
             "rank": rank,
-            "label": ord2sign[int(idx)],
+            "label": index_to_label[int(idx)],
             "confidence": float(probs[idx]),
         }
         for rank, idx in enumerate(top_idx, start=1)
@@ -130,9 +156,10 @@ def predict_topk(parquet_path: Path, k: int = 5) -> dict:
 
 
 def main():
-    interpreter = tf.lite.Interpreter(model_path=str(MODEL_PATH))
-    print(interpreter.get_input_details())
-    print(interpreter.get_output_details())
+    global _interpreter
+    _interpreter = tf.lite.Interpreter(model_path=str(MODEL_PATH))
+    print(_interpreter.get_input_details())
+    print(_interpreter.get_output_details())
     if len(sys.argv) < 2:
         raise SystemExit("Usage: python predict_topk_json.py path/to/sample.parquet [k]")
 

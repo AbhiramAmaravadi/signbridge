@@ -4,6 +4,7 @@ import axios, { AxiosError } from 'axios';
 import {
   API_HOST_LABEL,
   APPEND_WORD_URL,
+  DELETE_WORD_URL,
   FINALIZE_URL,
   INFERENCE_URL,
   JSON_HEADERS,
@@ -64,11 +65,14 @@ type InferenceResponse = {
   candidate?: string | null;
   candidate_confidence?: number;
   candidate_hits?: number;
+  detected_emotion?: string;
+  emotion_confidence?: number;
   locked_word?: string | null;
   lock_progress?: number;
   words?: string[];
   next_word?: string | null;
   next_words?: string[];
+  suggested_next_words?: string[];
   raw_sentence?: string;
   finalized_sentence?: string | null;
   eos_trigger?: string | null;
@@ -1217,6 +1221,7 @@ function App() {
   const frameBufferRef = useRef<LandmarkFrame[]>([]);
   const framesSinceInferenceRef = useRef(0);
   const inFlightRef = useRef(false);
+  const pendingWindowRef = useRef<LandmarkFrame[] | null>(null);
   const lastSpokenSentenceRef = useRef<string | null>(null);
   const pauseTimerRef = useRef<number | null>(null);
   const isPausedRef = useRef(false);
@@ -1246,7 +1251,9 @@ function App() {
   const liveWords = output?.words ?? [];
   const nextWords = output?.finalized_sentence
     ? []
-    : output?.next_words?.length
+    : output?.suggested_next_words?.length
+      ? output.suggested_next_words
+      : output?.next_words?.length
       ? output.next_words
       : output?.next_word
         ? [output.next_word]
@@ -1330,7 +1337,12 @@ function App() {
   }, []);
 
   const postInference = useCallback(async (landmarks: LandmarkFrame[]) => {
-    if (inFlightRef.current || isPausedRef.current) return;
+    if (isPausedRef.current) return;
+    if (inFlightRef.current) {
+      pendingWindowRef.current = landmarks;
+      return;
+    }
+
     inFlightRef.current = true;
     const startedAt = performance.now();
     try {
@@ -1341,6 +1353,7 @@ function App() {
       );
       if (!mountedRef.current || isPausedRef.current) return;
       setOutput(response.data);
+      setDetectedEmotion(response.data.detected_emotion || 'Neutral');
       setLatencyMs(Math.round(performance.now() - startedAt));
       setStatus('connected');
       setError(null);
@@ -1352,6 +1365,11 @@ function App() {
       setError(formatError(requestError));
     } finally {
       inFlightRef.current = false;
+      const pendingWindow = pendingWindowRef.current;
+      pendingWindowRef.current = null;
+      if (pendingWindow && mountedRef.current && !isPausedRef.current) {
+        void postInference(pendingWindow);
+      }
     }
   }, []);
 
@@ -1365,6 +1383,7 @@ function App() {
         ...response.data,
         top_k: current?.top_k ?? response.data.top_k,
       }));
+      setDetectedEmotion(response.data.detected_emotion || 'Neutral');
       setStatus('connected');
       setError(null);
     } catch (requestError) {
@@ -1394,6 +1413,21 @@ function App() {
     }
   }, []);
 
+  const deleteLastWord = useCallback(async () => {
+    try {
+      const response = await axios.post<InferenceResponse>(DELETE_WORD_URL, {}, { timeout: 4000, headers: JSON_HEADERS });
+      setOutput((current) => ({
+        ...(current ?? response.data),
+        ...response.data,
+        top_k: current?.top_k ?? response.data.top_k,
+      }));
+      setError(null);
+    } catch (requestError) {
+      setStatus('error');
+      setError(formatError(requestError));
+    }
+  }, []);
+
   const resetConversation = useCallback(async () => {
     lastSpokenSentenceRef.current = null;
     setOutput(null);
@@ -1404,6 +1438,7 @@ function App() {
     setDetectedScene('unknown');
     frameBufferRef.current = [];
     framesSinceInferenceRef.current = 0;
+    pendingWindowRef.current = null;
     setBufferLength(0);
     setError(null);
     setUiMode(isRunning ? 'listening' : 'idle');
@@ -1441,7 +1476,7 @@ function App() {
     try {
       const response = await axios.post<TranslateResponse>(
         TRANSLATE_URL,
-        { words, image_base64: captureSnapshot(), mime_type: 'image/jpeg' },
+        { words, image_base64: captureSnapshot(), mime_type: 'image/jpeg', detected_emotion: detectedEmotion },
         { timeout: 15000, headers: JSON_HEADERS },
       );
       const polished = response.data.polished_sentence || sentence;
@@ -1460,7 +1495,7 @@ function App() {
       setDetectedScene(resolved.scene);
       speakSentence(fallbackSentence, resolved.emotion);
     }
-  }, [captureSnapshot, speakSentence]);
+  }, [captureSnapshot, detectedEmotion, speakSentence]);
 
   const handleResults = useCallback((results: HolisticResults) => {
     drawResults(results);
@@ -1485,6 +1520,7 @@ function App() {
     if (canvasRef.current && ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     frameBufferRef.current = [];
     framesSinceInferenceRef.current = 0;
+    pendingWindowRef.current = null;
     inFlightRef.current = false;
     setIsPaused(false);
     isPausedRef.current = false;
@@ -1592,10 +1628,17 @@ function App() {
         event.preventDefault();
         void finalizeSentence();
       }
+      if (event.key === 'Backspace' && (event.target as HTMLElement).closest('#demo')) {
+        const target = event.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable) {
+          event.preventDefault();
+          void deleteLastWord();
+        }
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [finalizeSentence]);
+  }, [deleteLastWord, finalizeSentence]);
 
   useEffect(() => {
     const sentence = output?.finalized_sentence;
@@ -1745,13 +1788,13 @@ function App() {
                 {output?.candidate && <span className="candidate-token">{output.candidate}<i /></span>}
               </div>
               <div className="suggestion-block"><div className="suggestion-label"><span>Suggested next words</span><small>Context-aware</small></div><div className="suggestion-chips">{nextWords.length ? nextWords.map((word) => <button type="button" key={word} onClick={() => void appendSuggestion(word)}>+ {word}</button>) : <span className="suggestion-empty">Keep signing to unlock suggestions</span>}</div></div>
-              <div className="sentence-actions"><button className="pill-button control-primary small" type="button" onClick={finalizeSentence}>Finalize thought <ArrowIcon /></button><button className="control-ghost small" type="button" onClick={resetConversation}>Reset</button></div>
+              <div className="sentence-actions"><button className="pill-button control-primary small" type="button" onClick={finalizeSentence}>Finalize thought <ArrowIcon /></button><button className="control-ghost small" type="button" onClick={() => void deleteLastWord()} aria-label="Delete last locked-in word">⌫ Delete</button><button className="control-ghost small" type="button" onClick={resetConversation}>Reset</button></div>
             </section>
 
             <section className="prediction-card glass-card">
               <div className="card-heading compact"><div><span className="eyebrow">Top prediction</span><h3>{output?.locked_word ? 'Gesture locked' : 'Reading the room'}</h3></div><span className={`confidence-orb ${topPrediction && topPrediction.confidence >= 0.4 ? 'orb-hot' : ''}`} /></div>
               <div className="prediction-main"><div><strong className="prediction-word">{predictionLabel}</strong><p>{topPrediction ? `${(topPrediction.confidence * 100).toFixed(1)}% model confidence` : 'Start the camera to begin'}</p></div><ProgressRing progress={lockProgress} /></div>
-              <div className="lock-meter"><span style={{ width: `${Math.max(0, Math.min(100, lockProgress * 100))}%` }} /></div><div className="meter-caption"><span>Agreement window</span><span>{output?.candidate_hits ?? 0} / 8 stable</span></div>
+              <div className="lock-meter"><span style={{ width: `${Math.max(0, Math.min(100, lockProgress * 100))}%` }} /></div><div className="meter-caption"><span>Agreement window</span><span>{output?.candidate_hits ?? 0} / 2 stable</span></div>
             </section>
 
             <section className="translation-card glass-card">
