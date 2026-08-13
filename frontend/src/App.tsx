@@ -622,7 +622,7 @@ function Acknowledgments() {
     { name: 'Google Cloud Platform', logo: 'https://storage.googleapis.com/gweb-cloudblog-publish/images/BlogHeader_Set2_D.max-2600x2600.png', text: 'Powered by Google Cloud Platform infrastructure and Gemini LLM architecture.' },
     { name: 'Qualcomm', logo: 'https://media.barchart.com/contributors-admin/common-images/images/S%26P%20500%20Companies/Technology%20(names%20J%20-%20Z)/Qualcomm%2C%20Inc_%20logo%20on%20phone-by%20viewimage%20via%20Shutterstock.jpg', text: 'Special thanks to Qualcomm engineers for technical discussions and hardware support for future edge-device deployments.' },
   ];
-  const team = [['Siqi Dai', 'sdai66@wisc.edu'], ['Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['Jianhong Shi', 'jshi296@wisc.edu'], ['Nithya Krishna', 'nkrishna5@wisc.edu']];
+  const team = [['Siqi Dai', 'sdai66@wisc.edu'], ['Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['Jianhong Shi', 'jshi296@wisc.edu']];
   return <section className="acknowledgments-section section-shell"><div className="acknowledgments-intro"><span className="eyebrow">Acknowledgments</span><h2>Sponsors &amp; Special Acknowledgments</h2><p>Supported by leading academic programs and industry hardware partners.</p></div><div className="sponsor-banner"><span className="sponsor-banner-label">Sponsored &amp; supported by</span><div className="sponsor-marquee">{sponsors.map((sponsor) => <motion.div key={sponsor.name} className="sponsor-pillar" whileHover={{ y: -2 }}><ResilientImage className="sponsor-logo" src={sponsor.logo} alt={`${sponsor.name} logo`} /><p>{sponsor.text}</p></motion.div>)}</div></div><div className="team-heading"><span className="team-badge">TEAM GREEN LAKE</span><div><h2>University of Wisconsin–Madison</h2><p>Built by a cross-disciplinary team for a more expressive web.</p></div></div><div className="team-matrix">{team.map(([name, email]) => <motion.div className="team-row" key={email} whileHover={{ x: 4 }}><strong>{name}</strong><a href={`mailto:${email}`}>{email}</a><a className="member-email" href={`mailto:${email}`}>✉ Email Member</a></motion.div>)}</div></section>;
 }
 
@@ -639,7 +639,7 @@ function SponsorTeamShowcase() {
     { name: 'Google Cloud Platform', logo: 'https://storage.googleapis.com/gweb-cloudblog-publish/images/BlogHeader_Set2_D.max-2600x2600.png', text: 'Powered by GCP infrastructure and Gemini architecture.' },
     { name: 'Qualcomm', logo: 'https://media.barchart.com/contributors-admin/common-images/images/S%26P%20500%20Companies/Technology%20(names%20J%20-%20Z)/Qualcomm%2C%20Inc_%20logo%20on%20phone-by%20viewimage%20via%20Shutterstock.jpg', text: 'Edge hardware and technical advisory for future deployments.' },
   ];
-  const team = [['SD', 'Siqi Dai', 'sdai66@wisc.edu'], ['AA', 'Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['JS', 'Jianhong Shi', 'jshi296@wisc.edu'], ['NK', 'Nithya Krishna', 'nkrishna5@wisc.edu']];
+  const team = [['SD', 'Siqi Dai', 'sdai66@wisc.edu'], ['AA', 'Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['JS', 'Jianhong Shi', 'jshi296@wisc.edu']];
   return <section className="acknowledgments-section section-shell"><div className="acknowledgments-intro"><span className="ecosystem-badge">ECOSYSTEM</span><h2>Sponsors &amp; Academic Partners</h2><p>Supported by leading academic programs and industry hardware partners.</p></div><div className="partner-showcase">{sponsors.map((sponsor) => <motion.article key={sponsor.name} className="partner-block" whileHover={{ y: -4 }}><ResilientImage className="partner-logo" src={sponsor.logo} alt={`${sponsor.name} logo`} /><h3>{sponsor.name}</h3><p>{sponsor.text}</p></motion.article>)}</div><div className="team-showcase"><div className="team-showcase-copy"><span className="team-badge">TEAM GREEN LAKE</span><h2>University of Wisconsin–Madison</h2><p>We are building a more expressive, privacy-first web where people can share meaning without physical barriers.</p></div><div className="cyber-profile-grid">{team.map(([initials, name, email]) => <motion.article className="cyber-profile" key={email} whileHover={{ y: -4 }}><div className="profile-head"><span className="profile-initials">{initials}</span><strong>{name}</strong></div><div className="profile-foot"><span>{email}</span><a href={`mailto:${email}`} aria-label={`Email ${name}`}><i>↗</i><b>Copy Email</b></a></div></motion.article>)}</div></div></section>;
 }
 
@@ -649,7 +649,7 @@ function SponsorTeamShowcaseV2() {
     { name: 'Google Cloud Platform', logo: 'https://storage.googleapis.com/gweb-cloudblog-publish/images/BlogHeader_Set2_D.max-2600x2600.png' },
     { name: 'Qualcomm', logo: 'https://media.barchart.com/contributors-admin/common-images/images/S%26P%20500%20Companies/Technology%20(names%20J%20-%20Z)/Qualcomm%2C%20Inc_%20logo%20on%20phone-by%20viewimage%20via%20Shutterstock.jpg' },
   ];
-  const team = [['Siqi Dai', 'sdai66@wisc.edu'], ['Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['Jianhong Shi', 'jshi296@wisc.edu'], ['Nithya Krishna', 'nkrishna5@wisc.edu']];
+  const team = [['Siqi Dai', 'sdai66@wisc.edu'], ['Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['Jianhong Shi', 'jshi296@wisc.edu']];
   return <section className="acknowledgments-section section-shell"><div className="acknowledgments-intro"><span className="eyebrow">[ ACKNOWLEDGMENTS ]</span><h2>Acknowledgments</h2><p>Supported by academic programs and industry partners building a more expressive web.</p></div><div className="sponsor-banner sponsor-banner-clean"><div className="sponsor-marquee">{sponsors.map((sponsor) => <motion.div key={sponsor.name} className="sponsor-pillar" whileHover={{ y: -2 }}><ResilientImage className="sponsor-logo" src={sponsor.logo} alt={`${sponsor.name} logo`} /><span className="sponsor-name">{sponsor.name}</span></motion.div>)}</div></div><div className="team-showcase team-showcase-clean"><div className="team-showcase-copy"><span className="team-badge">[ TEAM GREEN LAKE ]</span><h2>University of Wisconsin–Madison</h2></div><div className="team-roster">{team.map(([name, email]) => <a className="team-roster-row" href={`mailto:${email}`} key={email}><strong>{name}</strong><span>— {email}</span><span aria-hidden="true">[↗]</span></a>)}</div></div></section>;
 }
 
@@ -704,7 +704,7 @@ function SponsorTeamShowcaseV3() {
       logoKind: 'qualcomm' as const,
     },
   ];
-  const team = [['Siqi Dai', 'sdai66@wisc.edu'], ['Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['Jianhong Shi', 'jshi296@wisc.edu'], ['Nithya Krishna', 'nkrishna5@wisc.edu']];
+  const team = [['Siqi Dai', 'sdai66@wisc.edu'], ['Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['Jianhong Shi', 'jshi296@wisc.edu']];
   return (
     <section className="acknowledgments-section section-shell" id="team">
       <div className="acknowledgments-intro">
@@ -1690,23 +1690,23 @@ function App() {
       <section className="hero-section" id="top">
         <div className="hero-copy">
           <div className="hero-kicker"><span className="live-dot" /> Spatial AI for human connection</div>
-          <h1>Bridging silence with <em>spatial AI</em> &amp; multimodal LLMs.</h1>
-          <p>Real-time sign language recognition, enhanced by facial expression analysis and predictive next-word intelligence.</p>
+          <h1>From movement to <em>meaning</em> to voice.</h1>
+          <p>SignBridge reads hands, face, pose, and scene context to turn signing into natural speech in real time.</p>
 
           <div className="overview-capability-grid" aria-label="Context engine summary">
             <article className="overview-capability-badge">
-              <span className="ov-badge-kicker">Expression</span>
-              <strong>Facial &amp; Expression Mesh</strong>
-              <p>Real-time expression analysis for tone, question signals, and emotional emphasis.</p>
+              <span className="ov-badge-kicker">01 / Spatial input</span>
+              <strong>Hands + face + pose</strong>
+              <p>One camera captures the signals that make a sign expressive—not just its hand shape.</p>
             </article>
             <article className="overview-capability-badge">
-              <span className="ov-badge-kicker">Scene</span>
-              <strong>Ambient Scene Intelligence</strong>
-              <p>Dynamically adapts vocabulary based on location (e.g., Coffee Shop, Hospital/Medical context).</p>
+              <span className="ov-badge-kicker">02 / Temporal context</span>
+              <strong>Motion becomes structured data</strong>
+              <p>Landmarks are tracked across time so recognition can follow a gesture, not a single frame.</p>
             </article>
             <article className="overview-capability-badge">
-              <span className="ov-badge-kicker">Fusion</span>
-              <strong>Gemini Multimodal LLM Fusion</strong>
+              <span className="ov-badge-kicker">03 / Language output</span>
+              <strong>Gemini gives the sign a voice</strong>
               <p>Converts raw sign tokens (&quot;I&quot; · &quot;WANT&quot; · &quot;WATER&quot;) into natural spoken sentences (&quot;Could I please get a glass of water?&quot;).</p>
             </article>
           </div>
@@ -1739,9 +1739,9 @@ function App() {
 
       <section className="hero-stats section-shell" aria-label="SignBridge platform statistics">
         <div className="hero-stat"><strong>543</strong><span>Spatial landmarks</span></div>
-        <div className="hero-stat"><strong>&lt;30ms</strong><span>Local inference</span></div>
-        <div className="hero-stat"><strong>100%</strong><span>Privacy-first on-device</span></div>
-        <div className="hero-stat-status"><i /> Hybrid spatial model active</div>
+        <div className="hero-stat"><strong>11.59ms</strong><span>Average local latency</span></div>
+        <div className="hero-stat"><strong>2,044</strong><span>Sign classes in pipeline</span></div>
+        <div className="hero-stat-status"><i /> Camera-native spatial pipeline active</div>
       </section>
       </div>
 
