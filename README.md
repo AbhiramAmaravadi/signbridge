@@ -5,6 +5,10 @@
 </p>
 
 <p align="center">
+  <a href="https://signbridge-frontend-389644353290.us-central1.run.app/#overview">🚀 Launch the SignBridge Live Demo</a>
+</p>
+
+<p align="center">
   <a href="https://github.com/AbhiramAmaravadi/signbridge/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT License" /></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.11%2B-3776AB.svg?logo=python&logoColor=white" alt="Python 3.11 or newer" /></a>
   <a href="https://github.com/AbhiramAmaravadi/signbridge"><img src="https://img.shields.io/github/stars/AbhiramAmaravadi/signbridge?style=flat&logo=github" alt="GitHub stars" /></a>
@@ -15,6 +19,8 @@
 ## Overview
 
 SignBridge is a modular, real-time sign language recognition and translation platform. It captures video, extracts body/hand/face landmarks, classifies temporal gesture sequences, assembles recognized signs into sentences, and optionally uses Gemini for natural-language refinement and scene-aware translation.
+
+Try the deployed application: [SignBridge Live Demo](https://signbridge-frontend-389644353290.us-central1.run.app/#overview).
 
 The repository is organized as three cooperating applications:
 
