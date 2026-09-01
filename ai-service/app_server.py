@@ -5,6 +5,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Add candidate directories to sys.path (Docker: /app/sign_classifier; local monorepo: ../sign_classifier)
 for path in [
     BASE_DIR,
+    os.path.dirname(BASE_DIR),
     os.path.join(BASE_DIR, "sign_classifier"),
     os.path.join(os.path.dirname(BASE_DIR), "sign_classifier"),
 ]:
@@ -27,6 +28,7 @@ from gemini_client import GeminiClient
 from gemini_prompts import build_scene_prompt, build_translation_prompt
 from mediapipe_pipeline import FeatureExtractor, HolisticConfig, HolisticDetector
 from sentence_state import SentenceState, SentenceStateConfig
+from emotion_classifier.predict_emotion import predict_emotion_from_array
 
 from predict_topk import (  # noqa: E402
     DIMS as MODEL_VALUES_PER_LANDMARK,
@@ -73,10 +75,13 @@ class PredictResponse(BaseModel):
     buffer_length: int
     top_k: list[PredictionItem]
     candidate: str | None = None
+    candidate_confidence: float = 0.0
+    candidate_hits: int = 0
     locked_word: str | None = None
     lock_progress: float = 0.0
     words: list[str] = Field(default_factory=list)
     next_words: list[str] = Field(default_factory=list)
+    suggested_next_words: list[str] = Field(default_factory=list)
     raw_sentence: str = ""
     finalized_sentence: str | None = None
     eos_trigger: str | None = None
@@ -86,6 +91,8 @@ class PredictResponse(BaseModel):
     translation_prompt: str | None = None
     status: str = "searching"
     detail: str | None = None
+    detected_emotion: str = "Neutral"
+    emotion_confidence: float = 0.0
 
 
 class TranslateRequest(BaseModel):
@@ -93,6 +100,7 @@ class TranslateRequest(BaseModel):
     scene_context: str | None = None
     image_base64: str | None = None
     mime_type: str = "image/jpeg"
+    detected_emotion: str | None = None
 
 
 class TranslateResponse(BaseModel):
@@ -136,14 +144,15 @@ _pipeline_lock = Lock()
 _detector: HolisticDetector | None = None
 _extractor: FeatureExtractor | None = None
 _frame_buffer: deque[np.ndarray] = deque(maxlen=DEFAULT_SEQUENCE_LENGTH)
+_latest_landmark_sequence: np.ndarray | None = None
 _sentence_state = SentenceState(
     SentenceStateConfig(
-        confidence_threshold=0.35,
-        stable_prediction_count=8,
+        confidence_threshold=0.25,
+        stable_prediction_count=2,
         stable_prediction_seconds=0.0,
-        confidence_std_threshold=0.045,
+        confidence_std_threshold=0.10,
         release_idle_seconds=0.7,
-        cooldown_seconds=1.0,
+        cooldown_seconds=0.4,
         idle_seconds_to_finalize=5.0,
         stillness_epsilon=0.003,
     )
@@ -228,6 +237,8 @@ def _state_payload(
             if finalized
             else None
         ),
+        "detected_emotion": "Neutral",
+        "emotion_confidence": 0.0,
     }
 
 
@@ -243,7 +254,7 @@ def gemini_scene_prompt() -> dict[str, str]:
 
 @app.post("/api/v1/gemini/translate", response_model=TranslateResponse)
 def gemini_translate(request: TranslateRequest) -> TranslateResponse:
-    prompt = build_translation_prompt(request.words, request.scene_context)
+    prompt = build_translation_prompt(request.words, request.scene_context, request.detected_emotion)
     fallback = _fallback_polish(request.words)
     fallback_emotion, fallback_scene = _context_fallback(request.words)
     requested_scene = (request.scene_context or "").strip().lower()
@@ -331,6 +342,11 @@ def gemini_scene(request: SceneRequest) -> SceneResponse:
 
 @app.post("/api/v1/sentence/finalize", response_model=PredictResponse)
 def finalize_sentence(scene_context: str | None = None) -> PredictResponse:
+    emotion = (
+        predict_emotion_from_array(_latest_landmark_sequence)
+        if _latest_landmark_sequence is not None
+        else None
+    )
     finalized = _sentence_state.finalize("keypress")
     words = finalized.split() if finalized else []
 
@@ -344,14 +360,26 @@ def finalize_sentence(scene_context: str | None = None) -> PredictResponse:
         raw_sentence="",
         finalized_sentence=finalized,
         eos_trigger="keypress" if finalized else None,
-        translation_prompt=build_translation_prompt(words, scene_context) if finalized else None,
+        translation_prompt=(
+            build_translation_prompt(
+                words,
+                scene_context,
+                emotion["label"] if emotion else None,
+            )
+            if finalized
+            else None
+        ),
         detail="Sentence finalized by keypress." if finalized else "No words were available to finalize.",
+        detected_emotion=emotion["label"] if emotion else "Neutral",
+        emotion_confidence=float(emotion["confidence"]) if emotion else 0.0,
     )
 
 
 @app.post("/api/v1/sentence/reset")
 def reset_sentence() -> dict[str, str]:
+    global _latest_landmark_sequence
     _sentence_state.reset()
+    _latest_landmark_sequence = None
     return {"status": "reset"}
 
 
@@ -367,8 +395,24 @@ def append_sentence_word(request: AppendWordRequest) -> PredictResponse:
         words=list(_sentence_state.words),
         raw_sentence=_sentence_state.raw_sentence,
         next_words=_sentence_state.predict_next_words([]),
+        suggested_next_words=_sentence_state.predict_next_words([]),
         next_word=_sentence_state.predict_next_word([]),
         detail=f"Appended suggestion: {appended}" if appended else "Suggestion already present or empty.",
+    )
+
+
+@app.post("/api/v1/sentence/delete", response_model=PredictResponse)
+def delete_sentence_word() -> PredictResponse:
+    removed = _sentence_state.remove_last_word()
+    return PredictResponse(
+        timestamp=_utc_now(),
+        ready=True,
+        sequence_length=0,
+        buffer_length=len(_frame_buffer),
+        top_k=[],
+        words=list(_sentence_state.words),
+        raw_sentence=_sentence_state.raw_sentence,
+        detail=f"Deleted word: {removed}" if removed else "No words were available to delete.",
     )
 
 
@@ -394,12 +438,14 @@ def _context_fallback(words: list[str]) -> tuple[str, str]:
 @app.post("/api/v1/inference", response_model=PredictResponse)
 @app.post("/inference", response_model=PredictResponse)
 def predict(request: PredictRequest) -> PredictResponse:
+    global _latest_landmark_sequence
     if request.landmarks is None and request.image_base64 is None:
         raise HTTPException(status_code=400, detail="Provide either 'landmarks' or 'image_base64'.")
 
     if request.landmarks is not None:
         try:
             sequence = normalize_landmark_sequence(np.asarray(request.landmarks, dtype=np.float32))
+            _latest_landmark_sequence = sequence
             top_k = _predict_sequence(sequence, request.top_k)
             state = _state_payload(top_k, sequence, request.force_finalize, request.scene_context)
         except Exception as exc:
@@ -412,10 +458,13 @@ def predict(request: PredictRequest) -> PredictResponse:
             buffer_length=int(sequence.shape[0]),
             top_k=top_k,
             candidate=state["candidate"],
+            candidate_confidence=state["candidate_confidence"],
+            candidate_hits=state["candidate_hits"],
             locked_word=state["locked_word"],
             lock_progress=state["lock_progress"],
             words=state["words"],
             next_words=state["next_words"],
+            suggested_next_words=state["suggested_next_words"],
             raw_sentence=state["raw_sentence"],
             finalized_sentence=state["finalized_sentence"],
             eos_trigger=state["eos_trigger"],
@@ -424,6 +473,8 @@ def predict(request: PredictRequest) -> PredictResponse:
             motion_score=state["motion_score"],
             translation_prompt=state["translation_prompt"],
             status=state["status"],
+            detected_emotion=state["detected_emotion"],
+            emotion_confidence=state["emotion_confidence"],
         )
 
     try:
@@ -459,6 +510,7 @@ def predict(request: PredictRequest) -> PredictResponse:
 
         try:
             sequence = np.stack(tuple(_frame_buffer), axis=0).astype(np.float32, copy=False)
+            _latest_landmark_sequence = sequence
             top_k = _predict_sequence(sequence, request.top_k)
             state = _state_payload(top_k, sequence, request.force_finalize, request.scene_context)
         except Exception as exc:
@@ -471,10 +523,13 @@ def predict(request: PredictRequest) -> PredictResponse:
         buffer_length=len(_frame_buffer),
         top_k=top_k,
         candidate=state["candidate"],
+        candidate_confidence=state["candidate_confidence"],
+        candidate_hits=state["candidate_hits"],
         locked_word=state["locked_word"],
         lock_progress=state["lock_progress"],
         words=state["words"],
         next_words=state["next_words"],
+        suggested_next_words=state["suggested_next_words"],
         raw_sentence=state["raw_sentence"],
         finalized_sentence=state["finalized_sentence"],
         eos_trigger=state["eos_trigger"],
@@ -483,6 +538,8 @@ def predict(request: PredictRequest) -> PredictResponse:
         motion_score=state["motion_score"],
         translation_prompt=state["translation_prompt"],
         status=state["status"],
+        detected_emotion=state["detected_emotion"],
+        emotion_confidence=state["emotion_confidence"],
     )
 
 

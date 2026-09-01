@@ -19,13 +19,19 @@ Return a short environment label and one sentence of useful context.
 Examples: Restaurant, Hospital, Grocery Store, Classroom, Office, Home."""
 
 
-def build_translation_prompt(raw_words: list[str], scene_context: str | None = None) -> str:
+def build_translation_prompt(
+    raw_words: list[str],
+    scene_context: str | None = None,
+    detected_emotion: str | None = None,
+) -> str:
     raw_stream = " ".join(raw_words).strip()
     scene = scene_context.strip() if scene_context else "Unknown or not provided"
+    emotion = detected_emotion.strip() if detected_emotion else "Unknown or not provided"
 
     return f"""{TRANSLATION_SYSTEM_PROMPT}
 
 Scene context: {scene}
+Facial-landmark emotion: {emotion}
 Raw sign gloss stream: {raw_stream}
 
 Return this exact JSON shape:

@@ -4,6 +4,7 @@ import axios, { AxiosError } from 'axios';
 import {
   API_HOST_LABEL,
   APPEND_WORD_URL,
+  DELETE_WORD_URL,
   FINALIZE_URL,
   INFERENCE_URL,
   JSON_HEADERS,
@@ -64,11 +65,14 @@ type InferenceResponse = {
   candidate?: string | null;
   candidate_confidence?: number;
   candidate_hits?: number;
+  detected_emotion?: string;
+  emotion_confidence?: number;
   locked_word?: string | null;
   lock_progress?: number;
   words?: string[];
   next_word?: string | null;
   next_words?: string[];
+  suggested_next_words?: string[];
   raw_sentence?: string;
   finalized_sentence?: string | null;
   eos_trigger?: string | null;
@@ -618,7 +622,7 @@ function Acknowledgments() {
     { name: 'Google Cloud Platform', logo: 'https://storage.googleapis.com/gweb-cloudblog-publish/images/BlogHeader_Set2_D.max-2600x2600.png', text: 'Powered by Google Cloud Platform infrastructure and Gemini LLM architecture.' },
     { name: 'Qualcomm', logo: 'https://media.barchart.com/contributors-admin/common-images/images/S%26P%20500%20Companies/Technology%20(names%20J%20-%20Z)/Qualcomm%2C%20Inc_%20logo%20on%20phone-by%20viewimage%20via%20Shutterstock.jpg', text: 'Special thanks to Qualcomm engineers for technical discussions and hardware support for future edge-device deployments.' },
   ];
-  const team = [['Siqi Dai', 'sdai66@wisc.edu'], ['Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['Jianhong Shi', 'jshi296@wisc.edu'], ['Nithya Krishna', 'nkrishna5@wisc.edu']];
+  const team = [['Siqi Dai', 'sdai66@wisc.edu'], ['Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['Jianhong Shi', 'jshi296@wisc.edu']];
   return <section className="acknowledgments-section section-shell"><div className="acknowledgments-intro"><span className="eyebrow">Acknowledgments</span><h2>Sponsors &amp; Special Acknowledgments</h2><p>Supported by leading academic programs and industry hardware partners.</p></div><div className="sponsor-banner"><span className="sponsor-banner-label">Sponsored &amp; supported by</span><div className="sponsor-marquee">{sponsors.map((sponsor) => <motion.div key={sponsor.name} className="sponsor-pillar" whileHover={{ y: -2 }}><ResilientImage className="sponsor-logo" src={sponsor.logo} alt={`${sponsor.name} logo`} /><p>{sponsor.text}</p></motion.div>)}</div></div><div className="team-heading"><span className="team-badge">TEAM GREEN LAKE</span><div><h2>University of Wisconsin–Madison</h2><p>Built by a cross-disciplinary team for a more expressive web.</p></div></div><div className="team-matrix">{team.map(([name, email]) => <motion.div className="team-row" key={email} whileHover={{ x: 4 }}><strong>{name}</strong><a href={`mailto:${email}`}>{email}</a><a className="member-email" href={`mailto:${email}`}>✉ Email Member</a></motion.div>)}</div></section>;
 }
 
@@ -635,7 +639,7 @@ function SponsorTeamShowcase() {
     { name: 'Google Cloud Platform', logo: 'https://storage.googleapis.com/gweb-cloudblog-publish/images/BlogHeader_Set2_D.max-2600x2600.png', text: 'Powered by GCP infrastructure and Gemini architecture.' },
     { name: 'Qualcomm', logo: 'https://media.barchart.com/contributors-admin/common-images/images/S%26P%20500%20Companies/Technology%20(names%20J%20-%20Z)/Qualcomm%2C%20Inc_%20logo%20on%20phone-by%20viewimage%20via%20Shutterstock.jpg', text: 'Edge hardware and technical advisory for future deployments.' },
   ];
-  const team = [['SD', 'Siqi Dai', 'sdai66@wisc.edu'], ['AA', 'Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['JS', 'Jianhong Shi', 'jshi296@wisc.edu'], ['NK', 'Nithya Krishna', 'nkrishna5@wisc.edu']];
+  const team = [['SD', 'Siqi Dai', 'sdai66@wisc.edu'], ['AA', 'Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['JS', 'Jianhong Shi', 'jshi296@wisc.edu']];
   return <section className="acknowledgments-section section-shell"><div className="acknowledgments-intro"><span className="ecosystem-badge">ECOSYSTEM</span><h2>Sponsors &amp; Academic Partners</h2><p>Supported by leading academic programs and industry hardware partners.</p></div><div className="partner-showcase">{sponsors.map((sponsor) => <motion.article key={sponsor.name} className="partner-block" whileHover={{ y: -4 }}><ResilientImage className="partner-logo" src={sponsor.logo} alt={`${sponsor.name} logo`} /><h3>{sponsor.name}</h3><p>{sponsor.text}</p></motion.article>)}</div><div className="team-showcase"><div className="team-showcase-copy"><span className="team-badge">TEAM GREEN LAKE</span><h2>University of Wisconsin–Madison</h2><p>We are building a more expressive, privacy-first web where people can share meaning without physical barriers.</p></div><div className="cyber-profile-grid">{team.map(([initials, name, email]) => <motion.article className="cyber-profile" key={email} whileHover={{ y: -4 }}><div className="profile-head"><span className="profile-initials">{initials}</span><strong>{name}</strong></div><div className="profile-foot"><span>{email}</span><a href={`mailto:${email}`} aria-label={`Email ${name}`}><i>↗</i><b>Copy Email</b></a></div></motion.article>)}</div></div></section>;
 }
 
@@ -645,7 +649,7 @@ function SponsorTeamShowcaseV2() {
     { name: 'Google Cloud Platform', logo: 'https://storage.googleapis.com/gweb-cloudblog-publish/images/BlogHeader_Set2_D.max-2600x2600.png' },
     { name: 'Qualcomm', logo: 'https://media.barchart.com/contributors-admin/common-images/images/S%26P%20500%20Companies/Technology%20(names%20J%20-%20Z)/Qualcomm%2C%20Inc_%20logo%20on%20phone-by%20viewimage%20via%20Shutterstock.jpg' },
   ];
-  const team = [['Siqi Dai', 'sdai66@wisc.edu'], ['Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['Jianhong Shi', 'jshi296@wisc.edu'], ['Nithya Krishna', 'nkrishna5@wisc.edu']];
+  const team = [['Siqi Dai', 'sdai66@wisc.edu'], ['Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['Jianhong Shi', 'jshi296@wisc.edu']];
   return <section className="acknowledgments-section section-shell"><div className="acknowledgments-intro"><span className="eyebrow">[ ACKNOWLEDGMENTS ]</span><h2>Acknowledgments</h2><p>Supported by academic programs and industry partners building a more expressive web.</p></div><div className="sponsor-banner sponsor-banner-clean"><div className="sponsor-marquee">{sponsors.map((sponsor) => <motion.div key={sponsor.name} className="sponsor-pillar" whileHover={{ y: -2 }}><ResilientImage className="sponsor-logo" src={sponsor.logo} alt={`${sponsor.name} logo`} /><span className="sponsor-name">{sponsor.name}</span></motion.div>)}</div></div><div className="team-showcase team-showcase-clean"><div className="team-showcase-copy"><span className="team-badge">[ TEAM GREEN LAKE ]</span><h2>University of Wisconsin–Madison</h2></div><div className="team-roster">{team.map(([name, email]) => <a className="team-roster-row" href={`mailto:${email}`} key={email}><strong>{name}</strong><span>— {email}</span><span aria-hidden="true">[↗]</span></a>)}</div></div></section>;
 }
 
@@ -700,7 +704,7 @@ function SponsorTeamShowcaseV3() {
       logoKind: 'qualcomm' as const,
     },
   ];
-  const team = [['Siqi Dai', 'sdai66@wisc.edu'], ['Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['Jianhong Shi', 'jshi296@wisc.edu'], ['Nithya Krishna', 'nkrishna5@wisc.edu']];
+  const team = [['Siqi Dai', 'sdai66@wisc.edu'], ['Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['Jianhong Shi', 'jshi296@wisc.edu']];
   return (
     <section className="acknowledgments-section section-shell" id="team">
       <div className="acknowledgments-intro">
@@ -1217,6 +1221,7 @@ function App() {
   const frameBufferRef = useRef<LandmarkFrame[]>([]);
   const framesSinceInferenceRef = useRef(0);
   const inFlightRef = useRef(false);
+  const pendingWindowRef = useRef<LandmarkFrame[] | null>(null);
   const lastSpokenSentenceRef = useRef<string | null>(null);
   const pauseTimerRef = useRef<number | null>(null);
   const isPausedRef = useRef(false);
@@ -1246,7 +1251,9 @@ function App() {
   const liveWords = output?.words ?? [];
   const nextWords = output?.finalized_sentence
     ? []
-    : output?.next_words?.length
+    : output?.suggested_next_words?.length
+      ? output.suggested_next_words
+      : output?.next_words?.length
       ? output.next_words
       : output?.next_word
         ? [output.next_word]
@@ -1330,7 +1337,12 @@ function App() {
   }, []);
 
   const postInference = useCallback(async (landmarks: LandmarkFrame[]) => {
-    if (inFlightRef.current || isPausedRef.current) return;
+    if (isPausedRef.current) return;
+    if (inFlightRef.current) {
+      pendingWindowRef.current = landmarks;
+      return;
+    }
+
     inFlightRef.current = true;
     const startedAt = performance.now();
     try {
@@ -1341,6 +1353,7 @@ function App() {
       );
       if (!mountedRef.current || isPausedRef.current) return;
       setOutput(response.data);
+      setDetectedEmotion(response.data.detected_emotion || 'Neutral');
       setLatencyMs(Math.round(performance.now() - startedAt));
       setStatus('connected');
       setError(null);
@@ -1352,6 +1365,11 @@ function App() {
       setError(formatError(requestError));
     } finally {
       inFlightRef.current = false;
+      const pendingWindow = pendingWindowRef.current;
+      pendingWindowRef.current = null;
+      if (pendingWindow && mountedRef.current && !isPausedRef.current) {
+        void postInference(pendingWindow);
+      }
     }
   }, []);
 
@@ -1365,6 +1383,7 @@ function App() {
         ...response.data,
         top_k: current?.top_k ?? response.data.top_k,
       }));
+      setDetectedEmotion(response.data.detected_emotion || 'Neutral');
       setStatus('connected');
       setError(null);
     } catch (requestError) {
@@ -1394,6 +1413,21 @@ function App() {
     }
   }, []);
 
+  const deleteLastWord = useCallback(async () => {
+    try {
+      const response = await axios.post<InferenceResponse>(DELETE_WORD_URL, {}, { timeout: 4000, headers: JSON_HEADERS });
+      setOutput((current) => ({
+        ...(current ?? response.data),
+        ...response.data,
+        top_k: current?.top_k ?? response.data.top_k,
+      }));
+      setError(null);
+    } catch (requestError) {
+      setStatus('error');
+      setError(formatError(requestError));
+    }
+  }, []);
+
   const resetConversation = useCallback(async () => {
     lastSpokenSentenceRef.current = null;
     setOutput(null);
@@ -1404,6 +1438,7 @@ function App() {
     setDetectedScene('unknown');
     frameBufferRef.current = [];
     framesSinceInferenceRef.current = 0;
+    pendingWindowRef.current = null;
     setBufferLength(0);
     setError(null);
     setUiMode(isRunning ? 'listening' : 'idle');
@@ -1441,7 +1476,7 @@ function App() {
     try {
       const response = await axios.post<TranslateResponse>(
         TRANSLATE_URL,
-        { words, image_base64: captureSnapshot(), mime_type: 'image/jpeg' },
+        { words, image_base64: captureSnapshot(), mime_type: 'image/jpeg', detected_emotion: detectedEmotion },
         { timeout: 15000, headers: JSON_HEADERS },
       );
       const polished = response.data.polished_sentence || sentence;
@@ -1460,7 +1495,7 @@ function App() {
       setDetectedScene(resolved.scene);
       speakSentence(fallbackSentence, resolved.emotion);
     }
-  }, [captureSnapshot, speakSentence]);
+  }, [captureSnapshot, detectedEmotion, speakSentence]);
 
   const handleResults = useCallback((results: HolisticResults) => {
     drawResults(results);
@@ -1485,6 +1520,7 @@ function App() {
     if (canvasRef.current && ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     frameBufferRef.current = [];
     framesSinceInferenceRef.current = 0;
+    pendingWindowRef.current = null;
     inFlightRef.current = false;
     setIsPaused(false);
     isPausedRef.current = false;
@@ -1592,10 +1628,17 @@ function App() {
         event.preventDefault();
         void finalizeSentence();
       }
+      if (event.key === 'Backspace' && (event.target as HTMLElement).closest('#demo')) {
+        const target = event.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable) {
+          event.preventDefault();
+          void deleteLastWord();
+        }
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [finalizeSentence]);
+  }, [deleteLastWord, finalizeSentence]);
 
   useEffect(() => {
     const sentence = output?.finalized_sentence;
@@ -1647,23 +1690,23 @@ function App() {
       <section className="hero-section" id="top">
         <div className="hero-copy">
           <div className="hero-kicker"><span className="live-dot" /> Spatial AI for human connection</div>
-          <h1>Bridging silence with <em>spatial AI</em> &amp; multimodal LLMs.</h1>
-          <p>Real-time sign language recognition, enhanced by facial expression analysis and predictive next-word intelligence.</p>
+          <h1>From movement to <em>meaning</em> to voice.</h1>
+          <p>SignBridge reads hands, face, pose, and scene context to turn signing into natural speech in real time.</p>
 
           <div className="overview-capability-grid" aria-label="Context engine summary">
             <article className="overview-capability-badge">
-              <span className="ov-badge-kicker">Expression</span>
-              <strong>Facial &amp; Expression Mesh</strong>
-              <p>Real-time expression analysis for tone, question signals, and emotional emphasis.</p>
+              <span className="ov-badge-kicker">01 / Spatial input</span>
+              <strong>Hands + face + pose</strong>
+              <p>One camera captures the signals that make a sign expressive—not just its hand shape.</p>
             </article>
             <article className="overview-capability-badge">
-              <span className="ov-badge-kicker">Scene</span>
-              <strong>Ambient Scene Intelligence</strong>
-              <p>Dynamically adapts vocabulary based on location (e.g., Coffee Shop, Hospital/Medical context).</p>
+              <span className="ov-badge-kicker">02 / Temporal context</span>
+              <strong>Motion becomes structured data</strong>
+              <p>Landmarks are tracked across time so recognition can follow a gesture, not a single frame.</p>
             </article>
             <article className="overview-capability-badge">
-              <span className="ov-badge-kicker">Fusion</span>
-              <strong>Gemini Multimodal LLM Fusion</strong>
+              <span className="ov-badge-kicker">03 / Language output</span>
+              <strong>Gemini gives the sign a voice</strong>
               <p>Converts raw sign tokens (&quot;I&quot; · &quot;WANT&quot; · &quot;WATER&quot;) into natural spoken sentences (&quot;Could I please get a glass of water?&quot;).</p>
             </article>
           </div>
@@ -1696,9 +1739,9 @@ function App() {
 
       <section className="hero-stats section-shell" aria-label="SignBridge platform statistics">
         <div className="hero-stat"><strong>543</strong><span>Spatial landmarks</span></div>
-        <div className="hero-stat"><strong>&lt;30ms</strong><span>Local inference</span></div>
-        <div className="hero-stat"><strong>100%</strong><span>Privacy-first on-device</span></div>
-        <div className="hero-stat-status"><i /> Hybrid spatial model active</div>
+        <div className="hero-stat"><strong>11.59ms</strong><span>Average local latency</span></div>
+        <div className="hero-stat"><strong>2,044</strong><span>Sign classes in pipeline</span></div>
+        <div className="hero-stat-status"><i /> Camera-native spatial pipeline active</div>
       </section>
       </div>
 
@@ -1745,13 +1788,13 @@ function App() {
                 {output?.candidate && <span className="candidate-token">{output.candidate}<i /></span>}
               </div>
               <div className="suggestion-block"><div className="suggestion-label"><span>Suggested next words</span><small>Context-aware</small></div><div className="suggestion-chips">{nextWords.length ? nextWords.map((word) => <button type="button" key={word} onClick={() => void appendSuggestion(word)}>+ {word}</button>) : <span className="suggestion-empty">Keep signing to unlock suggestions</span>}</div></div>
-              <div className="sentence-actions"><button className="pill-button control-primary small" type="button" onClick={finalizeSentence}>Finalize thought <ArrowIcon /></button><button className="control-ghost small" type="button" onClick={resetConversation}>Reset</button></div>
+              <div className="sentence-actions"><button className="pill-button control-primary small" type="button" onClick={finalizeSentence}>Finalize thought <ArrowIcon /></button><button className="control-ghost small" type="button" onClick={() => void deleteLastWord()} aria-label="Delete last locked-in word">⌫ Delete</button><button className="control-ghost small" type="button" onClick={resetConversation}>Reset</button></div>
             </section>
 
             <section className="prediction-card glass-card">
               <div className="card-heading compact"><div><span className="eyebrow">Top prediction</span><h3>{output?.locked_word ? 'Gesture locked' : 'Reading the room'}</h3></div><span className={`confidence-orb ${topPrediction && topPrediction.confidence >= 0.4 ? 'orb-hot' : ''}`} /></div>
               <div className="prediction-main"><div><strong className="prediction-word">{predictionLabel}</strong><p>{topPrediction ? `${(topPrediction.confidence * 100).toFixed(1)}% model confidence` : 'Start the camera to begin'}</p></div><ProgressRing progress={lockProgress} /></div>
-              <div className="lock-meter"><span style={{ width: `${Math.max(0, Math.min(100, lockProgress * 100))}%` }} /></div><div className="meter-caption"><span>Agreement window</span><span>{output?.candidate_hits ?? 0} / 8 stable</span></div>
+              <div className="lock-meter"><span style={{ width: `${Math.max(0, Math.min(100, lockProgress * 100))}%` }} /></div><div className="meter-caption"><span>Agreement window</span><span>{output?.candidate_hits ?? 0} / 2 stable</span></div>
             </section>
 
             <section className="translation-card glass-card">

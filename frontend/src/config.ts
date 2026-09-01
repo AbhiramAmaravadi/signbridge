@@ -22,6 +22,7 @@ export const INFERENCE_URL = `${API_BASE_URL}/inference`;
 export const FINALIZE_URL = `${API_BASE_URL}/api/v1/sentence/finalize`;
 export const RESET_URL = `${API_BASE_URL}/api/v1/sentence/reset`;
 export const APPEND_WORD_URL = `${API_BASE_URL}/api/v1/sentence/append`;
+export const DELETE_WORD_URL = `${API_BASE_URL}/api/v1/sentence/delete`;
 export const TRANSLATE_URL = `${API_BASE_URL}/api/v1/gemini/translate`;
 
 /** Short host label for connection-status UI */
