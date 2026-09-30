@@ -26,8 +26,8 @@ export const PAGE_SUBSECTIONS: Record<
   ],
   features: [
     { id: 'capabilities', number: '01', label: 'CAPABILITIES' },
-    { id: 'ecosystem', number: '02', label: 'ECOSYSTEM' },
-    { id: 'community', number: '03', label: 'COMMUNITY' },
+    { id: 'ecosystem', number: '02', label: 'STORY' },
+    { id: 'scenario', number: '03', label: 'SCENARIO' },
   ],
   team: [{ id: 'team', number: '01', label: 'ROSTER' }],
 };
