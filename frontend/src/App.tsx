@@ -281,7 +281,6 @@ function ArrowIcon() {
   );
 }
 
-const IMAGE_FALLBACK = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1200" height="700"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0" y1="0" x2="1" y2="1"%3E%3Cstop stop-color="%23030b18"/%3E%3Cstop offset="1" stop-color="%230b4d65"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="100%25" height="100%25" fill="url(%23g)"/%3E%3Cpath d="M0 510L1200 190M150 700L1000 0" stroke="%2322d3ee" stroke-opacity=".18" stroke-width="2"/%3E%3C/svg%3E';
 
 interface ResilientImageProps extends ImgHTMLAttributes<HTMLImageElement> {
   children?: React.ReactNode;
@@ -306,15 +305,7 @@ function ResilientImage({ src, alt, className, children, fallbackSrc, ...props }
   return (
     <div className={`media-container ${className || ''}`}>
       <div className={`cyber-fallback ${hasError ? 'is-visible' : ''}`}>
-        <svg className="cyber-fallback-grid" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <defs>
-            <pattern id="gridPattern" width="20" height="20" patternUnits="userSpaceOnUse">
-              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(34, 211, 238, 0.15)" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#gridPattern)" />
-        </svg>
-        <span className="cyber-fallback-text">MEDIA UNRESOLVED</span>
+        <span className="cyber-fallback-text">Image unavailable</span>
       </div>
 
       {!hasError && (
@@ -554,46 +545,63 @@ function ContextBentoGrid() {
   );
 }
 
-const LIVE_CAPTIONS = ["Let's review the quarterly roadmap...", 'The accessibility report looks great.', 'I can take the action items.'];
+function FeatureExperience() {
+  return (
+    <>
+      <ContextBentoGrid />
+      <div className="signal-divider" aria-hidden="true"><span /></div>
+      <EditorialStory />
+      <div className="signal-divider" aria-hidden="true"><span /></div>
+      <ReasoningComparisonV2 />
+      <div className="signal-divider" aria-hidden="true"><span /></div>
+      <ScenarioDial />
+    </>
+  );
+}
 
-function Ecosystem() {
-  const [captionIndex, setCaptionIndex] = useState(0);
-  const [typedCaption, setTypedCaption] = useState('');
-  const [showRawMesh, setShowRawMesh] = useState(false);
-  const [comparison, setComparison] = useState(52);
+type PremiumHeroProps = {
+  devMode: boolean;
+  isRunning: boolean;
+  onLaunchDemo: () => void;
+  onExplore: () => void;
+};
 
-  useEffect(() => {
-    const target = LIVE_CAPTIONS[captionIndex];
-    let character = 0;
-    const typeTimer = window.setInterval(() => {
-      character += 1;
-      setTypedCaption(target.slice(0, character));
-      if (character === target.length) window.clearInterval(typeTimer);
-    }, 42);
-    const nextTimer = window.setTimeout(() => setCaptionIndex((index) => (index + 1) % LIVE_CAPTIONS.length), 4100);
-    return () => { window.clearInterval(typeTimer); window.clearTimeout(nextTimer); };
-  }, [captionIndex]);
+function PremiumHero({ devMode, isRunning, onLaunchDemo, onExplore }: PremiumHeroProps) {
+  const [pointer, setPointer] = useState({ x: 50, y: 50 });
 
   return (
-    <section className="ecosystem-section section-shell" id="ecosystem">
-      <div className="section-intro roadmap-intro"><div><span className="eyebrow">04 / Future ecosystem</span><h2>From the browser to everywhere people connect.</h2></div><p>Designed as an adaptable intelligence layer for meetings, wearables, and better training data.</p></div>
-      <div className="ecosystem-grid">
-        <motion.article className="ecosystem-card ecosystem-meeting" whileHover={{ scale: 1.01 }} transition={{ duration: .3 }}>
-          <ResilientImage src="https://sorenson.com/wp-content/uploads/2024/07/featured-how-to-easily-make-zoom-meetings-deaf-inclusive-two-ways-to-get-zoom-interpreter-service.jpg" alt="Inclusive video meeting concept" /><div className="media-tint" />
-          <div className="live-subtitle"><span className="waveform"><i /><i /><i /><i /><i /></span><div><small>LIVE SUBTITLE</small><strong>{typedCaption}<b>▍</b></strong></div></div>
-          <div className="ecosystem-copy"><span className="bento-index">01 / Virtual meeting layer</span><h3>Meetings where everyone has a voice.</h3><p>Overlay SignBridge directly into Zoom, Google Meet, or Teams for real-time dual-subtitles and natural TTS speech synthesis.</p></div>
-        </motion.article>
-        <motion.article className="ecosystem-card ecosystem-perception" whileHover={{ scale: 1.01 }} transition={{ duration: .3 }}>
-          <ResilientImage src="https://images.stockcake.com/public/8/5/8/858e4c23-3a38-4319-a413-e7a9e1ad822a_large/futuristic-smart-glasses-stockcake.jpg" alt="Futuristic smart glasses concept" /><div className="media-tint" />
-          <div className={`raw-mesh ${showRawMesh ? 'is-visible' : ''}`} aria-hidden="true"><i /><i /><i /><i /><i /><i /></div>
-          <div className="ecosystem-copy"><span className="bento-index">02 / Ambient HUD</span><h3>Spatial AI, in your line of sight.</h3><p>Hands-free translation for face-to-face conversations through next-gen smart glasses, powered by a zero-hardware spatial stream.</p><button className="ecosystem-control" type="button" onClick={() => setShowRawMesh((visible) => !visible)}>{showRawMesh ? 'Show AI Stream' : 'Show Raw Mesh'}</button></div>
-        </motion.article>
-        <motion.article className="ecosystem-card ecosystem-training" whileHover={{ scale: 1.01 }} transition={{ duration: .3 }}>
-          <ResilientImage src="https://physicsworld.com/wp-content/uploads/2024/02/5-2-2024-Stretchy-glove.jpeg" alt="Stretchy smart glove concept" /><div className="media-tint" />
-          <div className="ecosystem-copy"><span className="bento-index">03 / Training signal</span><h3>Train with a richer signal.</h3><p>Haptic stretch gloves capture 3D joint coordinates to continuously improve landmark accuracy.</p></div>
-        </motion.article>
+    <section
+      className="premium-hero section-shell"
+      id="top"
+      style={{ '--hero-x': `${pointer.x}%`, '--hero-y': `${pointer.y}%` } as CSSProperties}
+      onPointerMove={(event: PointerEvent<HTMLElement>) => {
+        const bounds = event.currentTarget.getBoundingClientRect();
+        setPointer({
+          x: ((event.clientX - bounds.left) / bounds.width) * 100,
+          y: ((event.clientY - bounds.top) / bounds.height) * 100,
+        });
+      }}
+      onPointerLeave={() => setPointer({ x: 50, y: 50 })}
+    >
+      <div className="premium-hero-copy">
+        <span className="premium-eyebrow"><i /> SIGNBRIDGE / CAMERA-NATIVE AI</span>
+        <h1>Make every gesture <em>understood.</em></h1>
+        <p>SignBridge turns hands, expression, and movement into natural conversation — in the moment, with the person signing always in control.</p>
+        <div className="premium-actions">
+          <button className="premium-primary" type="button" onClick={onLaunchDemo}>
+            {isRunning ? 'Open live workspace' : 'Try the live demo'} <ArrowIcon />
+          </button>
+          <button className="premium-secondary" type="button" onClick={onExplore}>See how it works <span>↓</span></button>
+        </div>
+        <div className="premium-proof"><span><b>Local-first</b> spatial processing</span><span><b>Natural</b> language output</span></div>
       </div>
-      <motion.article className="origin-story" whileHover={{ scale: 1.005 }} transition={{ duration: .3 }}><svg className="origin-circuit" viewBox="0 0 1200 360" preserveAspectRatio="none" aria-hidden="true"><path d="M40 300H300L390 210h180l80-110h210l100 70h210M110 70h190l80 80h150l75 65h150l70 70h260" /><path d="M730 330V220l70-70V42M990 330V240l100-100V45" />{[[300,300],[390,210],[570,210],[650,100],[960,170],[380,150],[605,215],[825,220],[1090,140]].map(([cx, cy], index) => <circle key={index} cx={cx} cy={cy} r="7" />)}<path className="origin-glove-wire" d="M488 300c-25-41-27-82-8-125l18-40 10 67 9-112 12 114 17-132 13 135 21-105 9 102c42 5 69 28 75 62l13 74Z" /></svg><div className="media-tint" /><div className="origin-slider" style={{ '--comparison': `${comparison}%` } as CSSProperties}><div className="origin-now"><strong>NOW / SignBridge</strong><span>Spatial AI + Multimodal LLMs</span></div><div className="origin-then"><strong>THEN / 2016</strong><span>Haptic Gloves + Wires</span></div><input type="range" min="8" max="92" value={comparison} onChange={(event) => setComparison(Number(event.target.value))} aria-label="Then versus now comparison" /></div><div className="origin-story-copy"><span className="origin-badge">Origin &amp; heritage</span><h3>Inspired by MIT Innovation. Evolved for the Web.</h3><p>Early sign-to-speech glove breakthroughs proved that signing could become a richer digital signal. SignBridge carries that ambition forward as a camera-native, software-first story—removing the wires and physical constraints between people and their voice.</p></div></motion.article>
+      <div className="premium-product-stage" aria-label="SignBridge live translation preview">
+        <div className="premium-stage-header"><span><i /> LIVE PREVIEW</span><small>Camera · Face · Hands · Pose</small></div>
+        <div className="premium-stage-body">
+          <div className="premium-stage-camera"><HeroLandmarkScanner devMode={devMode} /><span className="premium-camera-label">SPATIAL SIGNAL</span></div>
+        </div>
+        <div className="premium-stage-footer"><span>01</span><span>Detect movement</span><span className="premium-stage-line" /><span>02</span><span>Shape meaning</span><span className="premium-stage-line" /><span>03</span><span>Give it a voice</span></div>
+      </div>
     </section>
   );
 }
@@ -603,10 +611,8 @@ function ScenarioDial() {
   const content = scenario === 'medical'
     ? { image: 'https://inclusiveasl.com/wp-content/uploads/2023/12/Medical-Website-2.jpg', title: 'Medical context', raw: 'PAIN / RIGHT / ABDOMEN', translation: 'Patient is signaling acute discomfort in the upper right abdomen area.', accent: 'rose' }
     : { image: 'https://deafaction.org/wp-content/uploads/2024/03/DeafAction14.08.23-018-1184x790.jpg', title: 'Tour & daily context', raw: 'LOOK / HISTORIC / TOWER', translation: 'On your left, you can see the historic clock tower constructed in 1842.', accent: 'cyan' };
-  return <section className="scenario-dial-section"><div className="section-shell"><div className="section-intro centered"><span className="eyebrow">Context dial / Gemini fusion</span><h2>One gesture. The right meaning.</h2><p>Spatial motion becomes more useful when it understands where the conversation is happening.</p></div><div className="scenario-selector-tabs"><button className={`scenario-tab-btn ${scenario === 'medical' ? 'is-active' : ''}`} type="button" onClick={() => setScenario('medical')}>Medical Context</button><button className={`scenario-tab-btn ${scenario === 'tour' ? 'is-active' : ''}`} type="button" onClick={() => setScenario('tour')}>Tour &amp; Daily Context</button></div><motion.div className={`scenario-grid scenario-${content.accent}`} key={scenario} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .35 }}><ResilientImage className="scenario-media-frame" src={content.image} alt={content.title} /><div className="scenario-content-panel"><div className="scenario-info"><span className="eyebrow">Active environment</span><h3>{content.title}</h3><p>Gemini combines the hand signal with live visual context before it finalizes spoken language.</p></div><div className="scenario-metrics-row"><div className="scenario-metric-box"><span>Raw gesture signal</span><strong className="scenario-signal-value">{content.raw}</strong></div><div className="scenario-metric-box"><span>Gemini multimodal translation</span><strong className="scenario-translation-value">{content.translation}</strong></div></div></div></motion.div></div></section>;
+  return <section className="scenario-dial-section" id="scenario"><div className="section-shell"><div className="section-intro centered"><span className="eyebrow">Context dial / Gemini fusion</span><h2>One gesture. The right meaning.</h2><p>Spatial motion becomes more useful when it understands where the conversation is happening.</p></div><div className="scenario-selector-tabs"><button className={`scenario-tab-btn ${scenario === 'medical' ? 'is-active' : ''}`} type="button" onClick={() => setScenario('medical')}>Medical Context</button><button className={`scenario-tab-btn ${scenario === 'tour' ? 'is-active' : ''}`} type="button" onClick={() => setScenario('tour')}>Tour &amp; Daily Context</button></div><motion.div className={`scenario-grid scenario-${content.accent}`} key={scenario} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .35 }}><ResilientImage className="scenario-media-frame" src={content.image} alt={content.title} /><div className="scenario-content-panel"><div className="scenario-info"><span className="eyebrow">Active environment</span><h3>{content.title}</h3><p>Gemini combines the hand signal with live visual context before it finalizes spoken language.</p></div><div className="scenario-metrics-row"><div className="scenario-metric-box"><span>Raw gesture signal</span><strong className="scenario-signal-value">{content.raw}</strong></div><div className="scenario-metric-box"><span>Gemini multimodal translation</span><strong className="scenario-translation-value">{content.translation}</strong></div></div></div></motion.div></div></section>;
 }
-
-void Ecosystem;
 
 function EditorialStory() {
   const columns = [
@@ -614,43 +620,6 @@ function EditorialStory() {
     { image: 'https://www.handtalk.me/en/wp-content/uploads/sites/3/2022/02/arq-6127ba158b407-1024x577.png', alt: 'Camera-Native Vision AI', badge: 'SignBridge vision-native', title: 'The Camera-Native Era.', description: 'Zero gloves, zero sensors. Pure web-based spatial AI powered by Gemini LLMs.' },
   ];
   return <section className="editorial-story-section section-shell" id="ecosystem"><div className="section-intro centered"><span className="eyebrow">04 / Story &amp; inspiration</span><h2>From physical gloves to vision-native AI.</h2></div><div className="editorial-story-grid">{columns.map((column) => <article className="editorial-col" key={column.title}><ResilientImage className="editorial-image-wrap" src={column.image} fallbackSrc={column.fallbackSrc} alt={column.alt} /><div className="editorial-copy-block"><span className={`editorial-badge-pill ${column.title.startsWith('The Camera') ? 'cyan-badge' : ''}`}>{column.badge}</span><h4>{column.title}</h4><p>{column.description}</p></div></article>)}</div></section>;
-}
-
-function Acknowledgments() {
-  const sponsors = [
-    { name: 'UW–Madison SAIL Program', logo: 'https://cdis.wisc.edu/wp-content/uploads/2025/05/SAIL-Logo-Website.png', text: 'Supported by the UW–Madison SAIL Program (School of Computer, Data & Information Sciences).' },
-    { name: 'Google Cloud Platform', logo: 'https://storage.googleapis.com/gweb-cloudblog-publish/images/BlogHeader_Set2_D.max-2600x2600.png', text: 'Powered by Google Cloud Platform infrastructure and Gemini LLM architecture.' },
-    { name: 'Qualcomm', logo: 'https://media.barchart.com/contributors-admin/common-images/images/S%26P%20500%20Companies/Technology%20(names%20J%20-%20Z)/Qualcomm%2C%20Inc_%20logo%20on%20phone-by%20viewimage%20via%20Shutterstock.jpg', text: 'Special thanks to Qualcomm engineers for technical discussions and hardware support for future edge-device deployments.' },
-  ];
-  const team = [['Siqi Dai', 'sdai66@wisc.edu'], ['Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['Jianhong Shi', 'jshi296@wisc.edu']];
-  return <section className="acknowledgments-section section-shell"><div className="acknowledgments-intro"><span className="eyebrow">Acknowledgments</span><h2>Sponsors &amp; Special Acknowledgments</h2><p>Supported by leading academic programs and industry hardware partners.</p></div><div className="sponsor-banner"><span className="sponsor-banner-label">Sponsored &amp; supported by</span><div className="sponsor-marquee">{sponsors.map((sponsor) => <motion.div key={sponsor.name} className="sponsor-pillar" whileHover={{ y: -2 }}><ResilientImage className="sponsor-logo" src={sponsor.logo} alt={`${sponsor.name} logo`} /><p>{sponsor.text}</p></motion.div>)}</div></div><div className="team-heading"><span className="team-badge">TEAM GREEN LAKE</span><div><h2>University of Wisconsin–Madison</h2><p>Built by a cross-disciplinary team for a more expressive web.</p></div></div><div className="team-matrix">{team.map(([name, email]) => <motion.div className="team-row" key={email} whileHover={{ x: 4 }}><strong>{name}</strong><a href={`mailto:${email}`}>{email}</a><a className="member-email" href={`mailto:${email}`}>✉ Email Member</a></motion.div>)}</div></section>;
-}
-
-void Acknowledgments;
-void SponsorTeamShowcase;
-void ReasoningComparison;
-void ArchitecturePipeline;
-void SamArchitectureDiagram;
-void SponsorTeamShowcaseV2;
-
-function SponsorTeamShowcase() {
-  const sponsors = [
-    { name: 'UW–Madison SAIL Program', logo: 'https://cdis.wisc.edu/wp-content/uploads/2025/05/SAIL-Logo-Website.png', text: 'Supported by UW–Madison SAIL Program (CDIS).' },
-    { name: 'Google Cloud Platform', logo: 'https://storage.googleapis.com/gweb-cloudblog-publish/images/BlogHeader_Set2_D.max-2600x2600.png', text: 'Powered by GCP infrastructure and Gemini architecture.' },
-    { name: 'Qualcomm', logo: 'https://media.barchart.com/contributors-admin/common-images/images/S%26P%20500%20Companies/Technology%20(names%20J%20-%20Z)/Qualcomm%2C%20Inc_%20logo%20on%20phone-by%20viewimage%20via%20Shutterstock.jpg', text: 'Edge hardware and technical advisory for future deployments.' },
-  ];
-  const team = [['SD', 'Siqi Dai', 'sdai66@wisc.edu'], ['AA', 'Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['JS', 'Jianhong Shi', 'jshi296@wisc.edu']];
-  return <section className="acknowledgments-section section-shell"><div className="acknowledgments-intro"><span className="ecosystem-badge">ECOSYSTEM</span><h2>Sponsors &amp; Academic Partners</h2><p>Supported by leading academic programs and industry hardware partners.</p></div><div className="partner-showcase">{sponsors.map((sponsor) => <motion.article key={sponsor.name} className="partner-block" whileHover={{ y: -4 }}><ResilientImage className="partner-logo" src={sponsor.logo} alt={`${sponsor.name} logo`} /><h3>{sponsor.name}</h3><p>{sponsor.text}</p></motion.article>)}</div><div className="team-showcase"><div className="team-showcase-copy"><span className="team-badge">TEAM GREEN LAKE</span><h2>University of Wisconsin–Madison</h2><p>We are building a more expressive, privacy-first web where people can share meaning without physical barriers.</p></div><div className="cyber-profile-grid">{team.map(([initials, name, email]) => <motion.article className="cyber-profile" key={email} whileHover={{ y: -4 }}><div className="profile-head"><span className="profile-initials">{initials}</span><strong>{name}</strong></div><div className="profile-foot"><span>{email}</span><a href={`mailto:${email}`} aria-label={`Email ${name}`}><i>↗</i><b>Copy Email</b></a></div></motion.article>)}</div></div></section>;
-}
-
-function SponsorTeamShowcaseV2() {
-  const sponsors = [
-    { name: 'UW–Madison SAIL Program', logo: 'https://cdis.wisc.edu/wp-content/uploads/2025/05/SAIL-Logo-Website.png' },
-    { name: 'Google Cloud Platform', logo: 'https://storage.googleapis.com/gweb-cloudblog-publish/images/BlogHeader_Set2_D.max-2600x2600.png' },
-    { name: 'Qualcomm', logo: 'https://media.barchart.com/contributors-admin/common-images/images/S%26P%20500%20Companies/Technology%20(names%20J%20-%20Z)/Qualcomm%2C%20Inc_%20logo%20on%20phone-by%20viewimage%20via%20Shutterstock.jpg' },
-  ];
-  const team = [['Siqi Dai', 'sdai66@wisc.edu'], ['Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['Jianhong Shi', 'jshi296@wisc.edu']];
-  return <section className="acknowledgments-section section-shell"><div className="acknowledgments-intro"><span className="eyebrow">[ ACKNOWLEDGMENTS ]</span><h2>Acknowledgments</h2><p>Supported by academic programs and industry partners building a more expressive web.</p></div><div className="sponsor-banner sponsor-banner-clean"><div className="sponsor-marquee">{sponsors.map((sponsor) => <motion.div key={sponsor.name} className="sponsor-pillar" whileHover={{ y: -2 }}><ResilientImage className="sponsor-logo" src={sponsor.logo} alt={`${sponsor.name} logo`} /><span className="sponsor-name">{sponsor.name}</span></motion.div>)}</div></div><div className="team-showcase team-showcase-clean"><div className="team-showcase-copy"><span className="team-badge">[ TEAM GREEN LAKE ]</span><h2>University of Wisconsin–Madison</h2></div><div className="team-roster">{team.map(([name, email]) => <a className="team-roster-row" href={`mailto:${email}`} key={email}><strong>{name}</strong><span>— {email}</span><span aria-hidden="true">[↗]</span></a>)}</div></div></section>;
 }
 
 type SponsorLogoKind = 'sail' | 'google-cloud' | 'qualcomm';
@@ -746,39 +715,6 @@ function DeveloperModeToggle({ active, onToggle }: { active: boolean; onToggle: 
   return <><button className={`dev-floating-toggle ${active ? 'is-active' : ''}`} type="button" onClick={onToggle}><i className="dev-toggle-indicator" /> Dev Mode: {active ? 'ON' : 'OFF'}</button>{active && <aside className="dev-inspector-panel" aria-label="Developer mode inspector"><div className="dev-inspector-header"><span>Spatial payload inspector</span><span>LIVE</span></div><div className="dev-inspector-body"><pre>{JSON.stringify({ frame: 543, fps: 30, buffer: '8/8', context: 'gemini-flash', transport: 'wasm → api → tts' }, null, 2)}</pre></div></aside>}</>;
 }
 
-function FrameBufferWidget() {
-  const [hovered, setHovered] = useState(false);
-  return <div className={`frame-buffer-widget ${hovered ? 'is-scanning' : ''}`} onPointerEnter={() => setHovered(true)} onPointerLeave={() => setHovered(false)}>
-    <span className="buffer-label">FRAME AGREEMENT</span>
-    <div className="buffer-frames">{Array.from({ length: 8 }, (_, index) => <span key={index}><b>F{index + 1}</b><em>{hovered ? 'LOCKED' : 'SAMPLING'}</em></span>)}</div>
-    <i className="buffer-scanner" />
-  </div>;
-}
-
-function VoiceStreamTerminal() {
-  const [visibleChars, setVisibleChars] = useState(0);
-  const message = "I'd like a cup of warm water, please.";
-  useEffect(() => {
-    const timer = window.setInterval(() => setVisibleChars((value) => value >= message.length ? 0 : value + 1), 70);
-    return () => window.clearInterval(timer);
-  }, [message.length]);
-  return <div className="voice-stream-terminal"><div><span>VOICE OUTPUT</span><strong>{message.slice(0, visibleChars)}<i /></strong></div><div className="voice-equalizer" aria-hidden="true">{[1, 2, 3, 4, 5].map((bar) => <i key={bar} style={{ animationDelay: `${bar * -0.14}s` }} />)}</div><small>🔊 Voice Output Stream Active</small></div>;
-}
-
-function ReasoningComparison() {
-  const [comparison, setComparison] = useState(50);
-  return <section className="reasoning-comparison section-shell" aria-label="Traditional and SignBridge translation comparison">
-    <div className="comparison-stage" style={{ '--comparison-position': `${comparison}%`, '--ai-opacity': Math.min(1, Math.max(0, (comparison - 50) / 32)), '--ai-translate': `${Math.max(0, 12 - (comparison - 50) * .4)}px` } as CSSProperties}>
-      <div className="comparison-ai"><span>SignBridge multimodal AI</span><strong>“Could I please get a glass of water?”</strong></div>
-      <div className="comparison-traditional"><span>Traditional rule-based</span><strong>“I” … “WANT” … “WATER”</strong></div>
-      <motion.div className="comparison-handle" animate={{ left: `${comparison}%` }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}><b>◄ drag ►</b></motion.div>
-      <input type="range" min="8" max="92" value={comparison} onChange={(event) => setComparison(Number(event.target.value))} aria-label="Compare translation approaches" />
-    </div>
-  </section>;
-}
-
-
-
 function ReasoningComparisonV2() {
   const [showNaturalSentence, setShowNaturalSentence] = useState(false);
   useEffect(() => {
@@ -786,24 +722,6 @@ function ReasoningComparisonV2() {
     return () => window.clearTimeout(timer);
   }, [showNaturalSentence]);
   return <section className="reasoning-comparison section-shell" aria-label="Automated sign language translation morphing comparison"><div className="comparison-stage morphing-translation"><div className="morphing-content"><span className="gemini-pill">[ GEMINI MULTIMODAL AI ]</span><p className="gemini-subtitle">WITH INTEGRATION OF LLM GEMINI</p><div className="morphing-copy-stage"><AnimatePresence mode="wait"><motion.div key={showNaturalSentence ? 'natural' : 'raw'} className={`morphing-copy ${showNaturalSentence ? 'morphing-natural' : 'morphing-raw'}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: .5, ease: 'easeInOut' }}><span className={`morphing-status ${showNaturalSentence ? 'status-refined' : 'status-raw'}`}>{showNaturalSentence ? '[ GEMINI LLM REFINED SENTENCE ]' : '[ RAW SIGN TOKENS DETECTED ]'}</span><strong>{showNaturalSentence ? 'Could I please get a glass of water?' : '"I" ... "WANT" ... "WATER"'}</strong></motion.div></AnimatePresence></div><p className="morphing-explanation">Corrects grammar, expands raw sign tokens, and constructs natural, complete sentences in real-time.</p></div></div></section>;
-}
-
-function SamArchitectureDiagram() {
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [elapsed, setElapsed] = useState(0);
-  const phase = elapsed % 6000;
-  const inputActive = phase < 1500;
-  const processingActive = phase >= 1500 && phase < 3500;
-  const outputActive = phase >= 3500;
-
-  useEffect(() => {
-    if (!isPlaying) return undefined;
-    const timer = window.setInterval(() => setElapsed((value) => (value + 100) % 6000), 100);
-    return () => window.clearInterval(timer);
-  }, [isPlaying]);
-
-  const nodeClass = (active: boolean, tone: string) => `sam-node sam-node-${tone} ${active ? 'is-active' : ''}`;
-  return <section className={`sam-architecture section-shell ${isPlaying ? 'is-playing' : 'is-paused'}`} aria-label="SignBridge spatial multimodal system architecture"><div className="sam-architecture-panel"><div className="sam-architecture-heading"><span className="sam-eyebrow">[ SYSTEM ARCHITECTURE ]</span><h2>SignBridge Spatial-Multimodal Pipeline</h2><p>From live spatial signals to natural language, continuously aligned in motion.</p></div><div className="sam-diagram"><svg className="sam-flow-lines" viewBox="0 0 1200 420" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="samBeam" x1="0" x2="1"><stop stopColor="#34d399" /><stop offset=".52" stopColor="#22d3ee" /><stop offset="1" stopColor="#a5f3fc" /></linearGradient><marker id="samArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#67e8f9" /></marker></defs><g className="sam-flow-base" markerEnd="url(#samArrow)"><path d="M150 105H250M150 315H250M350 105H450M350 315H450M550 105H625L700 210M550 315H625L700 210M800 210H1025" /><path className="sam-feedback-line" d="M700 315H610V360H500V315" /></g><g className="sam-flow-beams" markerEnd="url(#samArrow)"><path d="M150 105H250M150 315H250M350 105H450M350 315H450M550 105H625L700 210M550 315H625L700 210M800 210H1025" /><path className="sam-feedback-beam" d="M700 315H610V360H500V315" /></g></svg><div className="sam-diagram-grid"><motion.article className={nodeClass(inputActive, 'input')}><span className="sam-node-kicker">INPUT / VIDEO FRAME</span><strong>Live Webcam Frame</strong><span className="sam-frame-label">frame t</span><svg className="sam-hand-skeleton" viewBox="0 0 120 62" aria-hidden="true"><path d="M58 53 51 35 39 27 29 17M58 53 60 29 60 9M61 31 74 18 79 5M64 35 84 28 96 17M67 40 91 39 105 32" /><circle cx="58" cy="53" r="3" /><circle cx="51" cy="35" r="2" /><circle cx="39" cy="27" r="2" /><circle cx="29" cy="17" r="2" /><circle cx="60" cy="29" r="2" /><circle cx="60" cy="9" r="2" /><circle cx="74" cy="18" r="2" /><circle cx="79" cy="5" r="2" /><circle cx="84" cy="28" r="2" /><circle cx="96" cy="17" r="2" /><circle cx="91" cy="39" r="2" /><circle cx="105" cy="32" r="2" /></svg></motion.article><motion.article className={nodeClass(inputActive, 'input')}><span className="sam-node-kicker">INPUT / CONTEXT</span><strong>Context Prompt</strong><span className="sam-context-copy">“Dining / Ordering Water”</span></motion.article><motion.article className={nodeClass(processingActive, 'encoder')}><span className="sam-node-kicker">ENCODER / 01</span><strong>Spatial Mesh Encoder</strong><span>Processes 3D coordinates</span></motion.article><motion.article className={nodeClass(processingActive, 'encoder')}><span className="sam-node-kicker">ENCODER / 02</span><strong>Context Tokenizer</strong><span>Embeds scene meaning</span></motion.article><motion.article className={nodeClass(processingActive, 'core')}><span className="sam-node-kicker">CORE / DETECTOR</span><strong>Token Detector &amp; Sequence Align</strong><span className="sam-tokens">“I” · “WANT” · “WATER”</span></motion.article><motion.article className={nodeClass(processingActive, 'core')}><span className="sam-node-kicker">CORE / TRACKER</span><strong>Temporal Tracker</strong><span>Aggregates frames over time</span></motion.article><div className={`sam-convergence ${processingActive ? 'is-active' : ''}`} aria-label="Convergence node">+</div><motion.article className={nodeClass(processingActive, 'fusion')}><span className="sam-node-kicker">FUSION / MEMORY</span><strong>Gemini LLM Refinement Module</strong><span>Grammar · context · intent</span></motion.article><motion.article className={nodeClass(processingActive, 'memory')}><span className="sam-node-kicker">LOOP / MEMORY BANK</span><strong>Temporal Context Bank</strong><div className="sam-memory-stack"><i /><i /><i /></div><span>Feedback into tracker</span></motion.article><motion.article className={nodeClass(outputActive, 'output')}><span className="sam-node-kicker">OUTPUT / VOICE</span><strong className={outputActive ? 'is-revealed' : ''}>Could I please get a glass of water?</strong><span>Natural sentence stream</span></motion.article></div></div><button className="sam-play-toggle" type="button" onClick={() => setIsPlaying((playing) => !playing)} aria-label={isPlaying ? 'Pause architecture animation' : 'Play architecture animation'}>{isPlaying ? 'Ⅱ' : '▶'}</button><span className="sam-phase-readout">{isPlaying ? 'LIVE FLOW' : 'FLOW PAUSED'} · {String(Math.floor(phase / 1000)).padStart(2, '0')}s</span></div></section>;
 }
 
 function OverviewVisionStrip() {
@@ -977,235 +895,6 @@ function SamArchitectureDiagramV2() {
         <span className="sam-phase-readout">
           {isPlaying ? 'Live' : 'Paused'} · {String(Math.floor(phase / 1000)).padStart(2, '0')}s · Step {String(step).padStart(2, '0')}
         </span>
-      </div>
-    </section>
-  );
-}
-
-function ArchitecturePipeline() {
-  const [metrics, setMetrics] = useState({
-    fps: 30.0,
-    latency: 11.2,
-    rtt: 165,
-  });
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setMetrics({
-        fps: +(30.0 + (Math.random() - 0.5) * 0.4).toFixed(1),
-        latency: +(11.2 + (Math.random() - 0.5) * 0.6).toFixed(1),
-        rtt: Math.floor(165 + (Math.random() - 0.5) * 12),
-      });
-    }, 1200);
-    return () => clearInterval(interval);
-  }, []);
-
-  const [activeStep, setActiveStep] = useState(0);
-
-  const steps = [
-    {
-      title: 'Edge Landmark Extraction',
-      engine: 'MediaPipe Holistic',
-      detail: "Extracts 543 dense 3D spatial coordinates (33 pose, 468 face, 21 per hand) directly inside WebAssembly at 30 FPS. Zero video frames leave the user's browser.",
-      tag: '543 Spatial Points | <5ms Local Inference',
-      telemetry: 0,
-      className: 'step-neon-glow',
-      visual: (
-        <ResilientImage
-          src="https://learnopencv.com/wp-content/uploads/2022/12/MediaPipe-An-Introduction.gif"
-          alt="MediaPipe landmark tracking visualization"
-        >
-          <div className="live-stream-badge">
-            <span className="badge-dot" />
-            <span>LIVE STREAM</span>
-          </div>
-          <div className="dense-points-pill">543 DENSE POINTS / 30 FPS</div><div className="radar-scan-beam" />
-          <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 4 }} xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="card01Grid" width="16" height="16" patternUnits="userSpaceOnUse">
-                <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(34, 211, 238, 0.4)" strokeWidth="0.5" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#card01Grid)" />
-          </svg>
-        </ResilientImage>
-      )
-    },
-    {
-      title: 'Temporal Gesture Stabilization',
-      engine: '8-Frame State Buffer',
-      detail: "Sliding-window noise suppression filters spatial jitter and tracks continuous gesture trajectories to lock discrete sign tokens with 98% confidence before cloud dispatch.",
-      tag: '8-Frame Sliding Lock | Noise Suppression',
-      widget: <FrameBufferWidget />,
-      telemetry: 3,
-      className: '',
-      visual: (
-        <ResilientImage
-          src="https://princewilliamlivingweb.s3-accelerate.amazonaws.com/2020/10/shutterstock_477340192-scaled.jpg"
-          alt="Sign language communication photo"
-        />
-      )
-    },
-    {
-      title: 'Multimodal Context Fusion',
-      engine: 'Gemini 2.5 Flash',
-      detail: "Fuses spatial coordinate vectors with facial micro-expression signals and ambient scene context to capture subtle tone, question intent, and conversational mood.",
-      tag: 'Hybrid Cloud LLM | Contextual Intelligence',
-      telemetry: 4,
-      className: 'step-gradient-glow',
-      visual: (
-        <ResilientImage
-          src="https://storage.googleapis.com/gweb-uniblog-publish-prod/images/MBG_Gemini_SocialShare.width-1300.jpg"
-          alt="Gemini AI multimodal fusion graphic"
-        ><div className="multimodal-tags"><span>👁️ Facial Micro-Expression</span><span>🖐️ Hand Trajectory</span><span>💬 Context Vector</span></div></ResilientImage>
-      )
-    },
-    {
-      title: 'Predictive Next-Word Engine',
-      engine: 'Contextual N-Gram + LLM',
-      detail: "Ranks next-token output probabilities in real time and streams natural, low-latency Text-to-Speech (TTS) voice audio back to the conversation partner.",
-      tag: 'Streaming Voice | Real-Time TTS',
-      telemetry: 2,
-      className: '',
-      visual: (
-        <ResilientImage
-          src="https://cdn.analyticsvidhya.com/wp-content/uploads/2021/08/77308shutterstock-1208129407_trm5.960.jpg"
-          alt="Predictive network token visualization"
-        >
-          <div className="autocomplete-chips-container">
-            <span className="chip-prompt">"I want..."</span>
-            <span className="chip-suggestion animated-chip-1">water</span>
-            <span className="chip-suggestion animated-chip-2">coffee</span>
-          </div>
-          <svg className="audio-wave-svg" viewBox="0 0 100 40" preserveAspectRatio="none">
-            <g fill="#10b981" opacity="0.85">
-              {[10, 22, 14, 30, 18, 26, 12, 20, 15, 9].map((h, i) => (
-                <rect key={i} x={10 + i * 8} y={35 - h} width="4" height={h} rx="1.5">
-                  <animate attributeName="height"
-                           values={`${h}; ${h * 0.3}; ${h * 1.6}; ${h}`}
-                           dur={`${0.4 + i * 0.12}s`}
-                           repeatCount="indefinite" />
-                  <animate attributeName="y"
-                           values={`${35 - h}; ${35 - h * 0.3}; ${35 - h * 1.6}; ${35 - h}`}
-                           dur={`${0.4 + i * 0.12}s`}
-                           repeatCount="indefinite" />
-                </rect>
-              ))}
-            </g>
-          </svg>
-          <VoiceStreamTerminal />
-        </ResilientImage>
-      )
-    }
-  ];
-
-  return (
-    <section className="waterfall-section" id="architecture">
-      <div className="section-shell">
-      <div className="architecture-copy">
-        <span className="eyebrow">03 / Architecture</span>
-        <h2>Local signal. Shared meaning.</h2>
-        <p>A privacy-first, hybrid edge-cloud pipeline. High-frequency spatial dynamics stay on the client; semantic reasoning scales dynamically in the cloud.</p>
-        <a className="text-link" href="#demo">
-          Open the workspace <ArrowIcon />
-        </a>
-      </div>
-      <div className="waterfall-container">
-        <div className="waterfall-spine-container" aria-hidden="true"><svg className="waterfall-spine-svg" viewBox="0 0 30 1000" preserveAspectRatio="none"><path d="M15 0V1000" stroke="rgba(34,211,238,.22)" strokeWidth="1.5" /><circle r="5" cx="15" cy="0" fill="#67e8f9"><animateMotion dur="3s" repeatCount="indefinite" path="M15 0V1000" /></circle></svg></div>
-        <div className="waterfall-steps">
-          {steps.map((step, index) => (
-            <motion.div
-              className={`waterfall-step ${activeStep === index ? 'is-active' : ''}`}
-              key={step.title}
-              onMouseEnter={() => setActiveStep(index)}
-              onFocus={() => setActiveStep(index)}
-              onClick={() => setActiveStep(index)}
-              whileHover={{ y: -6 }}
-              style={{ cursor: 'pointer' }}
-            >
-              <div className="waterfall-step-row">
-                <div className="waterfall-step-content"><span className="waterfall-step-tag">0{index + 1} / {step.engine}</span><h3>{step.title}</h3><p>{step.detail}</p>{step.widget}<span className="pipeline-step-metric-pill">{step.tag}</span></div>
-                <div className="waterfall-step-media">{step.visual}</div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Animated Particle Pipeline */}
-        <svg className="particle-pipeline-svg" viewBox="0 0 1000 30" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-          <path d="M 50 15 L 950 15" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="2" strokeLinecap="round" />
-          <path d="M 50 15 L 350 15" stroke="rgba(34, 211, 238, 0.25)" strokeWidth="2.5" strokeLinecap="round" />
-          <path d="M 350 15 L 650 15" stroke="rgba(59, 130, 246, 0.25)" strokeWidth="2.5" strokeLinecap="round" />
-          <path d="M 650 15 L 950 15" stroke="rgba(16, 185, 129, 0.25)" strokeWidth="2.5" strokeLinecap="round" />
-
-          {/* Particle 01: Card 1 to 2 */}
-          <circle r="4" fill="#00f2fe" filter="url(#cyanGlow)">
-            <animateMotion dur="4s" repeatCount="indefinite" path="M 125 15 L 375 15" keyTimes="0;0.25;1" keyPoints="0;1;1" calcMode="linear" />
-            <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.24;0.25;1" dur="4s" repeatCount="indefinite" />
-          </circle>
-          {/* Particle 02: Card 2 to 3 */}
-          <circle r="4" fill="#3b82f6" filter="url(#blueGlow)">
-            <animateMotion dur="4s" repeatCount="indefinite" path="M 375 15 L 625 15" keyTimes="0;0.25;0.5;1" keyPoints="0;0;1;1" calcMode="linear" />
-            <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.24;0.25;0.49;0.5;1" dur="4s" repeatCount="indefinite" />
-          </circle>
-          {/* Particle 03: Card 3 to 4 */}
-          <circle r="4" fill="#10b981" filter="url(#greenGlow)">
-            <animateMotion dur="4s" repeatCount="indefinite" path="M 625 15 L 875 15" keyTimes="0;0.5;0.75;1" keyPoints="0;0;1;1" calcMode="linear" />
-            <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.49;0.5;0.74;0.75;1" dur="4s" repeatCount="indefinite" />
-          </circle>
-
-          <defs>
-            <filter id="cyanGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
-            <filter id="blueGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
-            <filter id="greenGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
-          </defs>
-        </svg>
-
-        {/* Live Developer Console Bar */}
-        <div className="pipeline-console-low">
-          <div className="console-status">
-            <span className="live-pulse-dot" />
-            <span>● LIVE STREAMING</span>
-          </div>
-          <div className="console-metrics">
-            <div className="console-metric">
-              <span className="metric-label">FPS:</span>
-              <span className="metric-value">{metrics.fps.toFixed(1)}</span>
-            </div>
-            <div className="console-divider">|</div>
-            <div className="console-metric">
-              <span className="metric-label">LANDMARKS:</span>
-              <span className="metric-value">543/frame</span>
-            </div>
-            <div className="console-divider">|</div>
-            <div className="console-metric">
-              <span className="metric-label">TFLITE LATENCY:</span>
-              <span className="metric-value">{metrics.latency.toFixed(1)}ms</span>
-            </div>
-            <div className="console-divider">|</div>
-            <div className="console-metric">
-              <span className="metric-label">GEMINI RTT:</span>
-              <span className="metric-value">{metrics.rtt}ms</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="tech-stack" aria-label="Technology stack">
-          <span>MediaPipe Holistic</span>
-          <span>TFLite WebAssembly</span>
-          <span>Gemini 2.5 Flash</span>
-          <span>Vite / React / Framer Motion</span>
-        </div>
-      </div>
       </div>
     </section>
   );
@@ -1650,6 +1339,7 @@ function App() {
 
   const topFive = output?.top_k?.length ? output.top_k.slice(0, 5) : [];
   const [activePage, setActivePage] = useState('overview');
+  const [scrollProgress, setScrollProgress] = useState(0);
 
   const goToPage = useCallback((pageId: string) => {
     if (!PAGE_IDS.includes(pageId)) return;
@@ -1667,16 +1357,31 @@ function App() {
     window.addEventListener('hashchange', syncFromHash);
     return () => window.removeEventListener('hashchange', syncFromHash);
   }, []);
+
+  useEffect(() => {
+    const updateScrollProgress = () => {
+      const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+      setScrollProgress(scrollableHeight > 0 ? window.scrollY / scrollableHeight : 0);
+    };
+    updateScrollProgress();
+    window.addEventListener('scroll', updateScrollProgress, { passive: true });
+    window.addEventListener('resize', updateScrollProgress);
+    return () => {
+      window.removeEventListener('scroll', updateScrollProgress);
+      window.removeEventListener('resize', updateScrollProgress);
+    };
+  }, [activePage]);
   const handleImageFallback = useCallback((event: SyntheticEvent<HTMLElement>) => {
     const image = event.target;
     if (!(image instanceof HTMLImageElement) || image.dataset.fallbackApplied) return;
     image.dataset.fallbackApplied = 'true';
     image.classList.add('image-fallback');
-    image.src = IMAGE_FALLBACK;
+    image.removeAttribute('src');
   }, []);
 
   return (
     <main className={`app-shell ${devMode ? 'dev-mode-active' : ''}`} onErrorCapture={handleImageFallback}>
+      <div className="sb-scroll-progress" style={{ '--scroll-progress': `${Math.min(1, Math.max(0, scrollProgress)) * 100}%` } as CSSProperties} aria-hidden="true" />
       <CapsuleNav
         activePage={activePage}
         onNavigate={goToPage}
@@ -1687,49 +1392,12 @@ function App() {
       <SectionIndex activePage={activePage} />
 
       <div className="sb-page-view overview-page" hidden={activePage !== 'overview'}>
-      <section className="hero-section" id="top">
-        <div className="hero-copy">
-          <div className="hero-kicker"><span className="live-dot" /> Spatial AI for human connection</div>
-          <h1>From movement to <em>meaning</em> to voice.</h1>
-          <p>SignBridge reads hands, face, pose, and scene context to turn signing into natural speech in real time.</p>
-
-          <div className="overview-capability-grid" aria-label="Context engine summary">
-            <article className="overview-capability-badge">
-              <span className="ov-badge-kicker">01 / Spatial input</span>
-              <strong>Hands + face + pose</strong>
-              <p>One camera captures the signals that make a sign expressive—not just its hand shape.</p>
-            </article>
-            <article className="overview-capability-badge">
-              <span className="ov-badge-kicker">02 / Temporal context</span>
-              <strong>Motion becomes structured data</strong>
-              <p>Landmarks are tracked across time so recognition can follow a gesture, not a single frame.</p>
-            </article>
-            <article className="overview-capability-badge">
-              <span className="ov-badge-kicker">03 / Language output</span>
-              <strong>Gemini gives the sign a voice</strong>
-              <p>Converts raw sign tokens (&quot;I&quot; · &quot;WANT&quot; · &quot;WATER&quot;) into natural spoken sentences (&quot;Could I please get a glass of water?&quot;).</p>
-            </article>
-          </div>
-
-          <div className="hero-actions">
-            <button className="pill-button hero-primary" type="button" onClick={() => { goToPage('demo'); if (!isRunning) void startCamera(); }}>
-              Try the interactive demo <ArrowIcon />
-            </button>
-            <a className="text-link" href="#architecture" onClick={(e) => { e.preventDefault(); scrollToSection('architecture'); }}>Explore the system <ArrowIcon /></a>
-          </div>
-          <div className="hero-proof">
-            <span><b>543</b> landmarks / frame</span>
-            <span><b>30</b> FPS target</span>
-            <span><b>∞</b> context-aware</span>
-          </div>
-        </div>
-        <div className="hero-visual">
-          <div className="hero-grid" />
-          <HeroLandmarkScanner devMode={devMode} />
-          <div className="hero-chip chip-blue">Face + pose context</div>
-          <div className="hero-chip chip-cyan">Gemini multimodal</div>
-        </div>
-      </section>
+      <PremiumHero
+        devMode={devMode}
+        isRunning={isRunning}
+        onLaunchDemo={() => { goToPage('demo'); if (!isRunning) void startCamera(); }}
+        onExplore={() => scrollToSection('architecture')}
+      />
 
       <div className="overview-pipeline-block section-shell" id="architecture">
         <SamArchitectureDiagramV2 />
@@ -1806,7 +1474,7 @@ function App() {
           </aside>
         </div>
 
-        <section className="developer-console" id="demo-console" aria-label="Developer console">
+        <section className="developer-console" id="demo-console" aria-label="Developer console" hidden={!devMode}>
           <div className="console-heading"><div><span className="eyebrow">Developer console / observability</span><h3>Every prediction, in the open.</h3></div><span className="console-chip"><i /> streaming telemetry</span></div>
           <div className="telemetry-grid"><div><span>Latency</span><strong>{latencyMs === null ? '—' : `${latencyMs}ms`}</strong></div><div><span>FPS</span><strong>{fps || '—'}</strong></div><div><span>Active buffer</span><strong>{bufferLength}<small> / {WINDOW_SIZE}</small></strong></div><div><span>Idle time</span><strong>{(output?.idle_seconds ?? 0).toFixed(1)}<small>s</small></strong></div><div><span>Total landmarks</span><strong>{LANDMARKS_PER_FRAME}</strong></div></div>
           <div className="matrix-layout"><div className="console-note"><span className="matrix-label">Pipeline readout</span><p>The model compares temporal agreement, confidence variance, and release posture before committing a word.</p><div className="console-status"><span className="state-dot state-connected" /> confidence gate <b>≥ 35%</b><span className="state-dot state-loading" /> variance gate <b>&lt; 4.5%</b></div></div><div className="probability-matrix"><div className="matrix-header"><span className="matrix-label">Top 5 probability matrix</span><span>Live output</span></div>{topFive.length ? topFive.map((item, index) => <div className="probability-row" key={`${item.label}-${index}`}><div className="probability-label"><span className={`rank rank-${index + 1}`}>{String(index + 1).padStart(2, '0')}</span><strong>{item.label}</strong><span className="probability-value">{(item.confidence * 100).toFixed(1)}%</span></div><div className="probability-track"><span className={item.confidence >= 0.4 ? 'bar-green' : item.confidence >= 0.2 ? 'bar-yellow' : 'bar-blue'} style={{ width: `${Math.max(0, Math.min(100, item.confidence * 100))}%` }} /></div></div>) : <div className="matrix-empty">No predictions yet. The probability matrix will animate as soon as a frame window is ready.</div>}</div></div>
@@ -1815,56 +1483,8 @@ function App() {
       </div>
 
       <div className="sb-page-view" hidden={activePage !== 'features'}>
-      <ContextBentoGrid />
+      <FeatureExperience />
 
-      <section className="feature-section section-shell" id="context" aria-hidden="true">
-        <div className="section-intro centered"><span className="eyebrow">02 / The context engine</span><h2>Recognition is only the beginning.</h2><p>SignBridge fuses movement, expression, and environment into a richer layer of meaning — locally first, intelligently assisted when it matters.</p></div>
-        <div className="feature-grid"><article className="feature-card feature-blue"><div className="feature-number">01</div><div className="feature-icon">◈</div><h3>On-device TFLite motion engine</h3><p>543 spatial landmarks are processed through a low-latency temporal window, keeping the most sensitive part of the interaction close to the user.</p><div className="feature-meta"><span>Low latency</span><span>Private by design</span></div></article><article className="feature-card feature-cyan"><div className="feature-number">02</div><div className="feature-icon">✦</div><h3>Multimodal context, made visible</h3><p>Facial landmarks, pose, and an optional camera snapshot give Gemini 2.5 Flash the context to read micro-expressions and scene cues.</p><div className="feature-meta"><span>Face + scene</span><span>Gemini 2.5 Flash</span></div></article><article className="feature-card feature-amber"><div className="feature-number">03</div><div className="feature-icon">⌁</div><h3>Smart word prediction</h3><p>A compact context map turns a live sentence into useful next-word suggestions, while confidence gates keep accidental lock-ins out.</p><div className="feature-meta"><span>N-gram hints</span><span>Human-confirmed</span></div></article></div>
-      </section>
-
-      <section className="bento-section section-shell" id="legacy-capabilities" aria-hidden="true">
-        <div className="section-intro centered">
-          <span className="eyebrow">02 / Context engine + capability system</span>
-          <h2>Three layers. One human-first signal.</h2>
-          <p>SignBridge turns spatial motion into a useful, private, and context-rich conversation layer.</p>
-        </div>
-        <div className="bento-grid">
-          <article className="bento-card bento-context-card">
-            <div className="bento-copy"><span className="bento-index">01 / multimodal</span><h3>Context that understands the moment.</h3><p>Hand landmarks, facial expression, and room context fuse into a translation that reads beyond the gesture.</p><div className="bento-tags"><span>Face cues</span><span>Scene aware</span><span>Gemini ready</span></div></div>
-            <div className="context-radar" aria-hidden="true"><div className="radar-ring ring-a" /><div className="radar-ring ring-b" /><div className="radar-sweep" /><span className="radar-node node-face">face</span><span className="radar-node node-hands">hands</span><span className="radar-node node-scene">scene</span><div className="radar-core">◎</div></div>
-          </article>
-          <article className="bento-card bento-local-card">
-            <div className="bento-card-top"><span className="bento-index">02 / on-device</span><span className="bento-metric">&lt; 30ms</span></div><h3>Fast where it matters.</h3><p>543 spatial landmarks run locally through a TFLite-ready motion path, keeping feedback immediate and data close.</p><div className="landmark-visual"><span /><span /><span /><span /><span /><span /><span /></div><div className="bento-footer"><span>Local inference</span><strong>Privacy by default</strong></div>
-          </article>
-          <article className="bento-card bento-predict-card">
-            <div className="bento-card-top"><span className="bento-index">03 / prediction</span><span className="prediction-live"><i /> live</span></div><h3>Finish the thought, naturally.</h3><p>Context-aware suggestions stay one tap away, so the person signing stays in control of the sentence.</p><div className="bento-suggestion-demo"><span>look</span><i>→</i><b>here</b><b>at me</b><b>there</b></div><div className="bento-footer"><span>Human-confirmed</span><strong>Next-word intelligence</strong></div>
-          </article>
-        </div>
-      </section>
-
-      <EditorialStory />
-
-      <section className="roadmap-section section-shell" id="legacy-ecosystem" aria-hidden="true">
-        <div className="section-intro roadmap-intro"><div><span className="eyebrow">04 / Future ecosystem</span><h2>From the browser to everywhere people connect.</h2></div><p>Designed as an adaptable intelligence layer for meetings, wearables, and better training data.</p></div>
-        <div className="roadmap-grid">
-          <article className="roadmap-card roadmap-wide"><div className="roadmap-image"><img src="https://sorenson.com/wp-content/uploads/2024/07/featured-how-to-easily-make-zoom-meetings-deaf-inclusive-two-ways-to-get-zoom-interpreter-service.jpg" alt="Inclusive video meeting concept" loading="lazy" referrerPolicy="no-referrer" /><span className="image-overlay-label">Virtual meeting layer</span></div><div className="roadmap-copy"><span className="bento-index">Coming next / 01</span><h3>Meetings that include every voice.</h3><p>Overlay SignBridge in Zoom, Google Meet, and Teams for dual subtitles plus natural TTS speech — without breaking the flow of the call.</p><div className="roadmap-tags"><span>Zoom</span><span>Google Meet</span><span>Teams</span></div></div></article>
-          <article className="roadmap-card"><div className="roadmap-image"><img src="https://images.stockcake.com/public/8/5/8/858e4c23-3a38-4319-a413-e7a9e1ad822a_large/futuristic-smart-glasses-stockcake.jpg" alt="Futuristic smart glasses concept" loading="lazy" referrerPolicy="no-referrer" /><span className="image-overlay-label">Ambient HUD</span></div><div className="roadmap-copy"><span className="bento-index">Coming next / 02</span><h3>Spatial AI, in your line of sight.</h3><p>Hands-free translation for face-to-face conversations through next-gen smart glasses.</p></div></article>
-          <article className="roadmap-card"><div className="roadmap-image"><img src="https://physicsworld.com/wp-content/uploads/2024/02/5-2-2024-Stretchy-glove.jpeg" alt="Stretchy smart glove concept" loading="lazy" referrerPolicy="no-referrer" /><span className="image-overlay-label">Training signal</span></div><div className="roadmap-copy"><span className="bento-index">Coming next / 03</span><h3>Train with a richer signal.</h3><p>Haptic stretch gloves capture 3D joint coordinates to continuously improve landmark accuracy.</p></div></article>
-        </div>
-      </section>
-
-      <section className="gallery-section section-shell" id="community">
-        <div className="gallery-heading"><div><span className="eyebrow">05 / Human connection</span><h2>Technology should feel more human.</h2></div><p>Built around the people who make language visible, expressive, and shared.</p></div>
-        <div className="gallery-row"><figure className="gallery-item gallery-large"><img src="https://a.storyblok.com/f/259811/1814x1209/25cb65fa1e/gebardensprache_website.jpg" alt="Sign language performer connecting through expression" loading="lazy" referrerPolicy="no-referrer" /><figcaption><strong>Expression is information.</strong><span>Every movement carries more than a word.</span></figcaption></figure><figure className="gallery-item"><img src="https://www.eastcentral.edu/community/wp-content/uploads/sites/78/2023/01/American-Sign-Language-1.jpg" alt="American Sign Language conversation" loading="lazy" referrerPolicy="no-referrer" /><figcaption><strong>Connection is the product.</strong><span>A more expressive web for everyone.</span></figcaption></figure></div>
-      </section>
-
-      <ReasoningComparisonV2 />
-      <ScenarioDial />
-
-      <section className="architecture-section section-shell" id="legacy-architecture" aria-hidden="true">
-        <div className="architecture-copy"><span className="eyebrow">03 / Architecture</span><h2>Local signal. Shared meaning.</h2><p>Every layer has a job: understand movement at the edge, stabilize decisions in the service, and add language and scene intelligence only where it improves the conversation.</p><a className="text-link" href="#demo" onClick={(e) => { e.preventDefault(); goToPage('demo'); }}>Open the workspace <ArrowIcon /></a></div>
-        <div className="architecture-flow"><div className="flow-node"><small>01 / input</small><strong>Camera + Holistic</strong><span>Face · hands · pose</span></div><div className="flow-line"><i /></div><div className="flow-node"><small>02 / intelligence</small><strong>Temporal state</strong><span>8-frame agreement</span></div><div className="flow-line cyan"><i /></div><div className="flow-node"><small>03 / output</small><strong>Gemini context</strong><span>Speech + translation</span></div></div>
-      </section>
       </div>
 
       <div className="sb-page-view" hidden={activePage !== 'team'}>
