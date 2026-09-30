@@ -298,7 +298,9 @@ body.nav-drawer-open {
 #demo-output,
 #demo-console,
 #capabilities,
+#translation,
 #architecture,
+#overview-proof,
 #overview-vision,
 #ecosystem,
 #community,
@@ -348,7 +350,26 @@ body.nav-drawer-open {
 @media (max-width: 520px) {
   .sb-capsule-nav {
     top: 1rem;
-    width: calc(100% - 1.25rem);
+    left: 1rem;
+    width: calc(100% - 2rem);
+    transform: none;
+  }
+}
+
+/* Fixed navigation clearance for every non-hero page. */
+.sb-page-view:not(.overview-page) {
+  padding-top: 7.5rem;
+}
+
+@media (max-width: 680px) {
+  .sb-page-view:not(.overview-page) {
+    padding-top: 6.75rem;
+  }
+
+  .sb-page-view:not(.overview-page) > .demo-section,
+  .sb-page-view:not(.overview-page) > .context-bento-section,
+  .sb-page-view:not(.overview-page) > .acknowledgments-section {
+    padding-top: 0;
   }
 }
 

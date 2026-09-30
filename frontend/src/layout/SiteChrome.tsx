@@ -1,42 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { API_DOCS_URL } from '../config';
-
-/** Top-level pages (capsule navbar). */
-export const TOP_PAGES: ReadonlyArray<{ id: string; label: string; cta?: boolean }> = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'demo', label: 'Live Demo', cta: true },
-  { id: 'features', label: 'Features' },
-  { id: 'team', label: 'Team' },
-];
-
-/** In-page details for the left sidebar, keyed by top-level page. */
-export const PAGE_SUBSECTIONS: Record<
-  string,
-  ReadonlyArray<{ id: string; number: string; label: string }>
-> = {
-  overview: [
-    { id: 'top', number: '01', label: 'HERO' },
-    { id: 'architecture', number: '02', label: 'PIPELINE' },
-    { id: 'overview-vision', number: '03', label: 'VISION' },
-  ],
-  demo: [
-    { id: 'demo-camera', number: '01', label: 'CAMERA' },
-    { id: 'demo-output', number: '02', label: 'OUTPUT' },
-    { id: 'demo-console', number: '03', label: 'CONSOLE' },
-  ],
-  features: [
-    { id: 'capabilities', number: '01', label: 'CAPABILITIES' },
-    { id: 'ecosystem', number: '02', label: 'STORY' },
-    { id: 'scenario', number: '03', label: 'SCENARIO' },
-  ],
-  team: [{ id: 'team', number: '01', label: 'ROSTER' }],
-};
-
-export const PAGE_IDS = TOP_PAGES.map((page) => page.id);
-
-export function scrollToSection(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
+import { PAGE_SUBSECTIONS, TOP_PAGES, scrollToSection } from './siteNavigation';
 
 function useActiveSection(sectionIds: readonly string[], fallback: string) {
   const [activeId, setActiveId] = useState(fallback);
@@ -47,7 +11,6 @@ function useActiveSection(sectionIds: readonly string[], fallback: string) {
       .filter((el): el is HTMLElement => Boolean(el));
 
     if (!elements.length) {
-      setActiveId(fallback);
       return undefined;
     }
 
@@ -87,10 +50,9 @@ function useActiveSection(sectionIds: readonly string[], fallback: string) {
 type CapsuleNavProps = {
   activePage: string;
   onNavigate: (pageId: string) => void;
-  onLaunchDemo?: () => void;
 };
 
-export function CapsuleNav({ activePage, onNavigate, onLaunchDemo }: CapsuleNavProps) {
+export function CapsuleNav({ activePage, onNavigate }: CapsuleNavProps) {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -107,12 +69,11 @@ export function CapsuleNav({ activePage, onNavigate, onLaunchDemo }: CapsuleNavP
   }, [open]);
 
   const go = useCallback(
-    (id: string, isCta?: boolean) => {
+    (id: string) => {
       setOpen(false);
       onNavigate(id);
-      if (isCta) onLaunchDemo?.();
     },
-    [onLaunchDemo, onNavigate],
+    [onNavigate],
   );
 
   return (
@@ -137,7 +98,7 @@ export function CapsuleNav({ activePage, onNavigate, onLaunchDemo }: CapsuleNavP
                 key={link.id}
                 className={`sb-capsule-cta ${activePage === link.id ? 'is-active' : ''}`}
                 type="button"
-                onClick={() => go(link.id, true)}
+                onClick={() => go(link.id)}
               >
                 {link.label}
               </button>
@@ -181,7 +142,7 @@ export function CapsuleNav({ activePage, onNavigate, onLaunchDemo }: CapsuleNavP
               key={link.id}
               type="button"
               className={link.cta || activePage === link.id ? 'is-cta' : undefined}
-              onClick={() => go(link.id, Boolean(link.cta))}
+              onClick={() => go(link.id)}
             >
               {link.label}
             </button>
@@ -200,12 +161,15 @@ export function CapsuleNav({ activePage, onNavigate, onLaunchDemo }: CapsuleNavP
 
 type SectionIndexProps = {
   activePage: string;
+  devMode?: boolean;
 };
 
-export function SectionIndex({ activePage }: SectionIndexProps) {
+export function SectionIndex({ activePage, devMode = false }: SectionIndexProps) {
   const items = useMemo(
-    () => PAGE_SUBSECTIONS[activePage] ?? PAGE_SUBSECTIONS.overview,
-    [activePage],
+    () => (PAGE_SUBSECTIONS[activePage] ?? PAGE_SUBSECTIONS.overview).filter(
+      (item) => item.id !== 'demo-console' || devMode,
+    ),
+    [activePage, devMode],
   );
   const itemIds = useMemo(() => items.map((item) => item.id), [items]);
   const activeId = useActiveSection(itemIds, items[0]?.id ?? 'top');

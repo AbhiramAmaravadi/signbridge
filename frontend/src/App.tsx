@@ -11,7 +11,8 @@ import {
   RESET_URL,
   TRANSLATE_URL,
 } from './config';
-import { CapsuleNav, PAGE_IDS, SectionIndex, scrollToSection } from './layout/SiteChrome';
+import { CapsuleNav, SectionIndex } from './layout/SiteChrome';
+import { PAGE_IDS, scrollToSection } from './layout/siteNavigation';
 
 type Landmark = { x: number; y: number; z: number; visibility?: number };
 type LandmarkFrame = number[][];
@@ -304,7 +305,7 @@ function ResilientImage({ src, alt, className, children, fallbackSrc, ...props }
 
   return (
     <div className={`media-container ${className || ''}`}>
-      <div className={`cyber-fallback ${hasError ? 'is-visible' : ''}`}>
+      <div className={`cyber-fallback ${hasError ? 'is-visible' : ''}`} aria-hidden={!hasError}>
         <span className="cyber-fallback-text">Image unavailable</span>
       </div>
 
@@ -515,30 +516,123 @@ function ContextBentoGrid() {
   return (
     <section className="context-bento-section section-shell" id="capabilities">
       <div className="section-intro centered">
-        <span className="eyebrow">02 / The context engine</span>
+        <span className="eyebrow">01 / The context engine</span>
         <h2>Recognition gets smarter with context.</h2>
         <p>Four real-time intelligence layers turn movement into communication that feels natural, nuanced, and fast.</p>
       </div>
       <div className="context-bento-grid">
-        <motion.article className="context-bento-card bento-llm" whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 280, damping: 22 }}>
+        <motion.article className="context-bento-card bento-llm" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
           <img src="https://image.cnbcfm.com/api/v1/image/107371197-1707432021946-gettyimages-1988737588-raa-googlege240208_npBM4.jpeg?v=1707432096" alt="Google AI event visual" loading="lazy" referrerPolicy="no-referrer" />
           <div className="bento-image-gradient" />
           <div className="bento-content"><span className="bento-index">01 / Core intelligence</span><span className="bento-live-badge"><i /> Gemini Active</span><h3>Multimodal LLM Reasoning</h3><p>Powered by Gemini 2.5 Flash. Translates non-verbal nuances and complex spatial motions into natural, fluid human speech.</p></div>
         </motion.article>
-        <motion.article className="context-bento-card bento-expression" whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 280, damping: 22 }}>
+        <motion.article className="context-bento-card bento-expression" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
           <img src="https://www.infolob.com/wp-content/uploads/2019/10/fr.png" alt="Facial landmark mesh" loading="lazy" referrerPolicy="no-referrer" />
           <div className="bento-image-gradient" /><div className="emotion-tags"><span>Questioning (88%)</span><span>Tone: Curious</span></div>
           <div className="bento-content"><span className="bento-index">02 / Facial mesh</span><h3>Expression &amp; Tone Recognition</h3><p>Sign language isn't just hands. Real-time facial mesh analysis detects tone, question signals, and emotional emphasis.</p></div>
         </motion.article>
-        <motion.article className="context-bento-card bento-scene" whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 280, damping: 22 }}>
+        <motion.article className="context-bento-card bento-scene" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
           <img src="https://i0.wp.com/downloads.mixtile.com/doc-images/hailo/restaurant-table-status/output-empty-and-occupied-tables.jpeg?w=1020&ssl=1" alt="Restaurant scene for ambient context recognition" loading="lazy" referrerPolicy="no-referrer" />
           <div className="bento-image-gradient" /><span className="scene-box scene-table">[ Table ]</span><span className="scene-box scene-menu">[ Menu ]</span>
           <div className="bento-content"><span className="bento-index">03 / Scene context</span><h3>Ambient Scene Intelligence</h3><p>Identifies your environment—like a coffee shop or meeting room—to dynamically constrain vocabulary and boost prediction precision.</p><button className={`ambient-toggle ${ambientContext ? 'is-on' : ''}`} type="button" onClick={() => setAmbientContext((enabled) => !enabled)} aria-pressed={ambientContext}><i /> {ambientContext ? 'Coffee shop vocabulary tuned' : 'Ambient context paused'}</button></div>
         </motion.article>
-        <motion.article className="context-bento-card bento-prediction" whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 280, damping: 22 }}>
+        <motion.article className="context-bento-card bento-prediction" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
           <img src="https://cdn.analyticsvidhya.com/wp-content/uploads/2021/08/77308shutterstock-1208129407_trm5.960.jpg" alt="Neural network visualization" loading="lazy" referrerPolicy="no-referrer" />
           <div className="bento-image-gradient" /><div className="autocomplete-demo"><span>I would like to</span><i>→</i><b>order</b><b>buy</b><b>ask</b></div>
           <div className="bento-content"><span className="bento-index">04 / Prediction</span><h3>Smart Next-Word Completion</h3><p>Predicts upcoming words in real-time before you finish the sign, making sign language communication 3x faster.</p></div>
+        </motion.article>
+      </div>
+    </section>
+  );
+}
+
+const predictionScenes = [
+  { prefix: 'I NEED', context: 'Urgent care · active scene', candidates: [['HELP', 84], ['WATER', 61], ['MORE', 46], ['TOILET', 31], ['PLEASE', 24]] },
+  { prefix: 'CAN YOU', context: 'Conversation · turn taking', candidates: [['HELP', 79], ['REPEAT', 66], ['WAIT', 41], ['EXPLAIN', 35], ['COME', 22]] },
+  { prefix: 'I FEEL', context: 'Expression · face + pose', candidates: [['HAPPY', 75], ['SICK', 69], ['TIRED', 52], ['NERVOUS', 39], ['BETTER', 28]] },
+] as const;
+
+const signExamples = [
+  { word: 'HELLO', detail: 'Open hand · outward greeting', image: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/ChocHello.jpg', source: 'Wikimedia Commons · CC BY 3.0' },
+  { word: 'THANK YOU', detail: 'Chin origin · outward trajectory', image: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/ASL_OpenB%40Chin-PalmBack.jpg', source: 'Wikimedia Commons · CC BY-SA 3.0' },
+  { word: 'I LOVE YOU', detail: 'Combined I · L · Y handshape', image: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/ILYLoveSign.jpg', source: 'Wikimedia Commons · CC BY-SA 4.0' },
+] as const;
+
+function IntelligenceLab() {
+  const [sceneIndex, setSceneIndex] = useState(0);
+  const [emotion, setEmotion] = useState<'warm' | 'urgent' | 'joyful'>('warm');
+  const scene = predictionScenes[sceneIndex];
+  const emotionCopy = {
+    warm: { label: 'Warm / reassuring', output: 'Could you help me, please?', rate: '0.94×', pitch: '+2%' },
+    urgent: { label: 'Urgent / focused', output: 'I need help right now.', rate: '1.08×', pitch: '+7%' },
+    joyful: { label: 'Joyful / energetic', output: 'It is so good to see you!', rate: '1.04×', pitch: '+11%' },
+  }[emotion];
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setSceneIndex((index) => (index + 1) % predictionScenes.length), 3600);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return (
+    <section className="intelligence-lab section-shell" id="intelligence">
+      <div className="intelligence-heading">
+        <span className="eyebrow">02 / Intelligence lab</span>
+        <h2>More than recognizing a single sign.</h2>
+        <p>SignBridge reasons across candidate gestures, temporal motion, language context, facial expression, and the way the final sentence should sound.</p>
+      </div>
+
+      <div className="intelligence-grid">
+        <motion.article className="intel-panel intel-top-five" initial={{ opacity: 0, y: 32 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .25 }}>
+          <div className="intel-panel-head"><span>LIVE CLASSIFIER</span><b><i /> TOP–5 HYPOTHESES</b></div>
+          <div className="prediction-context"><span>Observed sequence</span><strong>{scene.prefix}<em>_</em></strong><small>{scene.context}</small></div>
+          <AnimatePresence mode="wait">
+            <motion.ol key={scene.prefix} className="top-five-list" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: .35 }}>
+              {scene.candidates.map(([word, confidence], index) => (
+                <li key={word}><span>0{index + 1}</span><strong>{word}</strong><div><i style={{ width: `${confidence}%` }} /></div><b>{confidence}%</b></li>
+              ))}
+            </motion.ol>
+          </AnimatePresence>
+          <div className="prediction-pagination">{predictionScenes.map((item, index) => <button className={index === sceneIndex ? 'is-active' : ''} key={item.prefix} type="button" onClick={() => setSceneIndex(index)} aria-label={`Show ${item.prefix} predictions`} />)}</div>
+        </motion.article>
+
+        <motion.article className="intel-panel intel-next-word" initial={{ opacity: 0, y: 32 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .25 }} transition={{ delay: .08 }}>
+          <div className="intel-panel-head"><span>LANGUAGE MODEL</span><b>NEXT WORD</b></div>
+          <div className="next-word-sentence"><span>I</span><span>would</span><span>like</span><span>to</span><strong>order</strong><i /></div>
+          <div className="next-word-options"><span><b>order</b><small>0.76</small></span><span><b>buy</b><small>0.48</small></span><span><b>ask</b><small>0.31</small></span></div>
+          <p>Locked signs become language context. The prediction head proposes the next likely word before the next gesture is complete.</p>
+          <div className="intel-metric-row"><span>Context window <b>8 signs</b></span><span>Re-rank <b>Gemini</b></span></div>
+        </motion.article>
+
+        <motion.article className="intel-panel intel-sign-library" initial={{ opacity: 0, y: 32 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .18 }}>
+          <div className="intel-panel-head"><span>VISUAL LEXICON</span><b>IMAGE → ENGLISH</b></div>
+          <div className="sign-photo-grid">
+            {signExamples.map((sign, index) => (
+              <motion.figure key={sign.word} whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 260, damping: 22 }}>
+                <img src={sign.image} alt={`${sign.word} sign language example`} loading="lazy" referrerPolicy="no-referrer" />
+                <figcaption><span>0{index + 1}</span><strong>{sign.word}</strong><small>{sign.detail}</small></figcaption>
+                <em>{sign.source}</em>
+              </motion.figure>
+            ))}
+          </div>
+          <div className="sequence-research-note">
+            <div className="sequence-frames" aria-hidden="true"><i /><i /><i /><i /><i /></div>
+            <div><span><b /> ACTIVE RESEARCH</span><h3>Some signs are motion sequences, not static poses.</h3><p>We are improving temporal alignment for signs whose meaning depends on direction, repetition, speed, and the transition between handshapes.</p></div>
+          </div>
+        </motion.article>
+
+        <motion.article className="intel-panel intel-emotion-voice" initial={{ opacity: 0, y: 32 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .2 }}>
+          <div className="intel-panel-head"><span>AFFECTIVE OUTPUT</span><b>EMOTION → VOICE</b></div>
+          <div className="emotion-selector" role="group" aria-label="Voice emotion preview">
+            {(['warm', 'urgent', 'joyful'] as const).map((tone) => <button className={emotion === tone ? 'is-active' : ''} key={tone} type="button" onClick={() => setEmotion(tone)}>{tone}</button>)}
+          </div>
+          <AnimatePresence mode="wait">
+            <motion.div className="voice-output" key={emotion} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <span>Detected tone · {emotionCopy.label}</span><strong>“{emotionCopy.output}”</strong>
+              <div className="voice-wave" aria-hidden="true">{Array.from({ length: 28 }, (_, index) => <i key={index} style={{ '--wave': `${24 + ((index * 17) % 66)}%` } as CSSProperties} />)}</div>
+              <div className="voice-parameters"><span>Speaking rate <b>{emotionCopy.rate}</b></span><span>Pitch contour <b>{emotionCopy.pitch}</b></span><span>Prosody <b>adaptive</b></span></div>
+            </motion.div>
+          </AnimatePresence>
+          <p>Facial expression and body tension influence the synthesized voice, so the spoken result carries more than literal words.</p>
         </motion.article>
       </div>
     </section>
@@ -549,6 +643,8 @@ function FeatureExperience() {
   return (
     <>
       <ContextBentoGrid />
+      <div className="signal-divider" aria-hidden="true"><span /></div>
+      <IntelligenceLab />
       <div className="signal-divider" aria-hidden="true"><span /></div>
       <EditorialStory />
       <div className="signal-divider" aria-hidden="true"><span /></div>
@@ -611,7 +707,28 @@ function ScenarioDial() {
   const content = scenario === 'medical'
     ? { image: 'https://inclusiveasl.com/wp-content/uploads/2023/12/Medical-Website-2.jpg', title: 'Medical context', raw: 'PAIN / RIGHT / ABDOMEN', translation: 'Patient is signaling acute discomfort in the upper right abdomen area.', accent: 'rose' }
     : { image: 'https://deafaction.org/wp-content/uploads/2024/03/DeafAction14.08.23-018-1184x790.jpg', title: 'Tour & daily context', raw: 'LOOK / HISTORIC / TOWER', translation: 'On your left, you can see the historic clock tower constructed in 1842.', accent: 'cyan' };
-  return <section className="scenario-dial-section" id="scenario"><div className="section-shell"><div className="section-intro centered"><span className="eyebrow">Context dial / Gemini fusion</span><h2>One gesture. The right meaning.</h2><p>Spatial motion becomes more useful when it understands where the conversation is happening.</p></div><div className="scenario-selector-tabs"><button className={`scenario-tab-btn ${scenario === 'medical' ? 'is-active' : ''}`} type="button" onClick={() => setScenario('medical')}>Medical Context</button><button className={`scenario-tab-btn ${scenario === 'tour' ? 'is-active' : ''}`} type="button" onClick={() => setScenario('tour')}>Tour &amp; Daily Context</button></div><motion.div className={`scenario-grid scenario-${content.accent}`} key={scenario} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .35 }}><ResilientImage className="scenario-media-frame" src={content.image} alt={content.title} /><div className="scenario-content-panel"><div className="scenario-info"><span className="eyebrow">Active environment</span><h3>{content.title}</h3><p>Gemini combines the hand signal with live visual context before it finalizes spoken language.</p></div><div className="scenario-metrics-row"><div className="scenario-metric-box"><span>Raw gesture signal</span><strong className="scenario-signal-value">{content.raw}</strong></div><div className="scenario-metric-box"><span>Gemini multimodal translation</span><strong className="scenario-translation-value">{content.translation}</strong></div></div></div></motion.div></div></section>;
+  return (
+    <section className="scenario-dial-section" id="scenario">
+      <div className="section-shell">
+        <div className="section-intro centered">
+          <span className="eyebrow">Context dial / Gemini fusion</span>
+          <h2>One gesture. The right meaning.</h2>
+          <p>Spatial motion becomes more useful when it understands where the conversation is happening.</p>
+        </div>
+        <div className="scenario-selector-tabs">
+          <button className={`scenario-tab-btn ${scenario === 'medical' ? 'is-active' : ''}`} type="button" onClick={() => setScenario('medical')}>Medical Context</button>
+          <button className={`scenario-tab-btn ${scenario === 'tour' ? 'is-active' : ''}`} type="button" onClick={() => setScenario('tour')}>Tour &amp; Daily Context</button>
+        </div>
+        <motion.div className={`scenario-grid scenario-${content.accent}`} key={scenario} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .35 }}>
+          <ResilientImage className="scenario-media-frame" src={content.image} alt={content.title} />
+          <div className="scenario-content-panel">
+            <div className="scenario-info"><span className="eyebrow">Active environment</span><h3>{content.title}</h3><p>Gemini combines the hand signal with live visual context before it finalizes spoken language.</p></div>
+            <div className="scenario-metrics-row"><div className="scenario-metric-box"><span>Raw gesture signal</span><strong className="scenario-signal-value">{content.raw}</strong></div><div className="scenario-metric-box"><span>Gemini multimodal translation</span><strong className="scenario-translation-value">{content.translation}</strong></div></div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
 }
 
 function EditorialStory() {
@@ -619,27 +736,27 @@ function EditorialStory() {
     { image: 'https://www.goodnewsnetwork.org/wp-content/uploads/2016/05/sign-aloud-gloves-inventors-MIT.jpg', fallbackSrc: 'https://scx2.b-cdn.net/gfx/news/hires/2016/1-twoundergrad.jpg', alt: 'MIT sign language glove proof of concept', badge: '2016 MIT proof of concept', title: 'The Hardware Era.', description: 'Specialized flex sensors and tethered gloves proved that sign language could be captured digitally.' },
     { image: 'https://www.handtalk.me/en/wp-content/uploads/sites/3/2022/02/arq-6127ba158b407-1024x577.png', alt: 'Camera-Native Vision AI', badge: 'SignBridge vision-native', title: 'The Camera-Native Era.', description: 'Zero gloves, zero sensors. Pure web-based spatial AI powered by Gemini LLMs.' },
   ];
-  return <section className="editorial-story-section section-shell" id="ecosystem"><div className="section-intro centered"><span className="eyebrow">04 / Story &amp; inspiration</span><h2>From physical gloves to vision-native AI.</h2></div><div className="editorial-story-grid">{columns.map((column) => <article className="editorial-col" key={column.title}><ResilientImage className="editorial-image-wrap" src={column.image} fallbackSrc={column.fallbackSrc} alt={column.alt} /><div className="editorial-copy-block"><span className={`editorial-badge-pill ${column.title.startsWith('The Camera') ? 'cyan-badge' : ''}`}>{column.badge}</span><h4>{column.title}</h4><p>{column.description}</p></div></article>)}</div></section>;
+  return <section className="editorial-story-section section-shell" id="ecosystem"><div className="section-intro centered"><span className="eyebrow">03 / Evolution</span><h2>From physical gloves to vision-native AI.</h2></div><div className="editorial-story-grid">{columns.map((column, index) => <motion.article className="editorial-col" key={column.title} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .25 }} transition={{ duration: .65, delay: index * .1, ease: [0.22, 1, 0.36, 1] }}><ResilientImage className="editorial-image-wrap" src={column.image} fallbackSrc={column.fallbackSrc} alt={column.alt} /><div className="editorial-copy-block"><span className={`editorial-badge-pill ${column.title.startsWith('The Camera') ? 'cyan-badge' : ''}`}>{column.badge}</span><h4>{column.title}</h4><p>{column.description}</p></div></motion.article>)}</div></section>;
 }
 
-type SponsorLogoKind = 'sail' | 'google-cloud' | 'qualcomm';
+type SponsorLogoKind = 'uw' | 'sail' | 'qualcomm';
 
 function SponsorLogoMark({ kind, alt }: { kind: SponsorLogoKind; alt: string }) {
   return (
     <div className={`sponsor-logo-stage sponsor-logo-${kind}`} role="img" aria-label={alt}>
-      {kind === 'sail' && (
-        <svg className="sponsor-logo-svg" viewBox="0 0 240 72" aria-hidden="true">
-          <path className="sail-mark" d="M25 11 39 25 25 39 11 25Z" />
-          <path className="sail-mark sail-mark-secondary" d="m25 33 14 14-14 14-14-14Z" />
-          <text x="55" y="38" className="sail-wordmark">SAIL</text>
-          <text x="57" y="55" className="sail-caption">UW–MADISON</text>
+      {kind === 'uw' && (
+        <svg className="sponsor-logo-svg uw-logo-svg" viewBox="0 0 300 72" aria-hidden="true">
+          <path className="uw-crest" d="M10 7h49v43c0 9-11 14-24.5 18C21 64 10 59 10 50V7Z" />
+          <path className="uw-letter" d="m19 20 6 29h8l4-17 4 17h8l6-29h-7l-3 18-4-18h-8l-4 18-3-18h-7Z" />
+          <text x="72" y="31" className="uw-wordmark">UNIVERSITY OF</text>
+          <text x="72" y="52" className="uw-wordmark uw-wordmark-strong">WISCONSIN–MADISON</text>
         </svg>
       )}
-      {kind === 'google-cloud' && (
-        <svg className="sponsor-logo-svg google-cloud-svg" viewBox="0 0 280 72" aria-hidden="true">
-          <path fill="#4285F4" d="M49 55H19a17 17 0 0 1-3-33 24 24 0 0 1 45-7 20 20 0 0 1-12 40Zm-28-9h28a11 11 0 0 0 3-22l-6 2-2-6a15 15 0 0 0-29 5l1 7-7 1a8 8 0 0 0 1 13Z" />
-          <path fill="#34A853" d="M49 55H33l-9-9h25a11 11 0 0 0 3-22l-6 2-4-8 10-3a20 20 0 0 1-3 40Z" />
-          <text x="73" y="46" className="google-cloud-wordmark">Google Cloud</text>
+      {kind === 'sail' && (
+        <svg className="sponsor-logo-svg" viewBox="0 0 280 72" aria-hidden="true">
+          <path className="sail-mark" d="M11 56 34 8l23 48H11Zm23-31-8 22h17L34 25Z" />
+          <text x="72" y="39" className="sail-wordmark">SAIL</text>
+          <text x="73" y="56" className="sail-caption">SUMMER OF AI LABORATORY</text>
         </svg>
       )}
       {kind === 'qualcomm' && (
@@ -655,25 +772,32 @@ function SponsorLogoMark({ kind, alt }: { kind: SponsorLogoKind; alt: string }) 
 function SponsorTeamShowcaseV3() {
   const sponsors = [
     {
-      name: 'UW–Madison SAIL Program',
-      badge: '[ ACADEMIC RESEARCH ]',
-      description: 'Providing fundamental spatial AI research frameworks and computer vision support for real-time sign recognition.',
-      logoKind: 'sail' as const,
+      name: 'University of Wisconsin–Madison',
+      badge: '[ ACADEMIC HOME ]',
+      description: 'A cross-disciplinary environment connecting computer science, data, design, and human-centered problem solving.',
+      logoKind: 'uw' as const,
+      href: 'https://www.wisc.edu/',
     },
     {
-      name: 'Google Cloud Platform',
-      badge: '[ LLM & INFRASTRUCTURE ]',
-      description: 'Powered by Google Cloud GCP infrastructure and Gemini multimodal LLMs for low-latency grammar refinement.',
-      logoKind: 'google-cloud' as const,
+      name: 'Summer of AI Laboratory',
+      badge: '[ SAIL PROGRAM ]',
+      description: 'UW–Madison CDIS program for building original AI products through project-based learning and industry mentorship.',
+      logoKind: 'sail' as const,
+      href: 'https://cdis.wisc.edu/preparing-students-for-the-ai-era-cdis-and-openai-launch-sail/',
     },
     {
       name: 'Qualcomm',
       badge: '[ EDGE HARDWARE ]',
-      description: 'Supporting edge computing optimizations and hardware acceleration for future spatial-native deployments.',
+      description: 'Exploring efficient on-device spatial inference and hardware-aware deployment for responsive camera-native AI.',
       logoKind: 'qualcomm' as const,
+      href: 'https://www.qualcomm.com/',
     },
   ];
-  const team = [['Siqi Dai', 'sdai66@wisc.edu'], ['Abhiram Amaravadi', 'aamaravadi@wisc.edu'], ['Jianhong Shi', 'jshi296@wisc.edu']];
+  const team = [
+    { name: 'Siqi Dai', email: 'sdai66@wisc.edu', role: 'Product & Multimodal Experience', focus: 'Product direction · Interaction system · Gemini reasoning' },
+    { name: 'Abhiram Amaravadi', email: 'aamaravadi@wisc.edu', role: 'Spatial ML & Inference', focus: 'Landmark features · Temporal recognition · Top-K ranking' },
+    { name: 'Jianhong Shi', email: 'jshi296@wisc.edu', role: 'Realtime Platform & Voice', focus: 'Camera pipeline · Backend/API · Context-aware TTS' },
+  ];
   return (
     <section className="acknowledgments-section section-shell" id="team">
       <div className="acknowledgments-intro">
@@ -683,25 +807,26 @@ function SponsorTeamShowcaseV3() {
       </div>
       <div className="sponsor-bento-grid">
         {sponsors.map((sponsor) => (
-          <motion.article key={sponsor.name} className="sponsor-bento-card" whileHover={{ y: -2 }}>
+          <motion.a key={sponsor.name} className="sponsor-bento-card" href={sponsor.href} target="_blank" rel="noreferrer" whileHover={{ y: -4 }}>
             <SponsorLogoMark kind={sponsor.logoKind} alt={`${sponsor.name} logo`} />
             <span className="sponsor-bento-badge">{sponsor.badge}</span>
             <h3>{sponsor.name}</h3>
             <p>{sponsor.description}</p>
-          </motion.article>
+            <span className="partner-link-label">Visit official site ↗</span>
+          </motion.a>
         ))}
       </div>
       <div className="team-showcase team-showcase-clean">
         <div className="team-showcase-copy">
           <span className="team-badge">[ TEAM GREEN LAKE ]</span>
-          <h2>University of Wisconsin–Madison</h2>
-          <p>Built by a cross-disciplinary team for a more expressive web.</p>
+          <h2>Team Green Lake.</h2>
+          <p>Three disciplines, one shared goal: turn spatial AI into communication people can trust.</p>
         </div>
         <div className="team-roster">
-          {team.map(([name, email]) => (
-            <a className="team-roster-row team-roster-row-polished" href={`mailto:${email}`} key={email}>
-              <strong>{name}</strong>
-              <span>{email}</span>
+          {team.map((member) => (
+            <a className="team-roster-row team-roster-row-polished" href={`mailto:${member.email}`} key={member.email}>
+              <div className="team-member-identity"><strong>{member.name}</strong><small>{member.email}</small></div>
+              <div className="team-member-role"><b>{member.role}</b><span>{member.focus}</span></div>
               <span className="team-contact-pill">[ Contact ↗ ]</span>
             </a>
           ))}
@@ -721,30 +846,7 @@ function ReasoningComparisonV2() {
     const timer = window.setTimeout(() => setShowNaturalSentence((visible) => !visible), showNaturalSentence ? 3500 : 2500);
     return () => window.clearTimeout(timer);
   }, [showNaturalSentence]);
-  return <section className="reasoning-comparison section-shell" aria-label="Automated sign language translation morphing comparison"><div className="comparison-stage morphing-translation"><div className="morphing-content"><span className="gemini-pill">[ GEMINI MULTIMODAL AI ]</span><p className="gemini-subtitle">WITH INTEGRATION OF LLM GEMINI</p><div className="morphing-copy-stage"><AnimatePresence mode="wait"><motion.div key={showNaturalSentence ? 'natural' : 'raw'} className={`morphing-copy ${showNaturalSentence ? 'morphing-natural' : 'morphing-raw'}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: .5, ease: 'easeInOut' }}><span className={`morphing-status ${showNaturalSentence ? 'status-refined' : 'status-raw'}`}>{showNaturalSentence ? '[ GEMINI LLM REFINED SENTENCE ]' : '[ RAW SIGN TOKENS DETECTED ]'}</span><strong>{showNaturalSentence ? 'Could I please get a glass of water?' : '"I" ... "WANT" ... "WATER"'}</strong></motion.div></AnimatePresence></div><p className="morphing-explanation">Corrects grammar, expands raw sign tokens, and constructs natural, complete sentences in real-time.</p></div></div></section>;
-}
-
-function OverviewVisionStrip() {
-  return (
-    <section className="overview-vision-strip section-shell" id="overview-vision" aria-label="The Vision Evolution">
-      <div className="overview-vision-strip__intro">
-        <span>The vision evolution</span>
-        <h2>From tethered gloves to vision-native AI.</h2>
-      </div>
-      <div className="overview-vision-grid">
-        <article className="overview-vision-card overview-vision-card--past">
-          <span className="ov-era">2016 · Hardware era</span>
-          <h3>MIT proof of concept</h3>
-          <p>Specialized flex sensors and tethered gloves.</p>
-        </article>
-        <article className="overview-vision-card overview-vision-card--now">
-          <span className="ov-era">Present · Vision-native</span>
-          <h3>SignBridge + Gemini 2.5</h3>
-          <p>Zero gloves, zero hardware. 100% web-based spatial AI powered by Gemini multimodal LLMs.</p>
-        </article>
-      </div>
-    </section>
-  );
+  return <section className="reasoning-comparison section-shell" id="translation" aria-label="Automated sign language translation morphing comparison"><div className="comparison-stage morphing-translation"><div className="morphing-content"><span className="gemini-pill">[ GEMINI MULTIMODAL AI ]</span><p className="gemini-subtitle">WITH INTEGRATION OF LLM GEMINI</p><div className="morphing-copy-stage"><AnimatePresence mode="wait"><motion.div key={showNaturalSentence ? 'natural' : 'raw'} className={`morphing-copy ${showNaturalSentence ? 'morphing-natural' : 'morphing-raw'}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: .5, ease: 'easeInOut' }}><span className={`morphing-status ${showNaturalSentence ? 'status-refined' : 'status-raw'}`}>{showNaturalSentence ? '[ GEMINI LLM REFINED SENTENCE ]' : '[ RAW SIGN TOKENS DETECTED ]'}</span><strong>{showNaturalSentence ? 'Could I please get a glass of water?' : '"I" ... "WANT" ... "WATER"'}</strong></motion.div></AnimatePresence></div><p className="morphing-explanation">Corrects grammar, expands raw sign tokens, and constructs natural, complete sentences in real-time.</p></div></div></section>;
 }
 
 function SamArchitectureDiagramV2() {
@@ -763,7 +865,7 @@ function SamArchitectureDiagramV2() {
 
   const visible = (minStep: number) => step >= minStep;
   const nodeClass = (minStep: number, tone: string) =>
-    `sam-node sam-node-${tone} ${visible(minStep) ? 'is-active sam-step-visible' : 'sam-step-hidden'}`;
+    `sam-node sam-node-${tone} ${visible(minStep) ? 'is-active' : 'sam-step-pending'} ${step === minStep ? 'is-current' : ''}`;
   const pathClass = (minStep: number, extra = '') =>
     `sam-step-path ${visible(minStep) ? 'is-drawn' : ''} ${extra}`.trim();
 
@@ -794,12 +896,7 @@ function SamArchitectureDiagramV2() {
         </div>
         <div className="sam-diagram">
           <svg className="sam-flow-lines" viewBox="0 0 1200 440" preserveAspectRatio="none" aria-hidden="true">
-            <defs>
-              <marker id="samArrowV2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#67e8f9" />
-              </marker>
-            </defs>
-            <g className="sam-flow-base" markerEnd="url(#samArrowV2)">
+            <g className="sam-flow-base">
               {segments.map((segment, index) => (
                 <path
                   key={`base-${index}`}
@@ -808,7 +905,7 @@ function SamArchitectureDiagramV2() {
                 />
               ))}
             </g>
-            <g className="sam-flow-beams" markerEnd="url(#samArrowV2)">
+            <g className="sam-flow-beams">
               {segments.map((segment, index) => (
                 <path
                   key={`beam-${index}`}
@@ -820,7 +917,7 @@ function SamArchitectureDiagramV2() {
           </svg>
 
           <div className="sam-diagram-grid">
-            <motion.article className={nodeClass(1, 'input')} initial={false} animate={{ opacity: visible(1) ? 1 : 0, y: visible(1) ? 0 : 8 }}>
+            <motion.article className={nodeClass(1, 'input')} initial={false} animate={{ opacity: visible(1) ? 1 : .34, scale: visible(1) ? 1 : .985 }}>
             <span className="sam-node-kicker">Input · Video frame</span>
               <strong>Live Webcam Frame</strong>
               <span className="sam-frame-label">frame t</span>
@@ -832,52 +929,52 @@ function SamArchitectureDiagramV2() {
               </svg>
             </motion.article>
 
-            <motion.article className={nodeClass(4, 'input')} initial={false} animate={{ opacity: visible(4) ? 1 : 0, y: visible(4) ? 0 : 8 }}>
+            <motion.article className={nodeClass(4, 'input')} initial={false} animate={{ opacity: visible(4) ? 1 : .34, scale: visible(4) ? 1 : .985 }}>
               <span className="sam-node-kicker">Input · Context</span>
               <strong>Context Prompt</strong>
               <span className="sam-context-copy">&quot;Dining / Ordering Water&quot;</span>
             </motion.article>
 
-            <motion.article className={nodeClass(2, 'encoder')} initial={false} animate={{ opacity: visible(2) ? 1 : 0, y: visible(2) ? 0 : 8 }}>
+            <motion.article className={nodeClass(2, 'encoder')} initial={false} animate={{ opacity: visible(2) ? 1 : .34, scale: visible(2) ? 1 : .985 }}>
               <span className="sam-node-kicker">Encoder · Spatial mesh</span>
               <strong>Spatial Mesh Encoder</strong>
               <span>Processes 3D coordinates</span>
             </motion.article>
 
-            <motion.article className={nodeClass(5, 'encoder')} initial={false} animate={{ opacity: visible(5) ? 1 : 0, y: visible(5) ? 0 : 8 }}>
+            <motion.article className={nodeClass(5, 'encoder')} initial={false} animate={{ opacity: visible(5) ? 1 : .34, scale: visible(5) ? 1 : .985 }}>
               <span className="sam-node-kicker">Encoder · Context</span>
               <strong>Context Tokenizer</strong>
               <span>Embeds scene meaning</span>
             </motion.article>
 
-            <motion.article className={nodeClass(3, 'core')} initial={false} animate={{ opacity: visible(3) ? 1 : 0, y: visible(3) ? 0 : 8 }}>
+            <motion.article className={nodeClass(3, 'core')} initial={false} animate={{ opacity: visible(3) ? 1 : .34, scale: visible(3) ? 1 : .985 }}>
               <span className="sam-node-kicker">Core · Detector</span>
               <strong>Token Detector &amp; Sequence Align</strong>
               <span className="sam-tokens">&quot;I&quot; · &quot;WANT&quot; · &quot;WATER&quot;</span>
             </motion.article>
 
-            <motion.article className={nodeClass(6, 'core')} initial={false} animate={{ opacity: visible(6) ? 1 : 0, y: visible(6) ? 0 : 8 }}>
+            <motion.article className={nodeClass(6, 'core')} initial={false} animate={{ opacity: visible(6) ? 1 : .34, scale: visible(6) ? 1 : .985 }}>
               <span className="sam-node-kicker">Core · Tracker</span>
               <strong>Temporal Tracker</strong>
               <span>Aggregates frames over time</span>
             </motion.article>
 
-            <div className={`sam-convergence ${visible(7) ? 'is-active sam-step-visible' : 'sam-step-hidden'}`} aria-label="Convergence node">+</div>
+            <div className={`sam-convergence ${visible(7) ? 'is-active' : 'sam-step-pending'} ${step === 7 ? 'is-current' : ''}`} aria-label="Convergence node">+</div>
 
-            <motion.article className={nodeClass(9, 'fusion')} initial={false} animate={{ opacity: visible(9) ? 1 : 0, y: visible(9) ? 0 : 8 }}>
+            <motion.article className={nodeClass(9, 'fusion')} initial={false} animate={{ opacity: visible(9) ? 1 : .34, scale: visible(9) ? 1 : .985 }}>
               <span className="sam-node-kicker">Fusion · Gemini</span>
               <strong>Gemini LLM Refinement Module</strong>
               <span>Grammar · context · intent</span>
             </motion.article>
 
-            <motion.article className={nodeClass(8, 'memory')} initial={false} animate={{ opacity: visible(8) ? 1 : 0, y: visible(8) ? 0 : 8 }}>
+            <motion.article className={nodeClass(8, 'memory')} initial={false} animate={{ opacity: visible(8) ? 1 : .34, scale: visible(8) ? 1 : .985 }}>
               <span className="sam-node-kicker">Memory bank</span>
               <strong>Temporal Context Bank</strong>
               <div className="sam-memory-stack"><i /><i /><i /></div>
               <span>Feedback into tracker</span>
             </motion.article>
 
-            <motion.article className={nodeClass(10, 'output')} initial={false} animate={{ opacity: visible(10) ? 1 : 0, y: visible(10) ? 0 : 8 }}>
+            <motion.article className={nodeClass(10, 'output')} initial={false} animate={{ opacity: visible(10) ? 1 : .34, scale: visible(10) ? 1 : .985 }}>
               <span className="sam-node-kicker">Output · Voice</span>
               <strong className={visible(10) ? 'is-revealed' : ''}>Could I please get a glass of water?</strong>
               <span>Natural sentence stream</span>
@@ -1033,32 +1130,36 @@ function App() {
     }
 
     inFlightRef.current = true;
-    const startedAt = performance.now();
+    let nextWindow: LandmarkFrame[] | null = landmarks;
     try {
-      const response = await axios.post<InferenceResponse>(
-        INFERENCE_URL,
-        { landmarks },
-        { timeout: 8000, headers: JSON_HEADERS },
-      );
-      if (!mountedRef.current || isPausedRef.current) return;
-      setOutput(response.data);
-      setDetectedEmotion(response.data.detected_emotion || 'Neutral');
-      setLatencyMs(Math.round(performance.now() - startedAt));
-      setStatus('connected');
-      setError(null);
-      setUiMode(response.data.locked_word ? 'word_locked' : response.data.finalized_sentence ? 'processing' : 'listening');
-    } catch (requestError) {
-      if (!mountedRef.current || isPausedRef.current) return;
-      setUiMode('error');
-      setStatus('error');
-      setError(formatError(requestError));
+      while (nextWindow && mountedRef.current && !isPausedRef.current) {
+        const activeWindow = nextWindow;
+        pendingWindowRef.current = null;
+        const startedAt = performance.now();
+        try {
+          const response = await axios.post<InferenceResponse>(
+            INFERENCE_URL,
+            { landmarks: activeWindow },
+            { timeout: 8000, headers: JSON_HEADERS },
+          );
+          if (!mountedRef.current || isPausedRef.current) break;
+          setOutput(response.data);
+          setDetectedEmotion(response.data.detected_emotion || 'Neutral');
+          setLatencyMs(Math.round(performance.now() - startedAt));
+          setStatus('connected');
+          setError(null);
+          setUiMode(response.data.locked_word ? 'word_locked' : response.data.finalized_sentence ? 'processing' : 'listening');
+        } catch (requestError) {
+          if (!mountedRef.current || isPausedRef.current) break;
+          setUiMode('error');
+          setStatus('error');
+          setError(formatError(requestError));
+        }
+        nextWindow = pendingWindowRef.current;
+      }
     } finally {
       inFlightRef.current = false;
-      const pendingWindow = pendingWindowRef.current;
       pendingWindowRef.current = null;
-      if (pendingWindow && mountedRef.current && !isPausedRef.current) {
-        void postInference(pendingWindow);
-      }
     }
   }, []);
 
@@ -1380,37 +1481,32 @@ function App() {
   }, []);
 
   return (
-    <main className={`app-shell ${devMode ? 'dev-mode-active' : ''}`} onErrorCapture={handleImageFallback}>
+    <main className={`app-shell page-${activePage} ${devMode ? 'dev-mode-active' : ''}`} onErrorCapture={handleImageFallback}>
       <div className="sb-scroll-progress" style={{ '--scroll-progress': `${Math.min(1, Math.max(0, scrollProgress)) * 100}%` } as CSSProperties} aria-hidden="true" />
       <CapsuleNav
         activePage={activePage}
         onNavigate={goToPage}
-        onLaunchDemo={() => {
-          if (!isRunning) void startCamera();
-        }}
       />
-      <SectionIndex activePage={activePage} />
+      <SectionIndex activePage={activePage} devMode={devMode} />
 
       <div className="sb-page-view overview-page" hidden={activePage !== 'overview'}>
       <PremiumHero
         devMode={devMode}
         isRunning={isRunning}
-        onLaunchDemo={() => { goToPage('demo'); if (!isRunning) void startCamera(); }}
+        onLaunchDemo={() => goToPage('demo')}
         onExplore={() => scrollToSection('architecture')}
       />
 
-      <div className="overview-pipeline-block section-shell" id="architecture">
-        <SamArchitectureDiagramV2 />
-      </div>
-
-      <OverviewVisionStrip />
-
-      <section className="hero-stats section-shell" aria-label="SignBridge platform statistics">
+      <section className="hero-stats section-shell" id="overview-proof" aria-label="SignBridge platform statistics">
         <div className="hero-stat"><strong>543</strong><span>Spatial landmarks</span></div>
         <div className="hero-stat"><strong>11.59ms</strong><span>Average local latency</span></div>
         <div className="hero-stat"><strong>2,044</strong><span>Sign classes in pipeline</span></div>
         <div className="hero-stat-status"><i /> Camera-native spatial pipeline active</div>
       </section>
+
+      <div className="overview-pipeline-block section-shell" id="architecture">
+        <SamArchitectureDiagramV2 />
+      </div>
       </div>
 
       <div className="sb-page-view" hidden={activePage !== 'demo'}>
