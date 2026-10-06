@@ -61,7 +61,7 @@
   display: inline-block;
   margin-bottom: 0.4rem;
   color: var(--ov-muted);
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -129,7 +129,7 @@
 
 .overview-vision-strip__intro span {
   color: var(--ov-muted);
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -180,7 +180,7 @@
   gap: 0.4rem;
   margin-bottom: 0.75rem;
   color: var(--ov-muted);
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.01em;
