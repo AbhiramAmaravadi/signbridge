@@ -257,7 +257,7 @@ body.nav-drawer-open {
   border: 1px solid transparent;
   border-radius: 999px;
   color: var(--sb-nav-text);
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 0.72rem;
   letter-spacing: 0.02em;
   background: rgba(255, 255, 255, 0.03);
