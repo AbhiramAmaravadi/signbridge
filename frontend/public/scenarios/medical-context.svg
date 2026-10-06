@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Medical communication concept</title>
+  <desc id="desc">A technical illustration of sign information becoming an editable sentence with a body location reference.</desc>
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#1e2b38" stroke-width="1"/></pattern>
+    <linearGradient id="panel" x1="0" x2="1"><stop stop-color="#101820"/><stop offset="1" stop-color="#121d26"/></linearGradient>
+  </defs>
+  <rect width="1200" height="675" rx="28" fill="#0b1117"/>
+  <rect width="1200" height="675" rx="28" fill="url(#grid)" opacity=".62"/>
+  <path d="M96 102H1104M96 573H1104" stroke="#2a3b47"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M250 184c-52 0-94 42-94 94v154c0 52 42 94 94 94s94-42 94-94V278c0-52-42-94-94-94Z" stroke="#dbe6e8" stroke-width="3"/>
+    <circle cx="250" cy="149" r="42" stroke="#dbe6e8" stroke-width="3"/>
+    <path d="M205 296c-42 20-69 56-82 108M295 296c41 21 68 57 82 108" stroke="#7ebfc0" stroke-width="7"/>
+    <path d="M191 402c28-12 48-31 62-57M309 402c-27-12-47-31-61-57" stroke="#7ebfc0" stroke-width="7"/>
+    <circle cx="276" cy="386" r="24" stroke="#e9795f" stroke-width="3"/>
+    <circle cx="276" cy="386" r="8" fill="#e9795f" stroke="none"/>
+    <path d="M377 352H492" stroke="#7ebfc0" stroke-width="3" stroke-dasharray="5 11"/>
+    <path d="m479 340 14 12-14 12" stroke="#7ebfc0" stroke-width="3"/>
+  </g>
+  <g transform="translate(492 190)">
+    <rect width="612" height="296" rx="18" fill="url(#panel)" stroke="#344955"/>
+    <path d="M32 60H580" stroke="#344955"/>
+    <circle cx="34" cy="31" r="5" fill="#7ebfc0"/>
+    <text x="50" y="37" fill="#a8bcc1" font-family="monospace" font-size="15">COMMUNICATION PREVIEW · SIMULATED</text>
+    <text x="34" y="103" fill="#718991" font-family="monospace" font-size="13">RECOGNIZED TOKENS</text>
+    <text x="34" y="140" fill="#dce8e9" font-family="Arial, sans-serif" font-size="29" font-weight="600">PAIN  ·  RIGHT  ·  ABDOMEN</text>
+    <path d="M34 171H578" stroke="#344955"/>
+    <text x="34" y="207" fill="#718991" font-family="monospace" font-size="13">EDITABLE SENTENCE</text>
+    <text x="34" y="250" fill="#f5f8f7" font-family="Arial, sans-serif" font-size="31">I have pain on the right side</text>
+    <text x="34" y="286" fill="#f5f8f7" font-family="Arial, sans-serif" font-size="31">of my abdomen.</text>
+  </g>
+  <text x="96" y="625" fill="#7f949a" font-family="monospace" font-size="14">CONTEXT SUPPORTS LANGUAGE · IT DOES NOT REPLACE CLINICAL JUDGMENT</text>
+</svg>

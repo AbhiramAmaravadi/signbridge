@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Daily communication concept</title>
+  <desc id="desc">A technical illustration of sign information becoming an editable direction to a landmark.</desc>
+  <defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#1b3037"/></pattern></defs>
+  <rect width="1200" height="675" rx="28" fill="#0a1419"/><rect width="1200" height="675" rx="28" fill="url(#grid)" opacity=".7"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M151 506V288l91-91 92 91v218M191 506V338h103v168M226 197v-56h32v56M242 141v-35M223 106h38" stroke="#d9e8e8" stroke-width="3"/>
+    <circle cx="410" cy="183" r="40" stroke="#d9e8e8" stroke-width="3"/>
+    <path d="M410 224v183M410 285l-79 54M410 285l90-62M410 407l-57 103M410 407l68 103" stroke="#79c5c1" stroke-width="7"/>
+    <path d="M500 223c28-15 46-38 54-69" stroke="#79c5c1" stroke-width="7"/>
+    <path d="M486 145c23 2 42 14 56 35M505 126c26 3 49 16 66 39" stroke="#e6a371" stroke-width="3"/>
+    <path d="M558 330H666" stroke="#79c5c1" stroke-width="3" stroke-dasharray="5 11"/><path d="m653 318 14 12-14 12" stroke="#79c5c1" stroke-width="3"/>
+  </g>
+  <g transform="translate(666 180)">
+    <rect width="438" height="315" rx="18" fill="#101c22" stroke="#35505a"/>
+    <circle cx="31" cy="30" r="5" fill="#79c5c1"/><text x="47" y="36" fill="#9eb8bc" font-family="monospace" font-size="14">DIRECTION PREVIEW · SIMULATED</text>
+    <path d="M30 59H408" stroke="#35505a"/>
+    <text x="30" y="105" fill="#718c92" font-family="monospace" font-size="13">SIGN TOKENS</text>
+    <text x="30" y="143" fill="#dce9e9" font-family="Arial, sans-serif" font-size="28" font-weight="600">LOOK · TOWER · LEFT</text>
+    <path d="M30 172H408" stroke="#35505a"/>
+    <text x="30" y="214" fill="#718c92" font-family="monospace" font-size="13">EDITABLE DIRECTION</text>
+    <text x="30" y="258" fill="#f4f8f7" font-family="Arial, sans-serif" font-size="29">The historic tower is</text>
+    <text x="30" y="297" fill="#f4f8f7" font-family="Arial, sans-serif" font-size="29">on your left.</text>
+  </g>
+  <text x="96" y="625" fill="#789096" font-family="monospace" font-size="14">SIGNER REVIEWS THE LANGUAGE BEFORE IT IS SHARED</text>
+</svg>
