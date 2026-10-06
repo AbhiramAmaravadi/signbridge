@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ImgHTMLAttributes, type PointerEvent, type SyntheticEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useGSAP } from '@gsap/react';
+import { gsap } from 'gsap';
 import axios, { AxiosError } from 'axios';
 import {
   API_HOST_LABEL,
@@ -13,6 +15,8 @@ import {
 } from './config';
 import { CapsuleNav, SectionIndex } from './layout/SiteChrome';
 import { PAGE_IDS, scrollToSection } from './layout/siteNavigation';
+
+gsap.registerPlugin(useGSAP);
 
 type Landmark = { x: number; y: number; z: number; visibility?: number };
 type LandmarkFrame = number[][];
@@ -313,7 +317,7 @@ function ResilientImage({ src, alt, className, children, fallbackSrc, ...props }
         <img
           src={activeSrc}
           alt={alt}
-          loading="lazy"
+          loading={props.loading ?? 'lazy'}
           className={`media-image ${isLoaded ? 'is-loaded' : ''}`}
           onLoad={() => setIsLoaded(true)}
           onError={handleError}
@@ -469,13 +473,13 @@ function HandHelloVisual({ devMode }: { devMode: boolean }) {
           <text x="36" y="84">ASL / HELLO</text>
           <text x="36" y="101">OUTWARD WAVE TRAJECTORY</text>
           <text x="448" y="401">21 NODES</text>
-          <text x="448" y="418">LOCAL STREAM</text>
+          <text x="448" y="418">BROWSER STREAM</text>
         </g>
         <path className="hello-wave-trail" d="M420 124C500 154 507 228 458 282" />
         <path className="hello-wave-arrow" d="M454 271l8 12-14 1" />
       </svg>
 
-      <motion.div className="hello-hud hello-hud-confidence magnetic-tag" style={{ x: magnet.x, y: magnet.y }} whileHover={{ scale: 1.1 }} onPointerEnter={() => hoverNode(8)}><span>CONFIDENCE</span><strong>99.4%</strong></motion.div>
+      <motion.div className="hello-hud hello-hud-confidence magnetic-tag" style={{ x: magnet.x, y: magnet.y }} whileHover={{ scale: 1.1 }} onPointerEnter={() => hoverNode(8)}><span>PROTOTYPE</span><strong>DEMO</strong></motion.div>
       <motion.div className="hello-hud hello-hud-coordinate magnetic-tag" style={{ x: -magnet.x, y: -magnet.y }} whileHover={{ scale: 1.1 }} onPointerEnter={() => hoverNode(activeNode ?? 0)}><span>{activeNode === null ? 'X: 0.42, Y: 0.81, Z: -0.12' : coordinatesFor(activeNode)}</span><small>LIVE 3D VECTOR</small></motion.div>
       <motion.div className="hello-engine-tag magnetic-tag" style={{ x: magnet.x * 0.5, y: magnet.y * 0.5 }} whileHover={{ scale: 1.1 }} onPointerEnter={() => hoverNode(0)}><i /> {status}</motion.div>
     </motion.div>
@@ -502,10 +506,10 @@ function HeroLandmarkScanner({ devMode }: { devMode: boolean }) {
   };
 
   return <div className={`hero-scanner ${isActive ? 'is-active' : 'is-idle'}`} onPointerMove={onMove} onPointerLeave={() => setIsActive(false)} style={{ '--scan-x': `${pointer.x}%`, '--scan-y': `${pointer.y}%` } as CSSProperties}>
-    <ResilientImage className="hero-hand-photo" src="/woman-open-hand-french-manicure-isolated-white-background-51186691-removebg-preview.png" alt="Hand prepared for spatial landmark tracking" />
+    <ResilientImage className="hero-hand-photo" src="/woman-open-hand-french-manicure-isolated-white-background-51186691-removebg-preview.png" alt="Hand prepared for spatial landmark tracking" loading="eager" fetchPriority="high" width={560} height={690} />
     <div className="hero-xray-mask" />
     <HandHelloVisual devMode={devMode} />
-    <div className="hero-scanner-badge">21 POINTS · 99.4%</div>
+    <div className="hero-scanner-badge">21 HAND POINTS · DEMO</div>
     <div className="hero-idle-line" />
   </div>;
 }
@@ -522,24 +526,24 @@ function ContextBentoGrid() {
       </div>
       <div className="context-bento-grid">
         <motion.article className="context-bento-card bento-llm" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
-          <img src="https://image.cnbcfm.com/api/v1/image/107371197-1707432021946-gettyimages-1988737588-raa-googlege240208_npBM4.jpeg?v=1707432096" alt="Google AI event visual" loading="lazy" referrerPolicy="no-referrer" />
+          <img src="/capabilities/language-refinement.svg" alt="Diagram of sign tokens being refined into an editable sentence" loading="lazy" width="1200" height="700" />
           <div className="bento-image-gradient" />
-          <div className="bento-content"><span className="bento-index">01 / Core intelligence</span><span className="bento-live-badge"><i /> Gemini Active</span><h3>Multimodal LLM Reasoning</h3><p>Powered by Gemini 2.5 Flash. Translates non-verbal nuances and complex spatial motions into natural, fluid human speech.</p></div>
+          <div className="bento-content"><span className="bento-index">01 / Language layer</span><span className="bento-live-badge"><i /> Translation endpoint</span><h3>Sentence Refinement</h3><p>The configured translation service can refine recognized sign tokens into an editable sentence before speech output.</p></div>
         </motion.article>
         <motion.article className="context-bento-card bento-expression" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
-          <img src="https://www.infolob.com/wp-content/uploads/2019/10/fr.png" alt="Facial landmark mesh" loading="lazy" referrerPolicy="no-referrer" />
+          <img src="/capabilities/nonmanual-signals.svg" alt="Diagram of facial and upper-body landmarks contributing nonmanual linguistic information" loading="lazy" width="1200" height="700" />
           <div className="bento-image-gradient" /><div className="emotion-tags"><span>Questioning (88%)</span><span>Tone: Curious</span></div>
-          <div className="bento-content"><span className="bento-index">02 / Facial mesh</span><h3>Expression &amp; Tone Recognition</h3><p>Sign language isn't just hands. Real-time facial mesh analysis detects tone, question signals, and emotional emphasis.</p></div>
+          <div className="bento-content"><span className="bento-index">02 / Facial mesh</span><h3>Nonmanual Signal Input</h3><p>Facial and body landmarks are included in the prototype input because nonmanual information can contribute linguistic meaning.</p></div>
         </motion.article>
         <motion.article className="context-bento-card bento-scene" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
-          <img src="https://i0.wp.com/downloads.mixtile.com/doc-images/hailo/restaurant-table-status/output-empty-and-occupied-tables.jpeg?w=1020&ssl=1" alt="Restaurant scene for ambient context recognition" loading="lazy" referrerPolicy="no-referrer" />
+          <img src="/capabilities/visual-context.svg" alt="Diagram showing an optional scene snapshot used as context after sentence finalization" loading="lazy" width="1200" height="700" />
           <div className="bento-image-gradient" /><span className="scene-box scene-table">[ Table ]</span><span className="scene-box scene-menu">[ Menu ]</span>
-          <div className="bento-content"><span className="bento-index">03 / Scene context</span><h3>Ambient Scene Intelligence</h3><p>Identifies your environment—like a coffee shop or meeting room—to dynamically constrain vocabulary and boost prediction precision.</p><button className={`ambient-toggle ${ambientContext ? 'is-on' : ''}`} type="button" onClick={() => setAmbientContext((enabled) => !enabled)} aria-pressed={ambientContext}><i /> {ambientContext ? 'Coffee shop vocabulary tuned' : 'Ambient context paused'}</button></div>
+          <div className="bento-content"><span className="bento-index">03 / Scene context</span><h3>Optional Visual Context</h3><p>When a sentence is finalized, the configured translation endpoint may receive one camera snapshot with the recognized words.</p><button className={`ambient-toggle ${ambientContext ? 'is-on' : ''}`} type="button" onClick={() => setAmbientContext((enabled) => !enabled)} aria-pressed={ambientContext}><i /> {ambientContext ? 'Context example enabled' : 'Context example paused'}</button></div>
         </motion.article>
         <motion.article className="context-bento-card bento-prediction" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
-          <img src="https://cdn.analyticsvidhya.com/wp-content/uploads/2021/08/77308shutterstock-1208129407_trm5.960.jpg" alt="Neural network visualization" loading="lazy" referrerPolicy="no-referrer" />
+          <img src="/capabilities/next-word.svg" alt="Diagram showing signer-controlled next-word suggestions" loading="lazy" width="1200" height="700" />
           <div className="bento-image-gradient" /><div className="autocomplete-demo"><span>I would like to</span><i>→</i><b>order</b><b>buy</b><b>ask</b></div>
-          <div className="bento-content"><span className="bento-index">04 / Prediction</span><h3>Smart Next-Word Completion</h3><p>Predicts upcoming words in real-time before you finish the sign, making sign language communication 3x faster.</p></div>
+          <div className="bento-content"><span className="bento-index">04 / Prediction</span><h3>Smart Next-Word Completion</h3><p>Suggests possible next words from the current sequence so the signer can inspect and choose what comes next.</p></div>
         </motion.article>
       </div>
     </section>
@@ -639,6 +643,64 @@ function IntelligenceLab() {
   );
 }
 
+function SmartGlassesFuture() {
+  const sectionRef = useRef<HTMLElement | null>(null);
+
+  useGSAP(() => {
+    const media = gsap.matchMedia();
+    media.add('(prefers-reduced-motion: no-preference)', () => {
+      const timeline = gsap.timeline({ defaults: { ease: 'power2.out' } });
+      timeline
+        .set('.glasses-result-panel', { autoAlpha: 0, y: 14 })
+        .set('.glasses-token', { autoAlpha: 0, y: 8 })
+        .set('.glasses-scan', { xPercent: -130, autoAlpha: 0 })
+        .to('.glasses-scan', { xPercent: 170, autoAlpha: 1, duration: 1.15, ease: 'power1.inOut' })
+        .to('.glasses-scan', { autoAlpha: 0, duration: .18 }, '<.92')
+        .to('.glasses-token', { autoAlpha: 1, y: 0, duration: .32, stagger: .13 }, '-=.08')
+        .to('.glasses-result-panel', { autoAlpha: 1, y: 0, duration: .55 }, '+=.18')
+        .to('.glasses-speech-line i', { scaleX: 1, duration: .75, ease: 'power2.inOut' }, '<.1')
+        .to('.glasses-speech-line i', { opacity: .45, duration: .35 }, '+=1.4');
+    });
+    media.add('(prefers-reduced-motion: reduce)', () => {
+      gsap.set(['.glasses-result-panel', '.glasses-token'], { autoAlpha: 1, y: 0 });
+      gsap.set('.glasses-speech-line i', { scaleX: 1 });
+      gsap.set('.glasses-scan', { autoAlpha: 0 });
+    });
+    return () => media.revert();
+  }, { scope: sectionRef });
+
+  return (
+    <section className="future-glasses-section section-shell" id="future-hardware" ref={sectionRef} aria-labelledby="future-glasses-title">
+      <div className="future-glasses-copy">
+        <span className="future-label">Future research direction</span>
+        <h2 id="future-glasses-title">Conversation support that can move with you.</h2>
+        <p>We want to explore how a future wearable could keep the signer, the interpreted sentence, and the conversation partner in the same line of sight.</p>
+        <div className="future-principles" aria-label="Future smart glasses research principles">
+          <div><span>01</span><strong>Glanceable, not distracting</strong><p>Short results appear only when they help the conversation.</p></div>
+          <div><span>02</span><strong>Signer-controlled</strong><p>Recognition remains provisional until the signer confirms it.</p></div>
+          <div><span>03</span><strong>Privacy under test</strong><p>On-device processing and visible capture cues are research requirements, not current guarantees.</p></div>
+        </div>
+        <p className="future-disclaimer">Concept visualization only. SignBridge does not currently ship smart-glasses hardware or claim integration with Meta products.</p>
+      </div>
+      <figure className="glasses-concept-stage">
+        <div className="glasses-axis" aria-hidden="true"><i /><i /><i /></div>
+        <img src="/future/signbridge-smart-glasses-concept.png" width="1760" height="880" alt="Original SignBridge concept render of lightweight smart glasses" loading="lazy" />
+        <div className="glasses-scan" aria-hidden="true" />
+        <div className="glasses-hud" aria-label="Simulated smart glasses interpretation preview">
+          <span className="glasses-hud-label">SIGNBRIDGE · CONCEPT</span>
+          <div className="glasses-token-row" aria-hidden="true"><span className="glasses-token">HELLO</span><span className="glasses-token">NICE</span><span className="glasses-token">MEET</span></div>
+          <div className="glasses-result-panel">
+            <span>Editable interpretation</span>
+            <strong>Hello, it’s nice to meet you.</strong>
+            <div className="glasses-speech-line"><span>Ready to speak</span><i /></div>
+          </div>
+        </div>
+        <figcaption>Original, brand-neutral hardware concept rendered for SignBridge. Interface data is simulated.</figcaption>
+      </figure>
+    </section>
+  );
+}
+
 function FeatureExperience() {
   return (
     <>
@@ -647,6 +709,8 @@ function FeatureExperience() {
       <IntelligenceLab />
       <div className="signal-divider" aria-hidden="true"><span /></div>
       <EditorialStory />
+      <div className="signal-divider" aria-hidden="true"><span /></div>
+      <SmartGlassesFuture />
       <div className="signal-divider" aria-hidden="true"><span /></div>
       <ReasoningComparisonV2 />
       <div className="signal-divider" aria-hidden="true"><span /></div>
@@ -680,8 +744,8 @@ function PremiumHero({ devMode, isRunning, onLaunchDemo, onExplore }: PremiumHer
       onPointerLeave={() => setPointer({ x: 50, y: 50 })}
     >
       <div className="premium-hero-copy">
-        <span className="premium-eyebrow"><i /> SIGNBRIDGE / CAMERA-NATIVE AI</span>
-        <h1>Make every gesture <em>understood.</em></h1>
+        <span className="premium-eyebrow"><i /> SIGNBRIDGE / ASL RESEARCH PROTOTYPE</span>
+        <h1>Make every gesture <span className="hero-emphasis">understood.</span></h1>
         <p>SignBridge turns hands, expression, and movement into natural conversation — in the moment, with the person signing always in control.</p>
         <div className="premium-actions">
           <button className="premium-primary" type="button" onClick={onLaunchDemo}>
@@ -689,7 +753,7 @@ function PremiumHero({ devMode, isRunning, onLaunchDemo, onExplore }: PremiumHer
           </button>
           <button className="premium-secondary" type="button" onClick={onExplore}>See how it works <span>↓</span></button>
         </div>
-        <div className="premium-proof"><span><b>Local-first</b> spatial processing</span><span><b>Natural</b> language output</span></div>
+        <div className="premium-proof"><span><b>Browser-based</b> landmark extraction</span><span><b>Editable</b> language output</span></div>
       </div>
       <div className="premium-product-stage" aria-label="SignBridge live translation preview">
         <div className="premium-stage-header"><span><i /> LIVE PREVIEW</span><small>Camera · Face · Hands · Pose</small></div>
@@ -705,8 +769,8 @@ function PremiumHero({ devMode, isRunning, onLaunchDemo, onExplore }: PremiumHer
 function ScenarioDial() {
   const [scenario, setScenario] = useState<'medical' | 'tour'>('medical');
   const content = scenario === 'medical'
-    ? { image: 'https://inclusiveasl.com/wp-content/uploads/2023/12/Medical-Website-2.jpg', title: 'Medical context', raw: 'PAIN / RIGHT / ABDOMEN', translation: 'Patient is signaling acute discomfort in the upper right abdomen area.', accent: 'rose' }
-    : { image: 'https://deafaction.org/wp-content/uploads/2024/03/DeafAction14.08.23-018-1184x790.jpg', title: 'Tour & daily context', raw: 'LOOK / HISTORIC / TOWER', translation: 'On your left, you can see the historic clock tower constructed in 1842.', accent: 'cyan' };
+    ? { image: '/scenarios/medical-context.svg', title: 'Medical context', raw: 'PAIN / RIGHT / ABDOMEN', translation: 'I have pain on the right side of my abdomen.', accent: 'rose', alt: 'Illustrated medical communication example showing a signer, an abdomen location marker, and an editable sentence' }
+    : { image: '/scenarios/daily-context.svg', title: 'Tour & daily context', raw: 'LOOK / HISTORIC / TOWER', translation: 'The historic tower is on your left.', accent: 'cyan', alt: 'Illustrated daily communication example showing a signer, a landmark, and an editable direction' };
   return (
     <section className="scenario-dial-section" id="scenario">
       <div className="section-shell">
@@ -720,10 +784,10 @@ function ScenarioDial() {
           <button className={`scenario-tab-btn ${scenario === 'tour' ? 'is-active' : ''}`} type="button" onClick={() => setScenario('tour')}>Tour &amp; Daily Context</button>
         </div>
         <motion.div className={`scenario-grid scenario-${content.accent}`} key={scenario} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .35 }}>
-          <ResilientImage className="scenario-media-frame" src={content.image} alt={content.title} />
+          <ResilientImage className="scenario-media-frame" src={content.image} alt={content.alt} width={1200} height={675} />
           <div className="scenario-content-panel">
-            <div className="scenario-info"><span className="eyebrow">Active environment</span><h3>{content.title}</h3><p>Gemini combines the hand signal with live visual context before it finalizes spoken language.</p></div>
-            <div className="scenario-metrics-row"><div className="scenario-metric-box"><span>Raw gesture signal</span><strong className="scenario-signal-value">{content.raw}</strong></div><div className="scenario-metric-box"><span>Gemini multimodal translation</span><strong className="scenario-translation-value">{content.translation}</strong></div></div>
+            <div className="scenario-info"><span className="eyebrow">Illustrative workflow</span><h3>{content.title}</h3><p>This simulated example shows how recognized sign tokens could be reviewed and rewritten as editable language. It is not a medical diagnostic tool.</p></div>
+            <div className="scenario-metrics-row"><div className="scenario-metric-box"><span>Example sign tokens</span><strong className="scenario-signal-value">{content.raw}</strong></div><div className="scenario-metric-box"><span>Editable sentence example</span><strong className="scenario-translation-value">{content.translation}</strong></div></div>
           </div>
         </motion.div>
       </div>
@@ -734,7 +798,7 @@ function ScenarioDial() {
 function EditorialStory() {
   const columns = [
     { image: 'https://www.goodnewsnetwork.org/wp-content/uploads/2016/05/sign-aloud-gloves-inventors-MIT.jpg', fallbackSrc: 'https://scx2.b-cdn.net/gfx/news/hires/2016/1-twoundergrad.jpg', alt: 'MIT sign language glove proof of concept', badge: '2016 MIT proof of concept', title: 'The Hardware Era.', description: 'Specialized flex sensors and tethered gloves proved that sign language could be captured digitally.' },
-    { image: 'https://www.handtalk.me/en/wp-content/uploads/sites/3/2022/02/arq-6127ba158b407-1024x577.png', alt: 'Camera-Native Vision AI', badge: 'SignBridge vision-native', title: 'The Camera-Native Era.', description: 'Zero gloves, zero sensors. Pure web-based spatial AI powered by Gemini LLMs.' },
+    { image: 'https://www.handtalk.me/en/wp-content/uploads/sites/3/2022/02/arq-6127ba158b407-1024x577.png', alt: 'Camera-based sign recognition research', badge: 'SignBridge prototype', title: 'The Camera-Based Era.', description: 'The browser extracts hand, face, and pose landmarks before the sequence is sent to the configured recognition service.' },
   ];
   return <section className="editorial-story-section section-shell" id="ecosystem"><div className="section-intro centered"><span className="eyebrow">03 / Evolution</span><h2>From physical gloves to vision-native AI.</h2></div><div className="editorial-story-grid">{columns.map((column, index) => <motion.article className="editorial-col" key={column.title} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .25 }} transition={{ duration: .65, delay: index * .1, ease: [0.22, 1, 0.36, 1] }}><ResilientImage className="editorial-image-wrap" src={column.image} fallbackSrc={column.fallbackSrc} alt={column.alt} /><div className="editorial-copy-block"><span className={`editorial-badge-pill ${column.title.startsWith('The Camera') ? 'cyan-badge' : ''}`}>{column.badge}</span><h4>{column.title}</h4><p>{column.description}</p></div></motion.article>)}</div></section>;
 }
@@ -788,7 +852,7 @@ function SponsorTeamShowcaseV3() {
     {
       name: 'Qualcomm',
       badge: '[ EDGE HARDWARE ]',
-      description: 'Exploring efficient on-device spatial inference and hardware-aware deployment for responsive camera-native AI.',
+      description: 'Research direction: evaluate efficient on-device inference and hardware-aware deployment for future prototypes.',
       logoKind: 'qualcomm' as const,
       href: 'https://www.qualcomm.com/',
     },
@@ -846,153 +910,84 @@ function ReasoningComparisonV2() {
     const timer = window.setTimeout(() => setShowNaturalSentence((visible) => !visible), showNaturalSentence ? 3500 : 2500);
     return () => window.clearTimeout(timer);
   }, [showNaturalSentence]);
-  return <section className="reasoning-comparison section-shell" id="translation" aria-label="Automated sign language translation morphing comparison"><div className="comparison-stage morphing-translation"><div className="morphing-content"><span className="gemini-pill">[ GEMINI MULTIMODAL AI ]</span><p className="gemini-subtitle">WITH INTEGRATION OF LLM GEMINI</p><div className="morphing-copy-stage"><AnimatePresence mode="wait"><motion.div key={showNaturalSentence ? 'natural' : 'raw'} className={`morphing-copy ${showNaturalSentence ? 'morphing-natural' : 'morphing-raw'}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: .5, ease: 'easeInOut' }}><span className={`morphing-status ${showNaturalSentence ? 'status-refined' : 'status-raw'}`}>{showNaturalSentence ? '[ GEMINI LLM REFINED SENTENCE ]' : '[ RAW SIGN TOKENS DETECTED ]'}</span><strong>{showNaturalSentence ? 'Could I please get a glass of water?' : '"I" ... "WANT" ... "WATER"'}</strong></motion.div></AnimatePresence></div><p className="morphing-explanation">Corrects grammar, expands raw sign tokens, and constructs natural, complete sentences in real-time.</p></div></div></section>;
+  return <section className="reasoning-comparison section-shell" id="translation" aria-label="Sign-token sentence refinement example"><div className="comparison-stage morphing-translation"><div className="morphing-content"><span className="gemini-pill">[ LANGUAGE REFINEMENT ]</span><p className="gemini-subtitle">EXAMPLE TRANSLATION OUTPUT</p><div className="morphing-copy-stage"><AnimatePresence mode="wait"><motion.div key={showNaturalSentence ? 'natural' : 'raw'} className={`morphing-copy ${showNaturalSentence ? 'morphing-natural' : 'morphing-raw'}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: .5, ease: 'easeInOut' }}><span className={`morphing-status ${showNaturalSentence ? 'status-refined' : 'status-raw'}`}>{showNaturalSentence ? '[ EDITABLE SENTENCE EXAMPLE ]' : '[ RAW SIGN TOKENS ]'}</span><strong>{showNaturalSentence ? 'Could I please get a glass of water?' : '"I" ... "WANT" ... "WATER"'}</strong></motion.div></AnimatePresence></div><p className="morphing-explanation">The configured translation service can refine recognized tokens into a sentence for the signer to review.</p></div></div></section>;
 }
 
 function SamArchitectureDiagramV2() {
   const [isPlaying, setIsPlaying] = useState(true);
-  const [elapsed, setElapsed] = useState(0);
-  const CYCLE_MS = 11000;
-  const STEP_MS = 1000;
-  const phase = elapsed % CYCLE_MS;
-  const step = Math.min(10, Math.floor(phase / STEP_MS));
+  const [interactionPaused, setInteractionPaused] = useState(false);
+  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const [step, setStep] = useState(prefersReducedMotion ? 5 : 0);
+
+  const stages = [
+    { label: 'Capture', title: 'Signer in frame', description: 'Camera frames provide hand, face, and pose landmarks.', tone: 'capture' },
+    { label: 'Spatial signal', title: 'Landmark sequence', description: 'Coordinates are normalized into a temporal input window.', tone: 'signal' },
+    { label: 'Recognition', title: 'ASL candidates', description: 'The research classifier ranks signs from its current 250-class scope.', tone: 'recognition' },
+    { label: 'Interpretation', title: 'Language context', description: 'Recognized tokens can be refined into editable language.', tone: 'interpretation' },
+    { label: 'Review', title: 'Signer confirms', description: 'The signer inspects, corrects, and finalizes the sentence.', tone: 'review' },
+    { label: 'Speech', title: 'Conversation output', description: 'The confirmed sentence can be spoken to a conversation partner.', tone: 'speech' },
+  ] as const;
 
   useEffect(() => {
-    if (!isPlaying) return undefined;
-    const timer = window.setInterval(() => setElapsed((value) => (value + 100) % CYCLE_MS), 100);
+    if (!isPlaying || interactionPaused) return undefined;
+    if (prefersReducedMotion) return undefined;
+    const timer = window.setInterval(() => setStep((value) => (value + 1) % stages.length), 1150);
     return () => window.clearInterval(timer);
-  }, [isPlaying]);
-
-  const visible = (minStep: number) => step >= minStep;
-  const nodeClass = (minStep: number, tone: string) =>
-    `sam-node sam-node-${tone} ${visible(minStep) ? 'is-active' : 'sam-step-pending'} ${step === minStep ? 'is-current' : ''}`;
-  const pathClass = (minStep: number, extra = '') =>
-    `sam-step-path ${visible(minStep) ? 'is-drawn' : ''} ${extra}`.trim();
-
-  // Orthogonal + 45° merge. Feedback under-passes Temporal Context Bank at y=400.
-  const segments = [
-    { step: 2, d: 'M190 100H250' },
-    { step: 3, d: 'M350 100H450' },
-    { step: 5, d: 'M190 320H250' },
-    { step: 6, d: 'M350 320H450' },
-    { step: 7, d: 'M550 100H620L700 195' },
-    { step: 7, d: 'M550 320H620L700 225' },
-    { step: 8, d: 'M700 242V288' },
-    { step: 8, d: 'M550 350V400H700V348', feedback: true },
-    { step: 9, d: 'M716 210H820' },
-    { step: 10, d: 'M980 210H1025' },
-  ] as const;
+  }, [interactionPaused, isPlaying, prefersReducedMotion, stages.length]);
 
   return (
     <section
-      className={`sam-architecture ${isPlaying ? 'is-playing' : 'is-paused'}`}
-      aria-label="SignBridge spatial multimodal system architecture detail"
+      className="architecture-map"
+      aria-labelledby="architecture-title"
+      onPointerEnter={() => setInteractionPaused(true)}
+      onPointerLeave={() => setInteractionPaused(false)}
+      onFocusCapture={() => setInteractionPaused(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setInteractionPaused(false);
+      }}
     >
-      <div className="sam-architecture-panel">
-        <div className="sam-architecture-heading">
-          <span className="sam-eyebrow">System architecture</span>
-          <h2>SignBridge Spatial-Multimodal Pipeline</h2>
-          <p>From live spatial signals to natural language, continuously aligned in motion.</p>
+      <div className="architecture-map-heading">
+        <div>
+          <span className="architecture-kicker">System architecture</span>
+          <h2 id="architecture-title">One signal, carried all the way to conversation.</h2>
         </div>
-        <div className="sam-diagram">
-          <svg className="sam-flow-lines" viewBox="0 0 1200 440" preserveAspectRatio="none" aria-hidden="true">
-            <g className="sam-flow-base">
-              {segments.map((segment, index) => (
-                <path
-                  key={`base-${index}`}
-                  className={pathClass(segment.step, 'feedback' in segment && segment.feedback ? 'sam-feedback-line' : '')}
-                  d={segment.d}
-                />
-              ))}
-            </g>
-            <g className="sam-flow-beams">
-              {segments.map((segment, index) => (
-                <path
-                  key={`beam-${index}`}
-                  className={pathClass(segment.step, 'feedback' in segment && segment.feedback ? 'sam-feedback-beam' : '')}
-                  d={segment.d}
-                />
-              ))}
-            </g>
-          </svg>
-
-          <div className="sam-diagram-grid">
-            <motion.article className={nodeClass(1, 'input')} initial={false} animate={{ opacity: visible(1) ? 1 : .34, scale: visible(1) ? 1 : .985 }}>
-            <span className="sam-node-kicker">Input · Video frame</span>
-              <strong>Live Webcam Frame</strong>
-              <span className="sam-frame-label">frame t</span>
-              <svg className="sam-hand-skeleton" viewBox="0 0 120 62" aria-hidden="true">
-                <path d="M58 53 51 35 39 27 29 17M58 53 60 29 60 9M61 31 74 18 79 5M64 35 84 28 96 17M67 40 91 39 105 32" />
-                <circle cx="58" cy="53" r="3" /><circle cx="51" cy="35" r="2" /><circle cx="39" cy="27" r="2" /><circle cx="29" cy="17" r="2" />
-                <circle cx="60" cy="29" r="2" /><circle cx="60" cy="9" r="2" /><circle cx="74" cy="18" r="2" /><circle cx="79" cy="5" r="2" />
-                <circle cx="84" cy="28" r="2" /><circle cx="96" cy="17" r="2" /><circle cx="91" cy="39" r="2" /><circle cx="105" cy="32" r="2" />
-              </svg>
-            </motion.article>
-
-            <motion.article className={nodeClass(4, 'input')} initial={false} animate={{ opacity: visible(4) ? 1 : .34, scale: visible(4) ? 1 : .985 }}>
-              <span className="sam-node-kicker">Input · Context</span>
-              <strong>Context Prompt</strong>
-              <span className="sam-context-copy">&quot;Dining / Ordering Water&quot;</span>
-            </motion.article>
-
-            <motion.article className={nodeClass(2, 'encoder')} initial={false} animate={{ opacity: visible(2) ? 1 : .34, scale: visible(2) ? 1 : .985 }}>
-              <span className="sam-node-kicker">Encoder · Spatial mesh</span>
-              <strong>Spatial Mesh Encoder</strong>
-              <span>Processes 3D coordinates</span>
-            </motion.article>
-
-            <motion.article className={nodeClass(5, 'encoder')} initial={false} animate={{ opacity: visible(5) ? 1 : .34, scale: visible(5) ? 1 : .985 }}>
-              <span className="sam-node-kicker">Encoder · Context</span>
-              <strong>Context Tokenizer</strong>
-              <span>Embeds scene meaning</span>
-            </motion.article>
-
-            <motion.article className={nodeClass(3, 'core')} initial={false} animate={{ opacity: visible(3) ? 1 : .34, scale: visible(3) ? 1 : .985 }}>
-              <span className="sam-node-kicker">Core · Detector</span>
-              <strong>Token Detector &amp; Sequence Align</strong>
-              <span className="sam-tokens">&quot;I&quot; · &quot;WANT&quot; · &quot;WATER&quot;</span>
-            </motion.article>
-
-            <motion.article className={nodeClass(6, 'core')} initial={false} animate={{ opacity: visible(6) ? 1 : .34, scale: visible(6) ? 1 : .985 }}>
-              <span className="sam-node-kicker">Core · Tracker</span>
-              <strong>Temporal Tracker</strong>
-              <span>Aggregates frames over time</span>
-            </motion.article>
-
-            <div className={`sam-convergence ${visible(7) ? 'is-active' : 'sam-step-pending'} ${step === 7 ? 'is-current' : ''}`} aria-label="Convergence node">+</div>
-
-            <motion.article className={nodeClass(9, 'fusion')} initial={false} animate={{ opacity: visible(9) ? 1 : .34, scale: visible(9) ? 1 : .985 }}>
-              <span className="sam-node-kicker">Fusion · Gemini</span>
-              <strong>Gemini LLM Refinement Module</strong>
-              <span>Grammar · context · intent</span>
-            </motion.article>
-
-            <motion.article className={nodeClass(8, 'memory')} initial={false} animate={{ opacity: visible(8) ? 1 : .34, scale: visible(8) ? 1 : .985 }}>
-              <span className="sam-node-kicker">Memory bank</span>
-              <strong>Temporal Context Bank</strong>
-              <div className="sam-memory-stack"><i /><i /><i /></div>
-              <span>Feedback into tracker</span>
-            </motion.article>
-
-            <motion.article className={nodeClass(10, 'output')} initial={false} animate={{ opacity: visible(10) ? 1 : .34, scale: visible(10) ? 1 : .985 }}>
-              <span className="sam-node-kicker">Output · Voice</span>
-              <strong className={visible(10) ? 'is-revealed' : ''}>Could I please get a glass of water?</strong>
-              <span>Natural sentence stream</span>
-            </motion.article>
-          </div>
-        </div>
+        <p>The active path explains how a camera sequence becomes language the signer can review before speech.</p>
+      </div>
+      <ol className="architecture-track">
+        {stages.map((stage, index) => (
+          <li className={`architecture-stage architecture-stage-${stage.tone} ${index <= step ? 'is-complete' : ''} ${index === step ? 'is-current' : ''}`} key={stage.label}>
+            <article>
+              <span className="architecture-index">{String(index + 1).padStart(2, '0')}</span>
+              <span className="architecture-label">{stage.label}</span>
+              <strong>{stage.title}</strong>
+              <p>{stage.description}</p>
+            </article>
+            {index < stages.length - 1 && (
+              <span className={`architecture-link ${index < step ? 'is-active' : ''}`} aria-hidden="true">
+                <span className="architecture-signal-dot" />
+                <svg viewBox="0 0 48 16"><path d="M1 8h42M37 2l6 6-6 6" /></svg>
+              </span>
+            )}
+          </li>
+        ))}
+      </ol>
+      <div className="architecture-controls">
         <button
-          className="sam-play-toggle"
+          className="architecture-play-toggle"
           type="button"
           onClick={() => setIsPlaying((playing) => !playing)}
           aria-label={isPlaying ? 'Pause architecture animation' : 'Play architecture animation'}
         >
-          {isPlaying ? 'Ⅱ' : '▶'}
+          {isPlaying ? (
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6v12M16 6v12" /></svg>
+          ) : (
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 9 6-9 6Z" /></svg>
+          )}
         </button>
-        <span className="sam-phase-readout">
-          {isPlaying ? 'Live' : 'Paused'} · {String(Math.floor(phase / 1000)).padStart(2, '0')}s · Step {String(step).padStart(2, '0')}
-        </span>
+        <span><b>{prefersReducedMotion ? 'Full path shown' : isPlaying && !interactionPaused ? 'Following signal' : 'Animation paused'}</b> · {stages[step].label}</span>
+        <div className="architecture-progress" aria-hidden="true"><i style={{ width: `${((step + 1) / stages.length) * 100}%` }} /></div>
       </div>
+      <p className="sr-only">Architecture sequence: capture, spatial signal, recognition, interpretation, signer review, and speech.</p>
     </section>
   );
 }
@@ -1499,9 +1494,9 @@ function App() {
 
       <section className="hero-stats section-shell" id="overview-proof" aria-label="SignBridge platform statistics">
         <div className="hero-stat"><strong>543</strong><span>Spatial landmarks</span></div>
-        <div className="hero-stat"><strong>11.59ms</strong><span>Average local latency</span></div>
-        <div className="hero-stat"><strong>2,044</strong><span>Sign classes in pipeline</span></div>
-        <div className="hero-stat-status"><i /> Camera-native spatial pipeline active</div>
+        <div className="hero-stat"><strong>250</strong><span>ASL sign classes</span></div>
+        <div className="hero-stat"><strong>64</strong><span>Training sequence frames</span></div>
+        <div className="hero-stat-status"><i /> ASL recognition research prototype</div>
       </section>
 
       <div className="overview-pipeline-block section-shell" id="architecture">
@@ -1528,7 +1523,7 @@ function App() {
               <div className="video-scanline" />
               <div className="video-corner video-corner-tl" /><div className="video-corner video-corner-tr" /><div className="video-corner video-corner-bl" /><div className="video-corner video-corner-br" />
               {!isRunning && <div className="camera-empty"><span className="camera-icon">◎</span><strong>Camera is ready</strong><p>Start a session to see spatial landmarks and live recognition.</p></div>}
-              <div className="video-overlay-top"><span>MEDIAPIPE HOLISTIC</span><span>30 FPS / LOCAL</span></div>
+              <div className="video-overlay-top"><span>MEDIAPIPE HOLISTIC</span><span>30 FPS TARGET / BROWSER</span></div>
               <div className="video-overlay-bottom"><span className="overlay-status"><i /> {isRunning ? 'Signal detected' : 'Awaiting signal'}</span><span>Face · Hands · Pose</span></div>
             </div>
             <div className="camera-controls">
@@ -1538,7 +1533,7 @@ function App() {
               {isStarting && <div className="skeleton-stack" aria-label="Loading spatial engine"><i /><i /><i /></div>}
             </div>
             <div className="feature-chips" aria-label="Active SignBridge features">
-              <span className="feature-chip"><i /> LLM Facial Expression Active</span>
+              <span className="feature-chip"><i /> Nonmanual Landmark Input</span>
               <span className="feature-chip"><i /> Background Context Engine</span>
               <span className="feature-chip"><i /> Smart Next-Word Prediction</span>
             </div>
