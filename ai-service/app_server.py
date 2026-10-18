@@ -134,7 +134,7 @@ DEFAULT_PORT = 8001
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",") if o.strip()],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -184,6 +184,16 @@ def _get_pipeline() -> tuple[HolisticDetector, FeatureExtractor]:
         _extractor = FeatureExtractor()
 
     return _detector, _extractor
+
+
+@app.on_event("startup")
+def _warm_up() -> None:
+    """Load MediaPipe + TFLite models at boot so the first user request is not a cold start."""
+    try:
+        _get_pipeline()
+        print("[WARMUP] MediaPipe pipeline ready", flush=True)
+    except Exception as exc:  # never block startup on warm-up
+        print(f"[WARMUP] skipped: {exc}", flush=True)
 
 
 def _decode_base64_image(image_base64: str) -> np.ndarray:

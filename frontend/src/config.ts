@@ -36,3 +36,18 @@ export const API_HOST_LABEL = (() => {
 
 /** OpenAPI / Swagger docs on Cloud Run */
 export const API_DOCS_URL = `${API_BASE_URL}/docs`;
+
+/** Backend health endpoint (also used to wake a scaled-to-zero Cloud Run instance). */
+export const HEALTH_URL = `${API_BASE_URL}/health`;
+
+/**
+ * Fire-and-forget request sent as soon as the page loads so a cold Cloud Run
+ * instance starts booting (model + MediaPipe init) before the user clicks "Start".
+ */
+export function warmUpBackend(): void {
+  try {
+    void fetch(HEALTH_URL, { method: 'GET', mode: 'cors', cache: 'no-store' }).catch(() => undefined);
+  } catch {
+    /* ignore: warm-up is best effort */
+  }
+}

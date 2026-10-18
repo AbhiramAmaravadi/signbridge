@@ -1,51 +1,34 @@
 package com.signbridge.backend.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * CorsConfig
+ * CORS for the React frontend.
  *
- * Allows the React frontend
- * to communicate with the backend.
- *
- * Development:
- * React -> localhost:5173
- * Spring API -> localhost:8080
+ * Allowed origins come from {@code app.cors.allowed-origins}
+ * (env: CORS_ALLOWED_ORIGINS, comma separated). The same variable is read by the
+ * FastAPI service so both backends accept the same set of browsers origins.
  */
 @Configuration
 public class CorsConfig {
 
-    /**
-     * Configures Cross-Origin Resource Sharing (CORS).
-     */
+    @Value("${app.cors.allowed-origins}")
+    private String[] allowedOrigins;
+
     @Bean
     public WebMvcConfigurer corsConfigurer() {
-
         return new WebMvcConfigurer() {
-
             @Override
-            public void addCorsMappings(
-                    CorsRegistry registry) {
-
+            public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-
-                        // React development server
-                        .allowedOrigins(
-                                "http://localhost:5173")
-
-                        // Allow all HTTP methods
-                        .allowedMethods(
-                                "GET",
-                                "POST",
-                                "PUT",
-                                "DELETE",
-                                "OPTIONS")
-
-                        // Allow all headers
-                        .allowedHeaders("*");
+                        .allowedOrigins(allowedOrigins)
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedHeaders("*")
+                        .maxAge(3600);
             }
         };
     }

@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y libgl1 libglib2.0-0 && rm -rf /var/lib/
 
 WORKDIR /app
 
-ENV PYTHONPATH="/app:/app/sign_classifier:/app/signclassifier"
+ENV PYTHONPATH="/app:/app/sign_classifier"
 ENV PYTHONUNBUFFERED=1
 
 COPY ai-service/requirements.txt .

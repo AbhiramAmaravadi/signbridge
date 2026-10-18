@@ -101,9 +101,12 @@ type ConnectionState = 'idle' | 'loading' | 'connected' | 'disconnected' | 'erro
 type UiMode = 'idle' | 'listening' | 'word_locked' | 'processing' | 'speaking' | 'error';
 
 const PAUSE_AFTER_FINALIZE_MS = 3000;
-const HOLISTIC_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js';
-const DRAWING_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js';
-const HOLISTIC_ASSET_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/holistic';
+// MediaPipe is self-hosted (copied from node_modules by scripts/copy-mediapipe.mjs) so the demo
+// does not depend on a third-party CDN being reachable.
+const MEDIAPIPE_BASE = `${import.meta.env.BASE_URL}mediapipe`;
+const HOLISTIC_CDN = `${MEDIAPIPE_BASE}/holistic/holistic.js`;
+const DRAWING_CDN = `${MEDIAPIPE_BASE}/drawing_utils/drawing_utils.js`;
+const HOLISTIC_ASSET_BASE = `${MEDIAPIPE_BASE}/holistic`;
 const TARGET_FPS = 30;
 const FRAME_INTERVAL_MS = 1000 / TARGET_FPS;
 const WINDOW_SIZE = 45;
@@ -1135,7 +1138,7 @@ function App() {
           const response = await axios.post<InferenceResponse>(
             INFERENCE_URL,
             { landmarks: activeWindow },
-            { timeout: 8000, headers: JSON_HEADERS },
+            { timeout: 20000, headers: JSON_HEADERS },
           );
           if (!mountedRef.current || isPausedRef.current) break;
           setOutput(response.data);
@@ -1162,7 +1165,7 @@ function App() {
     pauseInference();
     setUiMode('processing');
     try {
-      const response = await axios.post<InferenceResponse>(FINALIZE_URL, {}, { timeout: 5000, headers: JSON_HEADERS });
+      const response = await axios.post<InferenceResponse>(FINALIZE_URL, {}, { timeout: 15000, headers: JSON_HEADERS });
       setOutput((current) => ({
         ...(current ?? response.data),
         ...response.data,
@@ -1183,7 +1186,7 @@ function App() {
       const response = await axios.post<InferenceResponse>(
         APPEND_WORD_URL,
         { word },
-        { timeout: 4000, headers: JSON_HEADERS },
+        { timeout: 10000, headers: JSON_HEADERS },
       );
       setOutput((current) => ({
         ...(current ?? response.data),
@@ -1200,7 +1203,7 @@ function App() {
 
   const deleteLastWord = useCallback(async () => {
     try {
-      const response = await axios.post<InferenceResponse>(DELETE_WORD_URL, {}, { timeout: 4000, headers: JSON_HEADERS });
+      const response = await axios.post<InferenceResponse>(DELETE_WORD_URL, {}, { timeout: 10000, headers: JSON_HEADERS });
       setOutput((current) => ({
         ...(current ?? response.data),
         ...response.data,
@@ -1232,7 +1235,7 @@ function App() {
     setIsPaused(false);
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     try {
-      await axios.post(RESET_URL, {}, { timeout: 4000, headers: JSON_HEADERS });
+      await axios.post(RESET_URL, {}, { timeout: 10000, headers: JSON_HEADERS });
     } catch (requestError) {
       setError(formatError(requestError));
     }
@@ -1262,7 +1265,7 @@ function App() {
       const response = await axios.post<TranslateResponse>(
         TRANSLATE_URL,
         { words, image_base64: captureSnapshot(), mime_type: 'image/jpeg', detected_emotion: detectedEmotion },
-        { timeout: 15000, headers: JSON_HEADERS },
+        { timeout: 30000, headers: JSON_HEADERS },
       );
       const polished = response.data.polished_sentence || sentence;
       const resolved = resolveContext(response.data.detected_emotion, response.data.detected_scene, sentence);

@@ -12,6 +12,9 @@ import './nav.css'
 import './overview.css'
 import './sam3.css'
 import App from './App.tsx'
+import { warmUpBackend } from './config'
+
+warmUpBackend()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
