@@ -220,3 +220,19 @@ __marimo__/
 dataset/
 .vercel
 .env*
+
+# --- SignBridge: secrets, local state, large/binary artifacts ---
+.env.local
+.env*.local
+.vercel/
+**/.vercel/
+hs_err_pid*.log
+replay_pid*.log
+frontend/dist/
+backend/target/
+ai-service/saved_sequences/
+*.npy
+SignBridge_Deck.pptx
+SignBridge_Demo_video.mp4
+*.mp4
+*.pptx

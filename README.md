@@ -131,7 +131,7 @@ Host: localhost
 Port: 5432
 Database: signbridge
 Username: postgres
-Password: 1234
+Password: (set via DB_PASSWORD env var)
 ```
 
 For shared or production environments, override these values through your normal Spring configuration mechanism and do not commit credentials.
