@@ -2512,3 +2512,38 @@ body,
     transition: none;
   }
 }
+
+/* ---- Future research direction: sit on the dark site surface instead of a light panel ---- */
+.future-glasses-section {
+  border-color: var(--line);
+  background: linear-gradient(180deg, rgba(17, 25, 39, .62), rgba(8, 11, 18, .2));
+}
+.future-label { color: var(--cyan); }
+.future-glasses-copy h2 { color: #f4f7fb; }
+.future-glasses-copy > p { color: var(--muted); }
+.future-principles { border-top-color: var(--line); }
+.future-principles > div { border-bottom-color: var(--line); }
+.future-principles span { color: var(--soft); }
+.future-principles strong { color: #e8eef6; }
+.future-principles p { color: var(--muted); }
+.future-glasses-copy .future-disclaimer { border-left-color: rgba(109, 215, 232, .55); color: var(--soft); }
+.glasses-concept-stage {
+  border-color: var(--line);
+  background:
+    radial-gradient(ellipse at 50% 60%, rgba(109, 215, 232, .13), transparent 62%),
+    var(--surface-1);
+}
+.glasses-concept-stage::before {
+  background-image:
+    linear-gradient(rgba(148, 163, 184, .055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, .055) 1px, transparent 1px);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 28%, transparent 78%);
+  mask-image: radial-gradient(ellipse at center, #000 28%, transparent 78%);
+}
+.glasses-axis { background: var(--line); }
+.glasses-axis i { border-color: rgba(148, 163, 184, .4); background: var(--surface-1); }
+.glasses-concept-stage figcaption { color: var(--soft); }
+
+/* Hot-linked photos that fail to load fall back to the card gradient instead of a broken-image box */
+.context-bento-card img.image-fallback,
+.context-bento-card img[alt]:not([src]) { visibility: hidden; }

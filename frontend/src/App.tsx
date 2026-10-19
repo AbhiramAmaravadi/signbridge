@@ -529,22 +529,22 @@ function ContextBentoGrid() {
       </div>
       <div className="context-bento-grid">
         <motion.article className="context-bento-card bento-llm" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
-          <img src="/capabilities/language-refinement.svg" alt="Diagram of sign tokens being refined into an editable sentence" loading="lazy" width="1200" height="700" />
+          <img src="https://image.cnbcfm.com/api/v1/image/107371197-1707432021946-gettyimages-1988737588-raa-googlege240208_npBM4.jpeg?v=1707432096" alt="Language model reasoning visual" loading="lazy" referrerPolicy="no-referrer" />
           <div className="bento-image-gradient" />
           <div className="bento-content"><span className="bento-index">01 / Language layer</span><span className="bento-live-badge"><i /> Translation endpoint</span><h3>Sentence Refinement</h3><p>The configured translation service can refine recognized sign tokens into an editable sentence before speech output.</p></div>
         </motion.article>
         <motion.article className="context-bento-card bento-expression" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
-          <img src="/capabilities/nonmanual-signals.svg" alt="Diagram of facial and upper-body landmarks contributing nonmanual linguistic information" loading="lazy" width="1200" height="700" />
+          <img src="https://www.infolob.com/wp-content/uploads/2019/10/fr.png" alt="Facial landmark mesh" loading="lazy" referrerPolicy="no-referrer" />
           <div className="bento-image-gradient" /><div className="emotion-tags"><span>Questioning (88%)</span><span>Tone: Curious</span></div>
           <div className="bento-content"><span className="bento-index">02 / Facial mesh</span><h3>Nonmanual Signal Input</h3><p>Facial and body landmarks are included in the prototype input because nonmanual information can contribute linguistic meaning.</p></div>
         </motion.article>
         <motion.article className="context-bento-card bento-scene" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
-          <img src="/capabilities/visual-context.svg" alt="Diagram showing an optional scene snapshot used as context after sentence finalization" loading="lazy" width="1200" height="700" />
+          <img src="https://i0.wp.com/downloads.mixtile.com/doc-images/hailo/restaurant-table-status/output-empty-and-occupied-tables.jpeg?w=1020&ssl=1" alt="Restaurant scene for ambient context recognition" loading="lazy" referrerPolicy="no-referrer" />
           <div className="bento-image-gradient" /><span className="scene-box scene-table">[ Table ]</span><span className="scene-box scene-menu">[ Menu ]</span>
           <div className="bento-content"><span className="bento-index">03 / Scene context</span><h3>Optional Visual Context</h3><p>When a sentence is finalized, the configured translation endpoint may receive one camera snapshot with the recognized words.</p><button className={`ambient-toggle ${ambientContext ? 'is-on' : ''}`} type="button" onClick={() => setAmbientContext((enabled) => !enabled)} aria-pressed={ambientContext}><i /> {ambientContext ? 'Context example enabled' : 'Context example paused'}</button></div>
         </motion.article>
         <motion.article className="context-bento-card bento-prediction" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
-          <img src="/capabilities/next-word.svg" alt="Diagram showing signer-controlled next-word suggestions" loading="lazy" width="1200" height="700" />
+          <img src="https://cdn.analyticsvidhya.com/wp-content/uploads/2021/08/77308shutterstock-1208129407_trm5.960.jpg" alt="Neural network visualization" loading="lazy" referrerPolicy="no-referrer" />
           <div className="bento-image-gradient" /><div className="autocomplete-demo"><span>I would like to</span><i>→</i><b>order</b><b>buy</b><b>ask</b></div>
           <div className="bento-content"><span className="bento-index">04 / Prediction</span><h3>Smart Next-Word Completion</h3><p>Suggests possible next words from the current sequence so the signer can inspect and choose what comes next.</p></div>
         </motion.article>
@@ -772,8 +772,8 @@ function PremiumHero({ devMode, isRunning, onLaunchDemo, onExplore }: PremiumHer
 function ScenarioDial() {
   const [scenario, setScenario] = useState<'medical' | 'tour'>('medical');
   const content = scenario === 'medical'
-    ? { image: '/scenarios/medical-context.svg', title: 'Medical context', raw: 'PAIN / RIGHT / ABDOMEN', translation: 'I have pain on the right side of my abdomen.', accent: 'rose', alt: 'Illustrated medical communication example showing a signer, an abdomen location marker, and an editable sentence' }
-    : { image: '/scenarios/daily-context.svg', title: 'Tour & daily context', raw: 'LOOK / HISTORIC / TOWER', translation: 'The historic tower is on your left.', accent: 'cyan', alt: 'Illustrated daily communication example showing a signer, a landmark, and an editable direction' };
+    ? { image: 'https://inclusiveasl.com/wp-content/uploads/2023/12/Medical-Website-2.jpg', title: 'Medical context', raw: 'PAIN / RIGHT / ABDOMEN', translation: 'I have pain on the right side of my abdomen.', accent: 'rose', alt: 'Medical communication example with a signer and clinician' }
+    : { image: 'https://deafaction.org/wp-content/uploads/2024/03/DeafAction14.08.23-018-1184x790.jpg', title: 'Tour & daily context', raw: 'LOOK / HISTORIC / TOWER', translation: 'The historic tower is on your left.', accent: 'cyan', alt: 'Daily communication example during a guided tour' };
   return (
     <section className="scenario-dial-section" id="scenario">
       <div className="section-shell">
@@ -918,79 +918,148 @@ function ReasoningComparisonV2() {
 
 function SamArchitectureDiagramV2() {
   const [isPlaying, setIsPlaying] = useState(true);
-  const [interactionPaused, setInteractionPaused] = useState(false);
-  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const [step, setStep] = useState(prefersReducedMotion ? 5 : 0);
-
-  const stages = [
-    { label: 'Capture', title: 'Signer in frame', description: 'Camera frames provide hand, face, and pose landmarks.', tone: 'capture' },
-    { label: 'Spatial signal', title: 'Landmark sequence', description: 'Coordinates are normalized into a temporal input window.', tone: 'signal' },
-    { label: 'Recognition', title: 'ASL candidates', description: 'The research classifier ranks signs from its current 250-class scope.', tone: 'recognition' },
-    { label: 'Interpretation', title: 'Language context', description: 'Recognized tokens can be refined into editable language.', tone: 'interpretation' },
-    { label: 'Review', title: 'Signer confirms', description: 'The signer inspects, corrects, and finalizes the sentence.', tone: 'review' },
-    { label: 'Speech', title: 'Conversation output', description: 'The confirmed sentence can be spoken to a conversation partner.', tone: 'speech' },
-  ] as const;
+  const [elapsed, setElapsed] = useState(0);
+  const CYCLE_MS = 11000;
+  const STEP_MS = 1000;
+  const phase = elapsed % CYCLE_MS;
+  const step = Math.min(10, Math.floor(phase / STEP_MS));
 
   useEffect(() => {
-    if (!isPlaying || interactionPaused) return undefined;
-    if (prefersReducedMotion) return undefined;
-    const timer = window.setInterval(() => setStep((value) => (value + 1) % stages.length), 1150);
+    if (!isPlaying) return undefined;
+    const timer = window.setInterval(() => setElapsed((value) => (value + 100) % CYCLE_MS), 100);
     return () => window.clearInterval(timer);
-  }, [interactionPaused, isPlaying, prefersReducedMotion, stages.length]);
+  }, [isPlaying]);
+
+  const visible = (minStep: number) => step >= minStep;
+  const nodeClass = (minStep: number, tone: string) =>
+    `sam-node sam-node-${tone} ${visible(minStep) ? 'is-active' : 'sam-step-pending'} ${step === minStep ? 'is-current' : ''}`;
+  const pathClass = (minStep: number, extra = '') =>
+    `sam-step-path ${visible(minStep) ? 'is-drawn' : ''} ${extra}`.trim();
+
+  // Orthogonal + 45° merge. Feedback under-passes Temporal Context Bank at y=400.
+  const segments = [
+    { step: 2, d: 'M190 100H250' },
+    { step: 3, d: 'M350 100H450' },
+    { step: 5, d: 'M190 320H250' },
+    { step: 6, d: 'M350 320H450' },
+    { step: 7, d: 'M550 100H620L700 195' },
+    { step: 7, d: 'M550 320H620L700 225' },
+    { step: 8, d: 'M700 242V288' },
+    { step: 8, d: 'M550 350V400H700V348', feedback: true },
+    { step: 9, d: 'M716 210H820' },
+    { step: 10, d: 'M980 210H1025' },
+  ] as const;
 
   return (
     <section
-      className="architecture-map"
-      aria-labelledby="architecture-title"
-      onPointerEnter={() => setInteractionPaused(true)}
-      onPointerLeave={() => setInteractionPaused(false)}
-      onFocusCapture={() => setInteractionPaused(true)}
-      onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setInteractionPaused(false);
-      }}
+      className={`sam-architecture ${isPlaying ? 'is-playing' : 'is-paused'}`}
+      aria-label="SignBridge spatial multimodal system architecture detail"
     >
-      <div className="architecture-map-heading">
-        <div>
-          <span className="architecture-kicker">System architecture</span>
-          <h2 id="architecture-title">One signal, carried all the way to conversation.</h2>
+      <div className="sam-architecture-panel">
+        <div className="sam-architecture-heading">
+          <span className="sam-eyebrow">System architecture</span>
+          <h2>SignBridge Spatial-Multimodal Pipeline</h2>
+          <p>From live spatial signals to natural language, continuously aligned in motion.</p>
         </div>
-        <p>The active path explains how a camera sequence becomes language the signer can review before speech.</p>
-      </div>
-      <ol className="architecture-track">
-        {stages.map((stage, index) => (
-          <li className={`architecture-stage architecture-stage-${stage.tone} ${index <= step ? 'is-complete' : ''} ${index === step ? 'is-current' : ''}`} key={stage.label}>
-            <article>
-              <span className="architecture-index">{String(index + 1).padStart(2, '0')}</span>
-              <span className="architecture-label">{stage.label}</span>
-              <strong>{stage.title}</strong>
-              <p>{stage.description}</p>
-            </article>
-            {index < stages.length - 1 && (
-              <span className={`architecture-link ${index < step ? 'is-active' : ''}`} aria-hidden="true">
-                <span className="architecture-signal-dot" />
-                <svg viewBox="0 0 48 16"><path d="M1 8h42M37 2l6 6-6 6" /></svg>
-              </span>
-            )}
-          </li>
-        ))}
-      </ol>
-      <div className="architecture-controls">
+        <div className="sam-diagram">
+          <svg className="sam-flow-lines" viewBox="0 0 1200 440" preserveAspectRatio="none" aria-hidden="true">
+            <g className="sam-flow-base">
+              {segments.map((segment, index) => (
+                <path
+                  key={`base-${index}`}
+                  className={pathClass(segment.step, 'feedback' in segment && segment.feedback ? 'sam-feedback-line' : '')}
+                  d={segment.d}
+                />
+              ))}
+            </g>
+            <g className="sam-flow-beams">
+              {segments.map((segment, index) => (
+                <path
+                  key={`beam-${index}`}
+                  className={pathClass(segment.step, 'feedback' in segment && segment.feedback ? 'sam-feedback-beam' : '')}
+                  d={segment.d}
+                />
+              ))}
+            </g>
+          </svg>
+
+          <div className="sam-diagram-grid">
+            <motion.article className={nodeClass(1, 'input')} initial={false} animate={{ opacity: visible(1) ? 1 : .34, scale: visible(1) ? 1 : .985 }}>
+            <span className="sam-node-kicker">Input · Video frame</span>
+              <strong>Live Webcam Frame</strong>
+              <span className="sam-frame-label">frame t</span>
+              <svg className="sam-hand-skeleton" viewBox="0 0 120 62" aria-hidden="true">
+                <path d="M58 53 51 35 39 27 29 17M58 53 60 29 60 9M61 31 74 18 79 5M64 35 84 28 96 17M67 40 91 39 105 32" />
+                <circle cx="58" cy="53" r="3" /><circle cx="51" cy="35" r="2" /><circle cx="39" cy="27" r="2" /><circle cx="29" cy="17" r="2" />
+                <circle cx="60" cy="29" r="2" /><circle cx="60" cy="9" r="2" /><circle cx="74" cy="18" r="2" /><circle cx="79" cy="5" r="2" />
+                <circle cx="84" cy="28" r="2" /><circle cx="96" cy="17" r="2" /><circle cx="91" cy="39" r="2" /><circle cx="105" cy="32" r="2" />
+              </svg>
+            </motion.article>
+
+            <motion.article className={nodeClass(4, 'input')} initial={false} animate={{ opacity: visible(4) ? 1 : .34, scale: visible(4) ? 1 : .985 }}>
+              <span className="sam-node-kicker">Input · Context</span>
+              <strong>Context Prompt</strong>
+              <span className="sam-context-copy">&quot;Dining / Ordering Water&quot;</span>
+            </motion.article>
+
+            <motion.article className={nodeClass(2, 'encoder')} initial={false} animate={{ opacity: visible(2) ? 1 : .34, scale: visible(2) ? 1 : .985 }}>
+              <span className="sam-node-kicker">Encoder · Spatial mesh</span>
+              <strong>Spatial Mesh Encoder</strong>
+              <span>Processes 3D coordinates</span>
+            </motion.article>
+
+            <motion.article className={nodeClass(5, 'encoder')} initial={false} animate={{ opacity: visible(5) ? 1 : .34, scale: visible(5) ? 1 : .985 }}>
+              <span className="sam-node-kicker">Encoder · Context</span>
+              <strong>Context Tokenizer</strong>
+              <span>Embeds scene meaning</span>
+            </motion.article>
+
+            <motion.article className={nodeClass(3, 'core')} initial={false} animate={{ opacity: visible(3) ? 1 : .34, scale: visible(3) ? 1 : .985 }}>
+              <span className="sam-node-kicker">Core · Detector</span>
+              <strong>Token Detector &amp; Sequence Align</strong>
+              <span className="sam-tokens">&quot;I&quot; · &quot;WANT&quot; · &quot;WATER&quot;</span>
+            </motion.article>
+
+            <motion.article className={nodeClass(6, 'core')} initial={false} animate={{ opacity: visible(6) ? 1 : .34, scale: visible(6) ? 1 : .985 }}>
+              <span className="sam-node-kicker">Core · Tracker</span>
+              <strong>Temporal Tracker</strong>
+              <span>Aggregates frames over time</span>
+            </motion.article>
+
+            <div className={`sam-convergence ${visible(7) ? 'is-active' : 'sam-step-pending'} ${step === 7 ? 'is-current' : ''}`} aria-label="Convergence node">+</div>
+
+            <motion.article className={nodeClass(9, 'fusion')} initial={false} animate={{ opacity: visible(9) ? 1 : .34, scale: visible(9) ? 1 : .985 }}>
+              <span className="sam-node-kicker">Fusion · Gemini</span>
+              <strong>Gemini LLM Refinement Module</strong>
+              <span>Grammar · context · intent</span>
+            </motion.article>
+
+            <motion.article className={nodeClass(8, 'memory')} initial={false} animate={{ opacity: visible(8) ? 1 : .34, scale: visible(8) ? 1 : .985 }}>
+              <span className="sam-node-kicker">Memory bank</span>
+              <strong>Temporal Context Bank</strong>
+              <div className="sam-memory-stack"><i /><i /><i /></div>
+              <span>Feedback into tracker</span>
+            </motion.article>
+
+            <motion.article className={nodeClass(10, 'output')} initial={false} animate={{ opacity: visible(10) ? 1 : .34, scale: visible(10) ? 1 : .985 }}>
+              <span className="sam-node-kicker">Output · Voice</span>
+              <strong className={visible(10) ? 'is-revealed' : ''}>Could I please get a glass of water?</strong>
+              <span>Natural sentence stream</span>
+            </motion.article>
+          </div>
+        </div>
         <button
-          className="architecture-play-toggle"
+          className="sam-play-toggle"
           type="button"
           onClick={() => setIsPlaying((playing) => !playing)}
           aria-label={isPlaying ? 'Pause architecture animation' : 'Play architecture animation'}
         >
-          {isPlaying ? (
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6v12M16 6v12" /></svg>
-          ) : (
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 9 6-9 6Z" /></svg>
-          )}
+          {isPlaying ? 'Ⅱ' : '▶'}
         </button>
-        <span><b>{prefersReducedMotion ? 'Full path shown' : isPlaying && !interactionPaused ? 'Following signal' : 'Animation paused'}</b> · {stages[step].label}</span>
-        <div className="architecture-progress" aria-hidden="true"><i style={{ width: `${((step + 1) / stages.length) * 100}%` }} /></div>
+        <span className="sam-phase-readout">
+          {isPlaying ? 'Live' : 'Paused'} · {String(Math.floor(phase / 1000)).padStart(2, '0')}s · Step {String(step).padStart(2, '0')}
+        </span>
       </div>
-      <p className="sr-only">Architecture sequence: capture, spatial signal, recognition, interpretation, signer review, and speech.</p>
     </section>
   );
 }
