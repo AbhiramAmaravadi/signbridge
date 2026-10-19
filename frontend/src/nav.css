@@ -308,23 +308,15 @@ body.nav-drawer-open {
   scroll-margin-top: 100px;
 }
 
-.app-shell .hero-copy > p,
 .app-shell .section-intro p,
-.app-shell .gallery-heading > p,
 .app-shell .connection-state,
-.app-shell .eyebrow,
-.app-shell .hero-kicker {
+.app-shell .eyebrow {
   color: #94a3b8;
 }
 
-.app-shell .hero-copy h1,
 .app-shell .section-intro h2,
 .app-shell .card-heading h3 {
   color: #f8fafc;
-}
-
-.app-shell > .top-nav {
-  display: none;
 }
 
 @media (max-width: 1100px) {
@@ -382,8 +374,7 @@ body.nav-drawer-open {
 }
 
 .sb-capsule-brand,
-.sb-capsule-links a,
-.sb-capsule-menu-label {
+.sb-capsule-links a {
   color: #9ca9b0 !important;
 }
 
@@ -392,15 +383,6 @@ body.nav-drawer-open {
 .sb-capsule-links a:hover,
 .sb-capsule-brand:hover {
   color: #eef2f3 !important;
-}
-
-.sb-capsule-brand-mark {
-  border-color: rgba(196, 210, 213, 0.42) !important;
-  background: rgba(157, 180, 189, 0.12) !important;
-}
-
-.sb-capsule-brand-mark span {
-  background: #c4d2d5 !important;
 }
 
 .sb-capsule-links a.is-active::after {
