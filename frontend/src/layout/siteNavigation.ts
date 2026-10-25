@@ -22,11 +22,10 @@ export const PAGE_SUBSECTIONS: Record<
     { id: 'demo-console', number: '03', label: 'Console' },
   ],
   features: [
-    { id: 'ch-1', number: '01', label: 'Capture' },
-    { id: 'ch-2', number: '02', label: 'Recognize' },
-    { id: 'ch-3', number: '03', label: 'Understand' },
-    { id: 'ch-4', number: '04', label: 'Express' },
-    { id: 'ch-5', number: '05', label: 'Next' },
+    { id: 'ch-1', number: '01', label: 'Recognize' },
+    { id: 'ch-2', number: '02', label: 'Understand' },
+    { id: 'ch-3', number: '03', label: 'Express' },
+    { id: 'ch-4', number: '04', label: 'Next' },
   ],
   team: [{ id: 'team', number: '01', label: 'Team' }],
 };

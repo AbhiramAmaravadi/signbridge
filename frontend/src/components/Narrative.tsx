@@ -2,6 +2,7 @@ import { useState } from 'react';
 /* Overview narrative: why it matters, where it applies, who built it.
    Only figures with a public source are shown; sectors are directions, not customers. */
 
+const WM = (f: string, w = 1000) => `https://commons.wikimedia.org/wiki/Special:FilePath/${f}?width=${w}`;
 const SOURCES = {
   who: 'https://www.who.int/news-room/fact-sheets/detail/deafness-and-hearing-loss',
   un: 'https://www.un.org/en/observances/sign-languages-day',
@@ -35,15 +36,19 @@ export function WhyItMatters() {
   );
 }
 
+const SECTORS = [
+  { k: 'Healthcare', d: 'Front-desk and triage questions where an interpreter is not yet in the room.', f: 'Doctor_consults_with_patient_(4).jpg' },
+  { k: 'Education', d: 'Practice tools for learners and quick check-ins between students and staff.', f: 'Students_and_teacher_in_a_high_school_classroom_in_North_Carolina_07.jpg' },
+  { k: 'Public services', d: 'Counters and kiosks at transit, city offices and libraries.', f: 'Admiralty_Station_Customer_Service_Centre_14-01-2023(1).jpg' },
+  { k: 'Retail and hospitality', d: 'Ordering, check-in and directions, where the same few phrases repeat.', f: 'Barista_prepares_espresso_at_coffee_shop.jpg' },
+  { k: 'Workplace', d: 'Short meetings and onboarding, alongside human interpreters rather than instead of them.', f: 'People_seated_at_table_participating_in_group_discussion_during_meeting.jpg' },
+  { k: 'Wearables', d: 'Captions on smart glasses so conversations can stay face to face.', f: 'A_Google_Glass_wearer.jpg' },
+];
+
 export function WhereItApplies() {
-  const items = [
-    { k: 'Healthcare', d: 'Front-desk and triage questions where an interpreter is not yet in the room.' },
-    { k: 'Education', d: 'Practice tools for learners and quick check-ins between students and staff.' },
-    { k: 'Public services', d: 'Counters and kiosks at transit, city offices and libraries.' },
-    { k: 'Retail and hospitality', d: 'Ordering, check-in and directions, where the same few phrases repeat.' },
-    { k: 'Workplace', d: 'Short meetings and onboarding, alongside human interpreters rather than instead of them.' },
-    { k: 'Wearables', d: 'Captions on smart glasses so conversations can stay face to face.' },
-  ];
+  const [i, setI] = useState(0);
+  const n = SECTORS.length;
+  const go = (k: number) => setI((k + n) % n);
   return (
     <section className="story-section section-shell" id="industries" aria-labelledby="ind-h">
       <div className="story-head">
@@ -51,11 +56,31 @@ export function WhereItApplies() {
         <h2 id="ind-h">Built for the moments between interpreters.</h2>
         <p>These are the sectors we are designing for. SignBridge is a research prototype, so none of them are paying customers yet.</p>
       </div>
-      <ul className="industry-grid">
-        {items.map((x) => (
-          <li key={x.k}><h3>{x.k}</h3><p>{x.d}</p></li>
+      <div className="sector-tabs" role="tablist" aria-label="Sectors">
+        {SECTORS.map((x, k) => (
+          <button key={x.k} type="button" role="tab" aria-selected={k === i} className={k === i ? 'is-active' : ''} onClick={() => go(k)}>{x.k}</button>
         ))}
-      </ul>
+      </div>
+      <div className="sector-viewport">
+        <div className="sector-track" style={{ transform: `translateX(-${i * 100}%)` }}>
+          {SECTORS.map((x, k) => (
+            <article key={x.k} className="sector-slide" aria-hidden={k !== i}>
+              <div className="sector-photo">
+                <img src={WM(x.f, 1200)} alt={`${x.k} setting`} loading="lazy" referrerPolicy="no-referrer" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+              </div>
+              <div className="sector-copy">
+                <span className="sector-n">{String(k + 1).padStart(2, '0')} / {String(n).padStart(2, '0')}</span>
+                <h3>{x.k}</h3>
+                <p>{x.d}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+        <div className="sector-nav">
+          <button type="button" aria-label="Previous sector" onClick={() => go(i - 1)}>←</button>
+          <button type="button" aria-label="Next sector" onClick={() => go(i + 1)}>→</button>
+        </div>
+      </div>
     </section>
   );
 }
@@ -104,7 +129,6 @@ export function Chapter({ n, title, line }: { n: number; title: string; line: st
   );
 }
 
-const WM = (f: string, w = 1000) => `https://commons.wikimedia.org/wiki/Special:FilePath/${f}?width=${w}`;
 const LP = 'https://www.lifeprint.com/asl101/';
 
 export function Photo({ src, alt, credit, href, ratio = '4 / 3', fallback }: { src: string; alt: string; credit: string; href?: string; ratio?: string; fallback?: React.ReactNode }) {
@@ -117,19 +141,6 @@ export function Photo({ src, alt, credit, href, ratio = '4 / 3', fallback }: { s
       </div>
       <figcaption>{href ? <a href={href} target="_blank" rel="noreferrer">{credit}</a> : credit}</figcaption>
     </figure>
-  );
-}
-
-export function RealSigners() {
-  return (
-    <section className="story-section section-shell" id="real-signers" aria-label="Sign language in real conversations">
-      <div className="photo-strip">
-        <Photo src={WM('Sign_language_interpreter.jpg')} alt="A sign language interpreter at work" credit="Photo: Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:Sign_language_interpreter.jpg" ratio="3 / 4" />
-        <Photo src={WM('Speaker_and_sign_language_interpreter_(Estonia).jpg')} alt="A speaker with a sign language interpreter on stage" credit="Photo: Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:Speaker_and_sign_language_interpreter_(Estonia).jpg" ratio="3 / 4" />
-        <Photo src={WM('Sign_Language_Interpretation_2.JPG')} alt="Sign language interpretation at an event" credit="Photo: Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:Sign_Language_Interpretation_2.JPG" ratio="3 / 4" />
-      </div>
-      <p className="story-note">Interpreters are essential, and they are not available for every short exchange. That gap is what we build for.</p>
-    </section>
   );
 }
 

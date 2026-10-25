@@ -1,7 +1,7 @@
-import { EraArt, FaceVisual, LanguageVisual, ScenarioArt, PredictionVisual, SceneVisual } from './components/ContextVisuals';
+import { FaceVisual, LanguageVisual, ScenarioArt, PredictionVisual, SceneVisual } from './components/ContextVisuals';
 import { PracticeCoach, TopFive } from './components/Practice';
 import { ClipFigure } from './components/MediaShowcase';
-import { BuiltWith, Chapter, RealSigners, ScenarioPhoto, SignGallery, WhereItApplies, WhyItMatters, WhyNow } from './components/Narrative';
+import { BuiltWith, Chapter, ScenarioPhoto, SignGallery, WhereItApplies, WhyItMatters, WhyNow } from './components/Narrative';
 import { MediaShowcase } from './components/MediaShowcase';
 import { DecisionFlow, DeployFlow, PipelineFlow } from './components/Flows';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ImgHTMLAttributes, type PointerEvent, type SyntheticEvent } from 'react';
@@ -559,99 +559,6 @@ function ContextBentoGrid() {
   );
 }
 
-const predictionScenes = [
-  { prefix: 'I NEED', context: 'Urgent care · active scene', candidates: [['HELP', 84], ['WATER', 61], ['MORE', 46], ['TOILET', 31], ['PLEASE', 24]] },
-  { prefix: 'CAN YOU', context: 'Conversation · turn taking', candidates: [['HELP', 79], ['REPEAT', 66], ['WAIT', 41], ['EXPLAIN', 35], ['COME', 22]] },
-  { prefix: 'I FEEL', context: 'Expression · face + pose', candidates: [['HAPPY', 75], ['SICK', 69], ['TIRED', 52], ['NERVOUS', 39], ['BETTER', 28]] },
-] as const;
-
-const signExamples = [
-  { word: 'HELLO', detail: 'Open hand · outward greeting', image: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/ChocHello.jpg', source: 'Wikimedia Commons · CC BY 3.0' },
-  { word: 'THANK YOU', detail: 'Chin origin · outward trajectory', image: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/ASL_OpenB%40Chin-PalmBack.jpg', source: 'Wikimedia Commons · CC BY-SA 3.0' },
-  { word: 'I LOVE YOU', detail: 'Combined I · L · Y handshape', image: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/ILYLoveSign.jpg', source: 'Wikimedia Commons · CC BY-SA 4.0' },
-] as const;
-
-function IntelligenceLab() {
-  const [sceneIndex, setSceneIndex] = useState(0);
-  const [emotion, setEmotion] = useState<'warm' | 'urgent' | 'joyful'>('warm');
-  const scene = predictionScenes[sceneIndex];
-  const emotionCopy = {
-    warm: { label: 'Warm / reassuring', output: 'Could you help me, please?', rate: '0.94×', pitch: '+2%' },
-    urgent: { label: 'Urgent / focused', output: 'I need help right now.', rate: '1.08×', pitch: '+7%' },
-    joyful: { label: 'Joyful / energetic', output: 'It is so good to see you!', rate: '1.04×', pitch: '+11%' },
-  }[emotion];
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setSceneIndex((index) => (index + 1) % predictionScenes.length), 3600);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  return (
-    <section className="intelligence-lab section-shell" id="intelligence">
-      <div className="intelligence-heading">
-        <span className="eyebrow">Top-5 hypotheses</span>
-        <h2>More than recognizing a single sign.</h2>
-        <p>SignBridge reasons across candidate gestures, temporal motion, language context, facial expression, and the way the final sentence should sound.</p>
-      </div>
-
-      <div className="intelligence-grid">
-        <motion.article className="intel-panel intel-top-five" initial={{ opacity: 0, y: 32 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .25 }}>
-          <div className="intel-panel-head"><span>Live classifier</span><b><i /> TOP–5 HYPOTHESES</b></div>
-          <div className="prediction-context"><span>Observed sequence</span><strong>{scene.prefix}<em>_</em></strong><small>{scene.context}</small></div>
-          <AnimatePresence mode="wait">
-            <motion.ol key={scene.prefix} className="top-five-list" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: .35 }}>
-              {scene.candidates.map(([word, confidence], index) => (
-                <li key={word}><span>0{index + 1}</span><strong>{word}</strong><div><i style={{ width: `${confidence}%` }} /></div><b>{confidence}%</b></li>
-              ))}
-            </motion.ol>
-          </AnimatePresence>
-          <div className="prediction-pagination">{predictionScenes.map((item, index) => <button className={index === sceneIndex ? 'is-active' : ''} key={item.prefix} type="button" onClick={() => setSceneIndex(index)} aria-label={`Show ${item.prefix} predictions`} />)}</div>
-        </motion.article>
-
-        <motion.article className="intel-panel intel-next-word" initial={{ opacity: 0, y: 32 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .25 }} transition={{ delay: .08 }}>
-          <div className="intel-panel-head"><span>Language model</span><b>Next word</b></div>
-          <div className="next-word-sentence"><span>I</span><span>would</span><span>like</span><span>to</span><strong>order</strong><i /></div>
-          <div className="next-word-options"><span><b>order</b><small>0.76</small></span><span><b>buy</b><small>0.48</small></span><span><b>ask</b><small>0.31</small></span></div>
-          <p>Locked signs become language context. The prediction head proposes the next likely word before the next gesture is complete.</p>
-          <div className="intel-metric-row"><span>Context window <b>8 signs</b></span><span>Re-rank <b>Gemini</b></span></div>
-        </motion.article>
-
-        <motion.article className="intel-panel intel-sign-library" initial={{ opacity: 0, y: 32 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .18 }}>
-          <div className="intel-panel-head"><span>Visual lexicon</span><b>Image → English</b></div>
-          <div className="sign-photo-grid">
-            {signExamples.map((sign, index) => (
-              <motion.figure key={sign.word} whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 260, damping: 22 }}>
-                <img src={sign.image} alt={`${sign.word} sign language example`} loading="lazy" referrerPolicy="no-referrer" />
-                <figcaption><span>0{index + 1}</span><strong>{sign.word}</strong><small>{sign.detail}</small></figcaption>
-                <em>{sign.source}</em>
-              </motion.figure>
-            ))}
-          </div>
-          <div className="sequence-research-note">
-            <div className="sequence-frames" aria-hidden="true"><i /><i /><i /><i /><i /></div>
-            <div><span><b /> ACTIVE RESEARCH</span><h3>Some signs are motion sequences, not static poses.</h3><p>We are improving temporal alignment for signs whose meaning depends on direction, repetition, speed, and the transition between handshapes.</p></div>
-          </div>
-        </motion.article>
-
-        <motion.article className="intel-panel intel-emotion-voice" initial={{ opacity: 0, y: 32 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .2 }}>
-          <div className="intel-panel-head"><span>Affective output</span><b>Emotion → voice</b></div>
-          <div className="emotion-selector" role="group" aria-label="Voice emotion preview">
-            {(['warm', 'urgent', 'joyful'] as const).map((tone) => <button className={emotion === tone ? 'is-active' : ''} key={tone} type="button" onClick={() => setEmotion(tone)}>{tone}</button>)}
-          </div>
-          <AnimatePresence mode="wait">
-            <motion.div className="voice-output" key={emotion} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-              <span>Detected tone · {emotionCopy.label}</span><strong>“{emotionCopy.output}”</strong>
-              <div className="voice-wave" aria-hidden="true">{Array.from({ length: 28 }, (_, index) => <i key={index} style={{ '--wave': `${24 + ((index * 17) % 66)}%` } as CSSProperties} />)}</div>
-              <div className="voice-parameters"><span>Speaking rate <b>{emotionCopy.rate}</b></span><span>Pitch contour <b>{emotionCopy.pitch}</b></span><span>Prosody <b>adaptive</b></span></div>
-            </motion.div>
-          </AnimatePresence>
-          <p>Facial expression and body tension influence the synthesized voice, so the spoken result carries more than literal words.</p>
-        </motion.article>
-      </div>
-    </section>
-  );
-}
-
 function SmartGlassesFuture() {
   const sectionRef = useRef<HTMLElement | null>(null);
 
@@ -713,20 +620,16 @@ function SmartGlassesFuture() {
 function FeatureExperience() {
   return (
     <>
-      <Chapter n={1} title="Capture" line="Sign language began with gloves and sensors. A camera is enough now." />
-      <EditorialStory />
-      <RealSigners />
-      <Chapter n={2} title="Recognize" line="Every frame votes, and a sign is only accepted when the votes agree." />
+      <Chapter n={1} title="Recognize" line="Every frame votes, and a sign is only accepted when the votes agree." />
       <div className="clip-pair section-shell"><ClipFigure name="hand" /><ClipFigure name="classifier" /></div>
-      <IntelligenceLab />
       <SignGallery />
       <DecisionFlow />
-      <Chapter n={3} title="Understand" line="Face, scene and likely next words add the context a hand shape alone lacks." />
+      <Chapter n={2} title="Understand" line="Face, scene and likely next words add the context a hand shape alone lacks." />
       <ContextBentoGrid />
-      <Chapter n={4} title="Express" line="Raw tokens become a sentence a person can edit and speak." />
+      <Chapter n={3} title="Express" line="Raw tokens become a sentence a person can edit and speak." />
       <ReasoningComparisonV2 />
       <ScenarioDial />
-      <Chapter n={5} title="Next" line="Where the same pipeline goes once it fits on your face." />
+      <Chapter n={4} title="Next" line="Where the same pipeline goes once it fits on your face." />
       <SmartGlassesFuture />
     </>
   );
@@ -806,14 +709,6 @@ function ScenarioDial() {
       </div>
     </section>
   );
-}
-
-function EditorialStory() {
-  const columns = [
-    { art: 'glove' as const, alt: 'MIT sign language glove proof of concept', badge: '2016 MIT proof of concept', title: 'The Hardware Era.', description: 'Specialized flex sensors and tethered gloves proved that sign language could be captured digitally.' },
-    { art: 'camera' as const, alt: 'Camera-based sign recognition research', badge: 'SignBridge prototype', title: 'The Camera-Based Era.', description: 'The browser extracts hand, face, and pose landmarks before the sequence is sent to the configured recognition service.' },
-  ];
-  return <section className="editorial-story-section section-shell" id="ecosystem"><div className="section-intro centered"><span className="eyebrow">From gloves to cameras</span><h2>From physical gloves to vision-native AI.</h2></div><div className="editorial-story-grid">{columns.map((column, index) => <motion.article className="editorial-col" key={column.title} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .25 }} transition={{ duration: .65, delay: index * .1, ease: [0.22, 1, 0.36, 1] }}><div className="editorial-image-wrap"><EraArt kind={column.art} /></div><div className="editorial-copy-block"><span className={`editorial-badge-pill ${column.title.startsWith('The Camera') ? 'cyan-badge' : ''}`}>{column.badge}</span><h4>{column.title}</h4><p>{column.description}</p></div></motion.article>)}</div></section>;
 }
 
 type SponsorLogoKind = 'uw' | 'sail' | 'qualcomm';

@@ -145,3 +145,23 @@ code,pre,kbd,samp,.dev-console *,.developer-console *{font-family:ui-monospace,S
 .page-features .context-bento-section{padding-top:0;padding-bottom:clamp(40px,5vw,72px)}
 .page-features .context-bento-grid{gap:20px;margin-top:0}
 .sb-page-view:not(.overview-page)>.context-bento-section{padding-top:0}
+
+/* sector carousel */
+.sector-tabs{display:flex;gap:8px;overflow-x:auto;margin-bottom:20px;padding-bottom:4px;scrollbar-width:none}
+.sector-tabs::-webkit-scrollbar{display:none}
+.sector-tabs button{flex:none;padding:9px 18px;border:1px solid var(--line-strong);border-radius:999px;background:transparent;color:var(--text-2);font:500 15px var(--font-display);cursor:pointer}
+.sector-tabs button.is-active{background:var(--text);border-color:var(--text);color:var(--bg)}
+.sector-viewport{position:relative;overflow:hidden;border-radius:var(--r-lg);border:1px solid var(--line-strong);background:var(--surface)}
+.sector-track{display:flex;transition:transform .55s cubic-bezier(.22,1,.36,1)}
+.sector-slide{flex:0 0 100%;display:grid;grid-template-columns:1.2fr 1fr;min-height:420px}
+.sector-photo{position:relative;background:linear-gradient(135deg,var(--surface-2),var(--surface-3))}
+.sector-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.sector-copy{display:flex;flex-direction:column;justify-content:center;gap:14px;padding:clamp(28px,4vw,56px)}
+.sector-n{font-size:14px;color:var(--text-3)}
+.sector-copy h3{margin:0;font:600 clamp(30px,3.4vw,44px)/1.1 var(--font-display);letter-spacing:-0.025em;color:var(--text)}
+.sector-copy p{margin:0;font-size:18px;line-height:1.6;color:var(--text-2);max-width:34ch}
+.sector-nav{position:absolute;right:20px;bottom:20px;display:flex;gap:8px}
+.sector-nav button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line-strong);background:var(--bg);color:var(--text);font-size:18px;cursor:pointer}
+.sector-nav button:hover{border-color:var(--accent)}
+@media (max-width:760px){.sector-slide{grid-template-columns:1fr}.sector-photo{min-height:220px}}
+@media (prefers-reduced-motion:reduce){.sector-track{transition:none}}
