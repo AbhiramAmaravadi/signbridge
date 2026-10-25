@@ -1,6 +1,7 @@
 import { EraArt, FaceVisual, LanguageVisual, ScenarioArt, PredictionVisual, SceneVisual } from './components/ContextVisuals';
 import { PracticeCoach, TopFive } from './components/Practice';
-import { BuiltWith, Chapter, WhereItApplies, WhyItMatters, WhyNow } from './components/Narrative';
+import { ClipFigure } from './components/MediaShowcase';
+import { BuiltWith, Chapter, RealSigners, ScenarioPhoto, SignGallery, WhereItApplies, WhyItMatters, WhyNow } from './components/Narrative';
 import { MediaShowcase } from './components/MediaShowcase';
 import { DecisionFlow, DeployFlow, PipelineFlow } from './components/Flows';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ImgHTMLAttributes, type PointerEvent, type SyntheticEvent } from 'react';
@@ -714,8 +715,11 @@ function FeatureExperience() {
     <>
       <Chapter n={1} title="Capture" line="Sign language began with gloves and sensors. A camera is enough now." />
       <EditorialStory />
+      <RealSigners />
       <Chapter n={2} title="Recognize" line="Every frame votes, and a sign is only accepted when the votes agree." />
+      <div className="clip-pair section-shell"><ClipFigure name="hand" /><ClipFigure name="classifier" /></div>
       <IntelligenceLab />
+      <SignGallery />
       <DecisionFlow />
       <Chapter n={3} title="Understand" line="Face, scene and likely next words add the context a hand shape alone lacks." />
       <ContextBentoGrid />
@@ -793,7 +797,7 @@ function ScenarioDial() {
           <button className={`scenario-tab-btn ${scenario === 'tour' ? 'is-active' : ''}`} type="button" onClick={() => setScenario('tour')}>Tour &amp; Daily Context</button>
         </div>
         <motion.div className={`scenario-grid scenario-${content.accent}`} key={scenario} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .35 }}>
-          <div className="scenario-media-frame"><ScenarioArt kind={scenario} /></div>
+          <div className="scenario-media-frame"><ScenarioPhoto key={scenario} kind={scenario} fallback={<ScenarioArt kind={scenario} />} /></div>
           <div className="scenario-content-panel">
             <div className="scenario-info"><span className="eyebrow">Illustrative workflow</span><h3>{content.title}</h3><p>This simulated example shows how recognized sign tokens could be reviewed and rewritten as editable language. It is not a medical diagnostic tool.</p></div>
             <div className="scenario-metrics-row"><div className="scenario-metric-box"><span>Example sign tokens</span><strong className="scenario-signal-value">{content.raw}</strong></div><div className="scenario-metric-box"><span>Editable sentence example</span><strong className="scenario-translation-value">{content.translation}</strong></div></div>

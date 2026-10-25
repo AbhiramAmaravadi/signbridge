@@ -77,3 +77,9 @@ export function MediaShowcase() {
     </section>
   );
 }
+
+const ALL: Record<string, Clip> = Object.fromEntries([...ROW_ONE, ...ROW_TWO].map((c) => [c.name, c]));
+export function ClipFigure({ name }: { name: 'hand' | 'classifier' | 'decision' }) {
+  const theme = useResolvedTheme();
+  return <Tile clip={{ ...ALL[name], w: ALL[name].w, h: ALL[name].h }} theme={theme} />;
+}

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 /* Overview narrative: why it matters, where it applies, who built it.
    Only figures with a public source are shown; sectors are directions, not customers. */
 
@@ -101,4 +102,59 @@ export function Chapter({ n, title, line }: { n: number; title: string; line: st
       <div><h2>{title}</h2><p>{line}</p></div>
     </header>
   );
+}
+
+const WM = (f: string, w = 1000) => `https://commons.wikimedia.org/wiki/Special:FilePath/${f}?width=${w}`;
+const LP = 'https://www.lifeprint.com/asl101/';
+
+export function Photo({ src, alt, credit, href, ratio = '4 / 3', fallback }: { src: string; alt: string; credit: string; href?: string; ratio?: string; fallback?: React.ReactNode }) {
+  const [bad, setBad] = useState(false);
+  if (bad) return fallback ? <>{fallback}</> : null;
+  return (
+    <figure className="photo-fig">
+      <div className="photo-frame" style={{ aspectRatio: ratio }}>
+        <img src={src} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setBad(true)} />
+      </div>
+      <figcaption>{href ? <a href={href} target="_blank" rel="noreferrer">{credit}</a> : credit}</figcaption>
+    </figure>
+  );
+}
+
+export function RealSigners() {
+  return (
+    <section className="story-section section-shell" id="real-signers" aria-label="Sign language in real conversations">
+      <div className="photo-strip">
+        <Photo src={WM('Sign_language_interpreter.jpg')} alt="A sign language interpreter at work" credit="Photo: Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:Sign_language_interpreter.jpg" ratio="3 / 4" />
+        <Photo src={WM('Speaker_and_sign_language_interpreter_(Estonia).jpg')} alt="A speaker with a sign language interpreter on stage" credit="Photo: Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:Speaker_and_sign_language_interpreter_(Estonia).jpg" ratio="3 / 4" />
+        <Photo src={WM('Sign_Language_Interpretation_2.JPG')} alt="Sign language interpretation at an event" credit="Photo: Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:Sign_Language_Interpretation_2.JPG" ratio="3 / 4" />
+      </div>
+      <p className="story-note">Interpreters are essential, and they are not available for every short exchange. That gap is what we build for.</p>
+    </section>
+  );
+}
+
+const SIGNS = [
+  { k: 'Flower', src: LP + 'signjpegs/f/flower1.jpg', page: LP + 'pages-signs/f/flower.htm' },
+  { k: 'Shhh', src: LP + 'gifs-animated/shhh.gif', page: LP + 'pages-signs/q/quiet.htm' },
+  { k: 'Wolf', src: LP + 'gifs/w/wolf.gif', page: LP + 'pages-signs/w/wolf.htm' },
+  { k: 'Look', src: LP + 'gifs/l/look-at-1.gif', page: LP + 'pages-signs/l/look.htm' },
+];
+export function SignGallery() {
+  return (
+    <section className="story-section section-shell" id="sign-gallery" aria-label="Signs the model reads best">
+      <div className="story-head"><span className="eyebrow">Best results so far</span><h2>Four signs it reads best.</h2><p>Flower, shhh, wolf and look are the signs the prototype recognises most reliably today. More are in training.</p></div>
+      <div className="sign-gallery">
+        {SIGNS.map((x) => (
+          <Photo key={x.k} src={x.src} alt={`The ASL sign for ${x.k}`} credit={`${x.k} · Lifeprint`} href={x.page} ratio="1 / 1" />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function ScenarioPhoto({ kind, fallback }: { kind: 'medical' | 'tour'; fallback: React.ReactNode }) {
+  const m = kind === 'medical'
+    ? { f: 'Doctor_consults_with_patient_(4).jpg', a: 'A doctor consulting with a patient' }
+    : { f: 'Sign_language,_2014_(01).jpg', a: 'People communicating in sign language' };
+  return <Photo src={WM(m.f, 1200)} alt={m.a} credit="Photo: Wikimedia Commons" href={`https://commons.wikimedia.org/wiki/File:${m.f}`} ratio="16 / 9" fallback={fallback} />;
 }

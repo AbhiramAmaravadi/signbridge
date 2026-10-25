@@ -63,14 +63,14 @@ const BONES: [number, number][] = [
 
 /* ---- lessons ---- */
 type Key = { t: number; x: number; y: number; rot?: number };
-type Lesson = { id: string; label: string; targets: string[]; shape: keyof typeof SHAPES; keys: Key[]; steps: string[]; note?: string };
+type Lesson = { id: string; label: string; targets: string[]; shape: keyof typeof SHAPES; keys: Key[]; steps: string[]; note?: string; refs: string[]; page: string };
 
 // scene is 300 x 320; head centre (150, 84)
 const LESSONS: Lesson[] = [
-  { id: 'flower', label: 'Flower', targets: ['flower', 'flowers'], shape: 'flatO', steps: ['Bunch your fingertips together', 'Touch beside one nostril, then the other'], keys: [{ t: 0, x: 134, y: 150, rot: -6 }, { t: 0.2, x: 134, y: 150, rot: -6 }, { t: 0.6, x: 166, y: 150, rot: 6 }, { t: 1, x: 166, y: 150, rot: 6 }], note: 'Think of smelling a flower. Keep your face in view of the camera.' },
-  { id: 'shhh', label: 'Shhh', targets: ['shhh', 'shh', 'shhhh', 'quiet', 'shush'], shape: 'point', steps: ['Point one index finger straight up', 'Rest it on your lips, hold still'], keys: [{ t: 0, x: 170, y: 262, rot: 8 }, { t: 0.35, x: 152, y: 228, rot: 0 }, { t: 0.8, x: 152, y: 228, rot: 0 }, { t: 1, x: 152, y: 228, rot: 0 }], note: 'Keep your other fingers folded so the index finger is clear.' },
-  { id: 'wolf', label: 'Wolf', targets: ['wolf'], shape: 'claw', steps: ['Curl your fingers into a claw by your nose', 'Push forward and outward, like a snout'], keys: [{ t: 0, x: 150, y: 196, rot: 0 }, { t: 0.25, x: 150, y: 196, rot: 0 }, { t: 0.8, x: 196, y: 176, rot: 28 }, { t: 1, x: 196, y: 176, rot: 28 }], note: 'Regional variants exist. This follows the most common form.' },
-  { id: 'look', label: 'Look', targets: ['look', 'looking'], shape: 'vee', steps: ['Make a V with two fingers pointing at your eyes', 'Turn the V outward, as if following your gaze'], keys: [{ t: 0, x: 144, y: 190, rot: -4 }, { t: 0.25, x: 144, y: 190, rot: -4 }, { t: 0.8, x: 206, y: 148, rot: 42 }, { t: 1, x: 206, y: 148, rot: 42 }] },
+  { id: 'flower', label: 'Flower', targets: ['flower', 'flowers'], shape: 'flatO', steps: ['Bunch your fingertips together', 'Touch your cheek beside your nose, then the other side'], keys: [{ t: 0, x: 134, y: 150, rot: -6 }, { t: 0.2, x: 134, y: 150, rot: -6 }, { t: 0.6, x: 166, y: 150, rot: 6 }, { t: 1, x: 166, y: 150, rot: 6 }], note: 'Think of smelling a flower. Keep your face in view of the camera.' , refs: ['https://www.lifeprint.com/asl101/signjpegs/f/flower1.jpg', 'https://www.lifeprint.com/asl101/signjpegs/f/flower2.jpg'], page: 'https://www.lifeprint.com/asl101/pages-signs/f/flower.htm' },
+  { id: 'shhh', label: 'Shhh', targets: ['shhh', 'shh', 'shhhh', 'quiet', 'shush'], shape: 'point', steps: ['Point one index finger straight up', 'Rest it on your lips, hold still'], keys: [{ t: 0, x: 170, y: 262, rot: 8 }, { t: 0.35, x: 152, y: 228, rot: 0 }, { t: 0.8, x: 152, y: 228, rot: 0 }, { t: 1, x: 152, y: 228, rot: 0 }], note: 'Keep your other fingers folded so the index finger is clear.' , refs: ['https://www.lifeprint.com/asl101/gifs-animated/shhh.gif'], page: 'https://www.lifeprint.com/asl101/pages-signs/q/quiet.htm' },
+  { id: 'wolf', label: 'Wolf', targets: ['wolf'], shape: 'claw', steps: ['Curl your fingers into a claw by your nose', 'Push forward and outward, like a snout'], keys: [{ t: 0, x: 150, y: 196, rot: 0 }, { t: 0.25, x: 150, y: 196, rot: 0 }, { t: 0.8, x: 196, y: 176, rot: 28 }, { t: 1, x: 196, y: 176, rot: 28 }], note: 'Regional variants exist. This follows the most common form.' , refs: ['https://www.lifeprint.com/asl101/gifs/w/wolf.gif'], page: 'https://www.lifeprint.com/asl101/pages-signs/w/wolf.htm' },
+  { id: 'look', label: 'Look', targets: ['look', 'looking'], shape: 'vee', steps: ['Make a V with two fingers pointing at your eyes', 'Turn the V outward, as if following your gaze'], keys: [{ t: 0, x: 144, y: 190, rot: -4 }, { t: 0.25, x: 144, y: 190, rot: -4 }, { t: 0.8, x: 206, y: 148, rot: 42 }, { t: 1, x: 206, y: 148, rot: 42 }] , refs: ['https://www.lifeprint.com/asl101/gifs/l/look-at-1.gif'], page: 'https://www.lifeprint.com/asl101/pages-signs/l/look.htm' },
 ];
 
 function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
@@ -160,6 +160,9 @@ export function PracticeCoach({ topK, locked, candidate, isRunning, isStarting, 
   const [phase, setPhase] = useState<'watch' | 'try' | 'done'>('watch');
   const [done, setDone] = useState<Record<string, boolean>>({});
   const lesson = LESSONS[index];
+  const [view, setView] = useState<'real' | 'schematic'>('real');
+  const [refBad, setRefBad] = useState<Record<string, boolean>>({});
+  const showReal = view === 'real' && !refBad[lesson.id];
 
   // matching: the locked word, the stable candidate, or the top-1 prediction
   const seen = [locked, candidate, topK[0]?.label].map(norm);
@@ -202,8 +205,16 @@ export function PracticeCoach({ topK, locked, candidate, isRunning, isStarting, 
 
       <div className="practice-body">
         <div className="practice-watch">
-          <CoachHand lesson={lesson} running={phase !== 'done'} />
-          <span className="practice-tag">Schematic reference</span>
+          {showReal ? (
+            <div className="practice-photos">
+              {lesson.refs.map((u) => (<img key={u} src={u} alt={`A signer demonstrating ${lesson.label}`} referrerPolicy="no-referrer" onError={() => setRefBad((b) => ({ ...b, [lesson.id]: true }))} />))}
+            </div>
+          ) : (<CoachHand lesson={lesson} running={phase !== 'done'} />)}
+          <div className="practice-view" role="group" aria-label="Reference view">
+            <button type="button" className={showReal ? 'is-active' : ''} onClick={() => setView('real')}>Signer</button>
+            <button type="button" className={!showReal ? 'is-active' : ''} onClick={() => setView('schematic')}>Schematic</button>
+          </div>
+          {showReal && <a className="practice-tag" href={lesson.page} target="_blank" rel="noreferrer">Source: Lifeprint</a>}
         </div>
 
         <div className="practice-steps">
