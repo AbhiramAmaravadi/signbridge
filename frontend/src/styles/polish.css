@@ -38,3 +38,9 @@ nav, header[class*="nav"] { border-bottom: 1px solid var(--line); }
 
 .dev-floating-toggle { background: var(--surface); color: var(--text-2); border: 1px solid var(--line-strong); font-size: 12px; opacity: 1; }
 .sam-tokens { color: var(--accent); }
+
+/* theme switch in the nav */
+.sb-theme-toggle { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--surface-2); }
+.sb-theme-toggle button { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--text-3); cursor: pointer; transition: background .2s ease, color .2s ease; }
+.sb-theme-toggle button:hover { color: var(--text); }
+.sb-theme-toggle button.is-active { background: var(--surface); color: var(--accent); box-shadow: 0 0 0 1px var(--line-strong); }

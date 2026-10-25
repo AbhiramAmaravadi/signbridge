@@ -1,3 +1,5 @@
+import { FaceVisual, LanguageVisual, PredictionVisual, SceneVisual } from './components/ContextVisuals';
+import { PracticeCoach, TopFive } from './components/Practice';
 import { MediaShowcase } from './components/MediaShowcase';
 import { DecisionFlow, DeployFlow, PipelineFlow } from './components/Flows';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ImgHTMLAttributes, type PointerEvent, type SyntheticEvent } from 'react';
@@ -531,22 +533,22 @@ function ContextBentoGrid() {
       </div>
       <div className="context-bento-grid">
         <motion.article className="context-bento-card bento-llm" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
-          <img src="https://image.cnbcfm.com/api/v1/image/107371197-1707432021946-gettyimages-1988737588-raa-googlege240208_npBM4.jpeg?v=1707432096" alt="Language model reasoning visual" loading="lazy" referrerPolicy="no-referrer" />
+          <LanguageVisual />
           <div className="bento-image-gradient" />
           <div className="bento-content"><span className="bento-index">01 / Language layer</span><span className="bento-live-badge"><i /> Translation endpoint</span><h3>Sentence Refinement</h3><p>The configured translation service can refine recognized sign tokens into an editable sentence before speech output.</p></div>
         </motion.article>
         <motion.article className="context-bento-card bento-expression" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
-          <img src="https://www.infolob.com/wp-content/uploads/2019/10/fr.png" alt="Facial landmark mesh" loading="lazy" referrerPolicy="no-referrer" />
+          <FaceVisual />
           <div className="bento-image-gradient" /><div className="emotion-tags"><span>Questioning (88%)</span><span>Tone: Curious</span></div>
           <div className="bento-content"><span className="bento-index">02 / Facial mesh</span><h3>Nonmanual Signal Input</h3><p>Facial and body landmarks are included in the prototype input because nonmanual information can contribute linguistic meaning.</p></div>
         </motion.article>
         <motion.article className="context-bento-card bento-scene" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
-          <img src="https://i0.wp.com/downloads.mixtile.com/doc-images/hailo/restaurant-table-status/output-empty-and-occupied-tables.jpeg?w=1020&ssl=1" alt="Restaurant scene for ambient context recognition" loading="lazy" referrerPolicy="no-referrer" />
+          <SceneVisual />
           <div className="bento-image-gradient" /><span className="scene-box scene-table">Table</span><span className="scene-box scene-menu">Menu</span>
           <div className="bento-content"><span className="bento-index">03 / Scene context</span><h3>Optional Visual Context</h3><p>When a sentence is finalized, the configured translation endpoint may receive one camera snapshot with the recognized words.</p><button className={`ambient-toggle ${ambientContext ? 'is-on' : ''}`} type="button" onClick={() => setAmbientContext((enabled) => !enabled)} aria-pressed={ambientContext}><i /> {ambientContext ? 'Context example enabled' : 'Context example paused'}</button></div>
         </motion.article>
         <motion.article className="context-bento-card bento-prediction" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
-          <img src="https://cdn.analyticsvidhya.com/wp-content/uploads/2021/08/77308shutterstock-1208129407_trm5.960.jpg" alt="Neural network visualization" loading="lazy" referrerPolicy="no-referrer" />
+          <PredictionVisual />
           <div className="bento-image-gradient" /><div className="autocomplete-demo"><span>I would like to</span><i>→</i><b>order</b><b>buy</b><b>ask</b></div>
           <div className="bento-content"><span className="bento-index">04 / Prediction</span><h3>Smart Next-Word Completion</h3><p>Suggests possible next words from the current sequence so the signer can inspect and choose what comes next.</p></div>
         </motion.article>
@@ -1592,6 +1594,8 @@ function App() {
           <div className="connection-state"><span className={`state-dot state-${status}`} /> {statusText(status, uiMode)} <span className="state-divider" /> <code>{API_HOST_LABEL}</code></div>
         </div>
 
+        <PracticeCoach topK={output?.top_k ?? []} locked={output?.locked_word} candidate={output?.candidate} isRunning={isRunning} isStarting={isStarting} onStartCamera={startCamera} />
+
         <div className="workspace-grid" id="demo-camera">
           <section className="camera-card glass-card">
             <div className="card-heading">
@@ -1635,6 +1639,7 @@ function App() {
               <div className="card-heading compact"><div><span className="eyebrow">Top prediction</span><h3>{output?.locked_word ? 'Gesture locked' : 'Reading the room'}</h3></div><span className={`confidence-orb ${topPrediction && topPrediction.confidence >= 0.4 ? 'orb-hot' : ''}`} /></div>
               <div className="prediction-main"><div><strong className="prediction-word">{predictionLabel}</strong><p>{topPrediction ? `${(topPrediction.confidence * 100).toFixed(1)}% model confidence` : 'Start the camera to begin'}</p></div><ProgressRing progress={lockProgress} /></div>
               <div className="lock-meter"><span style={{ width: `${Math.max(0, Math.min(100, lockProgress * 100))}%` }} /></div><div className="meter-caption"><span>Agreement window</span><span>{output?.candidate_hits ?? 0} / 2 stable</span></div>
+              <TopFive items={output?.top_k ?? []} />
             </section>
 
             <section className="translation-card glass-card">
