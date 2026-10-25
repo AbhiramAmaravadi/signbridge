@@ -1,0 +1,39 @@
+/* Apple / Scale-AI style refinements: quiet, high-contrast, generous spacing */
+html { background: var(--bg); scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.03em; text-wrap: balance; }
+p { text-wrap: pretty; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* small mono labels: never below 11px, never washed out */
+.bento-live-badge, .emotion-tags span, .scene-box, .ambient-toggle, .autocomplete-demo span, .autocomplete-demo b { font-size: 11px; }
+.bento-content p { font-size: 15px; }
+
+/* nav hairline instead of a heavy bar */
+nav, header[class*="nav"] { border-bottom: 1px solid var(--line); }
+
+::selection { background: color-mix(in srgb, var(--accent) 25%, transparent); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+/* buttons: Apple-style pills */
+.premium-primary, .premium-secondary { border-radius: 999px !important; font-family: var(--font-body); font-weight: 600; box-shadow: none !important; }
+.premium-primary { background: var(--accent) !important; color: var(--on-accent) !important; border: 1px solid transparent !important; }
+.premium-primary:hover { background: color-mix(in srgb, var(--accent) 88%, #000) !important; }
+.premium-secondary { background: transparent !important; color: var(--accent) !important; border: 1px solid var(--accent) !important; }
+.premium-secondary:hover { background: color-mix(in srgb, var(--accent) 8%, transparent) !important; }
+.premium-secondary span { color: inherit !important; }
+.premium-stage-header span, .premium-stage-header small { background: transparent !important; border: 0 !important; color: color-mix(in srgb, var(--text) 80%, transparent) !important; font-size: 11px !important; }
+/* hero product stage = real dark panel on the light page (SAM 3 style) */
+.premium-product-stage { background: var(--bg) !important; border-radius: var(--r-lg) !important; padding: 20px !important; overflow: hidden; }
+.premium-stage-camera { background: var(--surface) !important; border-color: var(--line) !important; }
+/* hero headline: Apple scale, 3 lines max */
+.premium-hero h1 { max-width: 12ch; font-size: clamp(44px, 5.6vw, 84px); font-weight: 600; letter-spacing: -0.045em; line-height: 1.04; }
+.hero-stat-status { font-size: 11px !important; }
+
+.dev-floating-toggle { background: var(--surface) !important; color: var(--text-2) !important; border: 1px solid var(--line-strong) !important; font-size: 11px !important; opacity: 1 !important; }

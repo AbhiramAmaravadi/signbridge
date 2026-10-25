@@ -1,10 +1,6 @@
 /* Overview page — Linear / Apple inspired polish */
 
 .overview-page {
-  --ov-cyan: #00f0ff;
-  --ov-indigo: #6366f1;
-  --ov-text: #f8fafc;
-  --ov-muted: #94a3b8;
   padding-bottom: 2rem;
 }
 
@@ -22,16 +18,8 @@
 }
 
 .overview-page .sam-architecture-panel {
-  border-color: rgba(34, 211, 238, 0.22);
-  background: rgba(2, 6, 23, 0.9);
-  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35), 0 0 50px rgba(6, 182, 212, 0.1);
-}
-
-.overview-page .sam-architecture-panel::before {
-  background:
-    radial-gradient(circle at 52% 48%, rgba(6, 182, 212, 0.14), transparent 36%),
-    radial-gradient(circle at 78% 28%, rgba(244, 114, 182, 0.1), transparent 30%),
-    radial-gradient(circle at 18% 70%, rgba(16, 185, 129, 0.08), transparent 28%);
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
 }
 
 /* Vision Evolution story strip */

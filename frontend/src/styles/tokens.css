@@ -1,0 +1,120 @@
+/* ==========================================================================
+   SignBridge design tokens — the only place raw colours are defined.
+   Light is the default canvas (Apple / Scale AI / SAM 3 reference).
+   "Stage" surfaces (camera, architecture, product visuals) re-declare the dark values locally,
+   so they stay dark inside a light page. Set <html data-theme="dark"> to flip the whole site.
+   ========================================================================== */
+
+:root {
+  /* canvas */
+  --bg: #fbfbfd;
+  --surface: #ffffff;
+  --surface-2: #f5f5f7;
+  --surface-3: #e8e8ed;
+  --fg: #1d1d1f;              /* overlay base: tinted with alpha for glass / hover fills */
+
+  /* text */
+  --text: #1d1d1f;
+  --text-2: #515154;          /* 7.6:1 on --surface */
+  --text-3: #6e6e73;          /* 5.0:1 on --surface */
+
+  /* lines */
+  --line: rgba(0, 0, 0, 0.08);
+  --line-strong: rgba(0, 0, 0, 0.16);
+
+  /* the single accent + status colours */
+  --accent: #0071e3;
+  --on-accent: #ffffff;
+  --ok: #1d8a4e;
+  --warn: #a15c00;
+  --err: #d1342b;
+
+  /* shape */
+  --r-sm: 8px;
+  --r-md: 16px;
+  --r-lg: 24px;
+
+  /* type */
+  --font-display: "Inter", "Atkinson Hyperlegible", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: "Atkinson Hyperlegible", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* dark values: whole-site dark theme and local "stage" surfaces */
+:root[data-theme="dark"],
+.on-dark,
+.premium-product-stage,
+.video-shell,
+.sam-architecture,
+.glasses-concept-stage,
+.scenario-media-frame,
+.editorial-image-wrap {
+  --bg: #0b0d12;
+  --surface: #11141b;
+  --surface-2: #171b24;
+  --surface-3: #222733;
+  --fg: #f2f4f8;
+  --text: #f2f4f8;
+  --text-2: #a3acb9;
+  --text-3: #8a93a1;
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --accent: #5b9dff;
+  --on-accent: #06121f;
+  --ok: #4fe0a2;
+  --warn: #e7b86b;
+  --err: #ff7a70;
+  color: var(--text);
+}
+
+/* legacy names -> semantic tokens. Declared on every scope so they resolve against the local palette. */
+:root,
+:root[data-theme="dark"],
+.on-dark,
+.premium-product-stage,
+.video-shell,
+.sam-architecture,
+.glasses-concept-stage,
+.scenario-media-frame,
+.editorial-image-wrap {
+  --ink: var(--text);
+  --muted: var(--text-2);
+  --soft: var(--text-3);
+  --obsidian: var(--bg);
+  --glass: color-mix(in srgb, var(--fg) 4%, transparent);
+  --blue: var(--accent);
+  --blue-bright: var(--accent);
+  --cyan: var(--accent);
+  --indigo: var(--accent);
+  --ice: var(--text);
+  --green: var(--ok);
+  --amber: var(--warn);
+  --surface-1: var(--surface);
+  --brand-ink: var(--text);
+  --brand-bg: var(--bg);
+  --brand-surface: var(--surface);
+  --brand-surface-raised: var(--surface-2);
+  --brand-line: var(--line);
+  --brand-muted: var(--text-2);
+  --brand-subtle: var(--text-3);
+  --brand-accent: var(--accent);
+  --brand-accent-strong: var(--accent);
+  --brand-live: var(--ok);
+  --brand-shadow: none;
+  --sb-nav-accent: var(--accent);
+  --sb-nav-accent-bright: var(--accent);
+  --sb-nav-accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
+  --sb-nav-text: var(--text-2);
+  --sb-nav-text-strong: var(--text);
+  --ov-cyan: var(--accent);
+  --ov-indigo: var(--accent);
+  --ov-text: var(--text);
+  --ov-muted: var(--text-2);
+  --product-blue: var(--accent);
+  --product-blue-dark: var(--accent);
+  --product-black: var(--text);
+  --product-copy: var(--text-2);
+  --product-canvas: var(--bg);
+  --product-paper: var(--surface);
+  --product-line: var(--line);
+}
