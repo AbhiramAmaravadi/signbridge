@@ -1,5 +1,6 @@
-import { FaceVisual, LanguageVisual, PredictionVisual, SceneVisual } from './components/ContextVisuals';
+import { EraArt, FaceVisual, LanguageVisual, ScenarioArt, PredictionVisual, SceneVisual } from './components/ContextVisuals';
 import { PracticeCoach, TopFive } from './components/Practice';
+import { BuiltWith, Chapter, WhereItApplies, WhyItMatters, WhyNow } from './components/Narrative';
 import { MediaShowcase } from './components/MediaShowcase';
 import { DecisionFlow, DeployFlow, PipelineFlow } from './components/Flows';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ImgHTMLAttributes, type PointerEvent, type SyntheticEvent } from 'react';
@@ -527,7 +528,7 @@ function ContextBentoGrid() {
   return (
     <section className="context-bento-section section-shell" id="capabilities">
       <div className="section-intro centered">
-        <span className="eyebrow">01 / The context engine</span>
+        <span className="eyebrow">Context engine</span>
         <h2>Recognition gets smarter with context.</h2>
         <p>Four real-time intelligence layers turn movement into communication that feels natural, nuanced, and fast.</p>
       </div>
@@ -587,7 +588,7 @@ function IntelligenceLab() {
   return (
     <section className="intelligence-lab section-shell" id="intelligence">
       <div className="intelligence-heading">
-        <span className="eyebrow">02 / Intelligence lab</span>
+        <span className="eyebrow">Top-5 hypotheses</span>
         <h2>More than recognizing a single sign.</h2>
         <p>SignBridge reasons across candidate gestures, temporal motion, language context, facial expression, and the way the final sentence should sound.</p>
       </div>
@@ -711,18 +712,18 @@ function SmartGlassesFuture() {
 function FeatureExperience() {
   return (
     <>
-      <ContextBentoGrid />
-      <div className="signal-divider" aria-hidden="true"><span /></div>
+      <Chapter n={1} title="Capture" line="Sign language began with gloves and sensors. A camera is enough now." />
+      <EditorialStory />
+      <Chapter n={2} title="Recognize" line="Every frame votes, and a sign is only accepted when the votes agree." />
       <IntelligenceLab />
       <DecisionFlow />
-      <div className="signal-divider" aria-hidden="true"><span /></div>
-      <EditorialStory />
-      <div className="signal-divider" aria-hidden="true"><span /></div>
-      <SmartGlassesFuture />
-      <div className="signal-divider" aria-hidden="true"><span /></div>
+      <Chapter n={3} title="Understand" line="Face, scene and likely next words add the context a hand shape alone lacks." />
+      <ContextBentoGrid />
+      <Chapter n={4} title="Express" line="Raw tokens become a sentence a person can edit and speak." />
       <ReasoningComparisonV2 />
-      <div className="signal-divider" aria-hidden="true"><span /></div>
       <ScenarioDial />
+      <Chapter n={5} title="Next" line="Where the same pipeline goes once it fits on your face." />
+      <SmartGlassesFuture />
     </>
   );
 }
@@ -777,13 +778,13 @@ function PremiumHero({ devMode, isRunning, onLaunchDemo, onExplore }: PremiumHer
 function ScenarioDial() {
   const [scenario, setScenario] = useState<'medical' | 'tour'>('medical');
   const content = scenario === 'medical'
-    ? { image: 'https://inclusiveasl.com/wp-content/uploads/2023/12/Medical-Website-2.jpg', title: 'Medical context', raw: 'PAIN / RIGHT / ABDOMEN', translation: 'I have pain on the right side of my abdomen.', accent: 'rose', alt: 'Medical communication example with a signer and clinician' }
-    : { image: 'https://deafaction.org/wp-content/uploads/2024/03/DeafAction14.08.23-018-1184x790.jpg', title: 'Tour & daily context', raw: 'LOOK / HISTORIC / TOWER', translation: 'The historic tower is on your left.', accent: 'cyan', alt: 'Daily communication example during a guided tour' };
+    ? { title: 'Medical context', raw: 'PAIN / RIGHT / ABDOMEN', translation: 'I have pain on the right side of my abdomen.', accent: 'rose', alt: 'Medical communication example with a signer and clinician' }
+    : { title: 'Tour & daily context', raw: 'LOOK / HISTORIC / TOWER', translation: 'The historic tower is on your left.', accent: 'cyan', alt: 'Daily communication example during a guided tour' };
   return (
     <section className="scenario-dial-section" id="scenario">
       <div className="section-shell">
         <div className="section-intro centered">
-          <span className="eyebrow">Context dial / Gemini fusion</span>
+          <span className="eyebrow">Context in use</span>
           <h2>One gesture. The right meaning.</h2>
           <p>Spatial motion becomes more useful when it understands where the conversation is happening.</p>
         </div>
@@ -792,7 +793,7 @@ function ScenarioDial() {
           <button className={`scenario-tab-btn ${scenario === 'tour' ? 'is-active' : ''}`} type="button" onClick={() => setScenario('tour')}>Tour &amp; Daily Context</button>
         </div>
         <motion.div className={`scenario-grid scenario-${content.accent}`} key={scenario} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .35 }}>
-          <ResilientImage className="scenario-media-frame" src={content.image} alt={content.alt} width={1200} height={675} />
+          <div className="scenario-media-frame"><ScenarioArt kind={scenario} /></div>
           <div className="scenario-content-panel">
             <div className="scenario-info"><span className="eyebrow">Illustrative workflow</span><h3>{content.title}</h3><p>This simulated example shows how recognized sign tokens could be reviewed and rewritten as editable language. It is not a medical diagnostic tool.</p></div>
             <div className="scenario-metrics-row"><div className="scenario-metric-box"><span>Example sign tokens</span><strong className="scenario-signal-value">{content.raw}</strong></div><div className="scenario-metric-box"><span>Editable sentence example</span><strong className="scenario-translation-value">{content.translation}</strong></div></div>
@@ -805,10 +806,10 @@ function ScenarioDial() {
 
 function EditorialStory() {
   const columns = [
-    { image: 'https://www.goodnewsnetwork.org/wp-content/uploads/2016/05/sign-aloud-gloves-inventors-MIT.jpg', fallbackSrc: 'https://scx2.b-cdn.net/gfx/news/hires/2016/1-twoundergrad.jpg', alt: 'MIT sign language glove proof of concept', badge: '2016 MIT proof of concept', title: 'The Hardware Era.', description: 'Specialized flex sensors and tethered gloves proved that sign language could be captured digitally.' },
-    { image: 'https://www.handtalk.me/en/wp-content/uploads/sites/3/2022/02/arq-6127ba158b407-1024x577.png', alt: 'Camera-based sign recognition research', badge: 'SignBridge prototype', title: 'The Camera-Based Era.', description: 'The browser extracts hand, face, and pose landmarks before the sequence is sent to the configured recognition service.' },
+    { art: 'glove' as const, alt: 'MIT sign language glove proof of concept', badge: '2016 MIT proof of concept', title: 'The Hardware Era.', description: 'Specialized flex sensors and tethered gloves proved that sign language could be captured digitally.' },
+    { art: 'camera' as const, alt: 'Camera-based sign recognition research', badge: 'SignBridge prototype', title: 'The Camera-Based Era.', description: 'The browser extracts hand, face, and pose landmarks before the sequence is sent to the configured recognition service.' },
   ];
-  return <section className="editorial-story-section section-shell" id="ecosystem"><div className="section-intro centered"><span className="eyebrow">03 / Evolution</span><h2>From physical gloves to vision-native AI.</h2></div><div className="editorial-story-grid">{columns.map((column, index) => <motion.article className="editorial-col" key={column.title} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .25 }} transition={{ duration: .65, delay: index * .1, ease: [0.22, 1, 0.36, 1] }}><ResilientImage className="editorial-image-wrap" src={column.image} fallbackSrc={column.fallbackSrc} alt={column.alt} /><div className="editorial-copy-block"><span className={`editorial-badge-pill ${column.title.startsWith('The Camera') ? 'cyan-badge' : ''}`}>{column.badge}</span><h4>{column.title}</h4><p>{column.description}</p></div></motion.article>)}</div></section>;
+  return <section className="editorial-story-section section-shell" id="ecosystem"><div className="section-intro centered"><span className="eyebrow">From gloves to cameras</span><h2>From physical gloves to vision-native AI.</h2></div><div className="editorial-story-grid">{columns.map((column, index) => <motion.article className="editorial-col" key={column.title} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .25 }} transition={{ duration: .65, delay: index * .1, ease: [0.22, 1, 0.36, 1] }}><div className="editorial-image-wrap"><EraArt kind={column.art} /></div><div className="editorial-copy-block"><span className={`editorial-badge-pill ${column.title.startsWith('The Camera') ? 'cyan-badge' : ''}`}>{column.badge}</span><h4>{column.title}</h4><p>{column.description}</p></div></motion.article>)}</div></section>;
 }
 
 type SponsorLogoKind = 'uw' | 'sail' | 'qualcomm';
@@ -1569,12 +1570,9 @@ function App() {
         onExplore={() => scrollToSection('architecture')}
       />
 
-      <section className="hero-stats section-shell" id="overview-proof" aria-label="SignBridge platform statistics">
-        <div className="hero-stat"><strong>543</strong><span>Spatial landmarks</span></div>
-        <div className="hero-stat"><strong>250</strong><span>ASL sign classes</span></div>
-        <div className="hero-stat"><strong>64</strong><span>Training sequence frames</span></div>
-        <div className="hero-stat-status"><i /> ASL recognition research prototype</div>
-      </section>
+      <WhyItMatters />
+      <WhereItApplies />
+      <WhyNow />
 
       <MediaShowcase />
 
@@ -1585,12 +1583,14 @@ function App() {
       </div>
 
       <DeployFlow />
+
+      <BuiltWith />
       </div>
 
       <div className="sb-page-view" hidden={activePage !== 'demo'}>
       <section className="demo-section section-shell" id="demo">
         <div className="section-intro demo-intro">
-          <div><span className="eyebrow">01 / Interactive workspace</span><h2>A clearer signal, from first gesture to final thought.</h2></div>
+          <div><span className="eyebrow">Live demo</span><h2>A clearer signal, from first gesture to final thought.</h2></div>
           <div className="connection-state"><span className={`state-dot state-${status}`} /> {statusText(status, uiMode)} <span className="state-divider" /> <code>{API_HOST_LABEL}</code></div>
         </div>
 

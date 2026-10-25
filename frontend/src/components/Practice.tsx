@@ -17,6 +17,9 @@ const SHAPES: Record<string, Shape> = {
   fist: { curl: [1, 1, 1, 1], thumb: 0.6, spread: 0 },
   ily: { curl: [0, 1, 1, 0], thumb: 0, spread: 0.55 },
   flatO: { curl: [0.62, 0.62, 0.62, 0.62], thumb: 0.45, spread: 0 },
+  point: { curl: [0, 1, 1, 1], thumb: 0.7, spread: 0 },
+  vee: { curl: [0, 0, 1, 1], thumb: 0.7, spread: 0.7 },
+  claw: { curl: [0.5, 0.5, 0.5, 0.5], thumb: 0.25, spread: 0.45 },
 };
 const FINGERS = [
   { base: [-0.33, -1.0], len: [0.4, 0.27, 0.21], lean: -0.1 },
@@ -64,12 +67,10 @@ type Lesson = { id: string; label: string; targets: string[]; shape: keyof typeo
 
 // scene is 300 x 320; head centre (150, 84)
 const LESSONS: Lesson[] = [
-  { id: 'hello', label: 'Hello', targets: ['hello', 'hi'], shape: 'flat', steps: ['Flat hand at your forehead', 'Move it outward, like a salute'], keys: [{ t: 0, x: 196, y: 140, rot: 8 }, { t: 0.25, x: 196, y: 140, rot: 8 }, { t: 0.8, x: 246, y: 118, rot: 30 }, { t: 1, x: 246, y: 118, rot: 30 }] },
-  { id: 'thankyou', label: 'Thank you', targets: ['thankyou', 'thanks'], shape: 'flat', steps: ['Flat hand touching your chin', 'Move it forward and down'], keys: [{ t: 0, x: 176, y: 196, rot: 10 }, { t: 0.25, x: 176, y: 196, rot: 10 }, { t: 0.8, x: 214, y: 258, rot: 24 }, { t: 1, x: 214, y: 258, rot: 24 }] },
-  { id: 'please', label: 'Please', targets: ['please'], shape: 'flat', steps: ['Flat hand on your chest', 'Rub in a slow circle'], keys: [{ t: 0, x: 140, y: 300, rot: -8 }, { t: 0.25, x: 168, y: 292, rot: 4 }, { t: 0.5, x: 152, y: 276, rot: 0 }, { t: 0.75, x: 124, y: 288, rot: -10 }, { t: 1, x: 140, y: 300, rot: -8 }] },
-  { id: 'help', label: 'Help', targets: ['help'], shape: 'fist', steps: ['Closed fist in front of you', 'Lift it up, as if on a palm'], keys: [{ t: 0, x: 150, y: 310, rot: 0 }, { t: 0.3, x: 150, y: 310, rot: 0 }, { t: 0.8, x: 150, y: 250, rot: 0 }, { t: 1, x: 150, y: 250, rot: 0 }], note: 'The real sign uses both hands; this shows the moving hand.' },
-  { id: 'more', label: 'More', targets: ['more'], shape: 'flatO', steps: ['Bunch your fingertips together', 'Tap them twice in front of you'], keys: [{ t: 0, x: 150, y: 290, rot: 0 }, { t: 0.2, x: 150, y: 308, rot: 0 }, { t: 0.4, x: 150, y: 290, rot: 0 }, { t: 0.6, x: 150, y: 308, rot: 0 }, { t: 0.8, x: 150, y: 290, rot: 0 }, { t: 1, x: 150, y: 290, rot: 0 }], note: 'The real sign uses both hands; this shows one.' },
-  { id: 'iloveyou', label: 'I love you', targets: ['iloveyou', 'ily', 'love'], shape: 'ily', steps: ['Thumb, index and pinky up', 'Hold it steady, palm out'], keys: [{ t: 0, x: 206, y: 282, rot: 0 }, { t: 0.5, x: 206, y: 272, rot: 5 }, { t: 1, x: 206, y: 282, rot: 0 }] },
+  { id: 'flower', label: 'Flower', targets: ['flower', 'flowers'], shape: 'flatO', steps: ['Bunch your fingertips together', 'Touch beside one nostril, then the other'], keys: [{ t: 0, x: 134, y: 150, rot: -6 }, { t: 0.2, x: 134, y: 150, rot: -6 }, { t: 0.6, x: 166, y: 150, rot: 6 }, { t: 1, x: 166, y: 150, rot: 6 }], note: 'Think of smelling a flower. Keep your face in view of the camera.' },
+  { id: 'shhh', label: 'Shhh', targets: ['shhh', 'shh', 'shhhh', 'quiet', 'shush'], shape: 'point', steps: ['Point one index finger straight up', 'Rest it on your lips, hold still'], keys: [{ t: 0, x: 170, y: 262, rot: 8 }, { t: 0.35, x: 152, y: 228, rot: 0 }, { t: 0.8, x: 152, y: 228, rot: 0 }, { t: 1, x: 152, y: 228, rot: 0 }], note: 'Keep your other fingers folded so the index finger is clear.' },
+  { id: 'wolf', label: 'Wolf', targets: ['wolf'], shape: 'claw', steps: ['Curl your fingers into a claw by your nose', 'Push forward and outward, like a snout'], keys: [{ t: 0, x: 150, y: 196, rot: 0 }, { t: 0.25, x: 150, y: 196, rot: 0 }, { t: 0.8, x: 196, y: 176, rot: 28 }, { t: 1, x: 196, y: 176, rot: 28 }], note: 'Regional variants exist. This follows the most common form.' },
+  { id: 'look', label: 'Look', targets: ['look', 'looking'], shape: 'vee', steps: ['Make a V with two fingers pointing at your eyes', 'Turn the V outward, as if following your gaze'], keys: [{ t: 0, x: 144, y: 190, rot: -4 }, { t: 0.25, x: 144, y: 190, rot: -4 }, { t: 0.8, x: 206, y: 148, rot: 42 }, { t: 1, x: 206, y: 148, rot: 42 }] },
 ];
 
 function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
@@ -186,7 +187,7 @@ export function PracticeCoach({ topK, locked, candidate, isRunning, isStarting, 
       <header className="practice-head">
         <div>
           <span className="eyebrow">Guided practice</span>
-          <h3>Watch it, then sign it.</h3>
+          <h3>Four signs the model recognises best.</h3>
         </div>
         <ol className="practice-tabs" aria-label="Lessons">
           {LESSONS.map((l, i) => (

@@ -301,7 +301,7 @@ body {
 }
 
 .sam-architecture {
-  max-width: 1320px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 0;
 }
@@ -495,7 +495,7 @@ body {
 }
 
 .editorial-story-section {
-  width: min(1320px, calc(100% - 64px));
+  width: min(1120px, calc(100% - 56px));
   padding: 83px 0 98px;
 }
 
@@ -543,7 +543,7 @@ body {
 }
 
 .reasoning-comparison {
-  width: min(1320px, calc(100% - 64px));
+  width: min(1120px, calc(100% - 56px));
   padding: 20px 0 85px;
 }
 
@@ -562,7 +562,7 @@ body {
 }
 
 .scenario-dial-section .section-shell {
-  width: min(1320px, calc(100% - 64px));
+  width: min(1120px, calc(100% - 56px));
 }
 
 .scenario-tab-btn {
@@ -624,7 +624,7 @@ body {
 }
 
 .signal-divider {
-  width: min(1320px, calc(100% - 64px));
+  width: min(1120px, calc(100% - 56px));
   height: 1px;
 }
 
@@ -639,7 +639,7 @@ body {
 }
 
 .page-demo .demo-section {
-  width: min(1320px, calc(100% - 64px));
+  width: min(1120px, calc(100% - 56px));
 }
 
 .page-demo .demo-intro h2 {
@@ -667,7 +667,7 @@ body {
 
 /* Team and acknowledgements share the same restrained product canvas. */
 .page-team .acknowledgments-section {
-  width: min(1320px, calc(100% - 64px));
+  width: min(1120px, calc(100% - 56px));
   padding: 98px 0 72px;
   border-top: 0;
 }
@@ -701,7 +701,7 @@ body {
 }
 
 .footer {
-  width: min(1320px, calc(100% - 64px));
+  width: min(1120px, calc(100% - 56px));
   color: var(--product-copy);
   border-top-color: var(--product-line);
 }
@@ -1070,7 +1070,7 @@ body,
 
 /* Technical capability expansion. */
 .intelligence-lab {
-  width: min(1320px, calc(100% - 64px));
+  width: min(1120px, calc(100% - 56px));
   padding: 85px 0 98px;
 }
 

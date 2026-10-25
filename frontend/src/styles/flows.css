@@ -137,3 +137,20 @@
 @media (prefers-reduced-motion: reduce) { .cv-flow, .cv-pt, .cv-scan, .cv-box, .cv-type { animation: none; } }
 
 .bento-expression .emotion-tags { top: calc(284px - 56px); right: auto; left: 14px; display: flex; flex-wrap: wrap; }
+
+/* real-photo face card + local scene art */
+.bento-visual.is-photo{position:relative;overflow:hidden}
+.bento-visual.is-photo img{width:100%;height:100%;object-fit:cover;object-position:50% 30%;display:block}
+.photo-scan{position:absolute;left:12%;right:12%;top:12%;height:2px;background:var(--accent);box-shadow:0 0 12px var(--accent);animation:photo-scan 3.4s ease-in-out infinite}
+@keyframes photo-scan{0%,100%{top:14%}50%{top:78%}}
+.photo-credit{position:absolute;right:12px;top:10px;font-size:12px;color:#fff;opacity:.75;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.scenario-art,.scenario-art svg{width:100%;height:100%;display:block}
+.scenario-art .sa-bg{fill:var(--surface-2,var(--bg-soft,#f2f4f7))}
+.scenario-art .sa-soft{fill:color-mix(in srgb,var(--text,#111) 8%,transparent)}
+.scenario-art .sa-person{fill:color-mix(in srgb,var(--text,#111) 22%,transparent)}
+.scenario-art .sa-person.is-alt{fill:color-mix(in srgb,var(--accent) 55%,transparent)}
+.scenario-art .sa-line{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.scenario-art .sa-bubble{fill:var(--bg,#fff);stroke:var(--accent);stroke-width:2}
+.scenario-art .sa-dot{fill:var(--accent)}
+.scenario-art .sa-text{fill:var(--text,#111);font:600 15px Inter,system-ui,sans-serif}
+@media (prefers-reduced-motion:reduce){.photo-scan{animation:none}}

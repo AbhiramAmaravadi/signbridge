@@ -10,23 +10,25 @@ export const PAGE_SUBSECTIONS: Record<
   ReadonlyArray<{ id: string; number: string; label: string }>
 > = {
   overview: [
-    { id: 'top', number: '01', label: 'HERO' },
-    { id: 'overview-proof', number: '02', label: 'PROOF' },
-    { id: 'architecture', number: '03', label: 'PIPELINE' },
+    { id: 'top', number: '01', label: 'Intro' },
+    { id: 'why', number: '02', label: 'Why it matters' },
+    { id: 'industries', number: '03', label: 'Where it applies' },
+    { id: 'how-it-works', number: '04', label: 'How it works' },
+    { id: 'partners', number: '05', label: 'Built with' },
   ],
   demo: [
-    { id: 'demo-camera', number: '01', label: 'CAMERA' },
-    { id: 'demo-output', number: '02', label: 'OUTPUT' },
-    { id: 'demo-console', number: '03', label: 'CONSOLE' },
+    { id: 'demo-camera', number: '01', label: 'Camera' },
+    { id: 'demo-output', number: '02', label: 'Output' },
+    { id: 'demo-console', number: '03', label: 'Console' },
   ],
   features: [
-    { id: 'capabilities', number: '01', label: 'CAPABILITIES' },
-    { id: 'intelligence', number: '02', label: 'INTELLIGENCE LAB' },
-    { id: 'ecosystem', number: '03', label: 'EVOLUTION' },
-    { id: 'translation', number: '04', label: 'TRANSLATION' },
-    { id: 'scenario', number: '05', label: 'SCENARIO' },
+    { id: 'ch-1', number: '01', label: 'Capture' },
+    { id: 'ch-2', number: '02', label: 'Recognize' },
+    { id: 'ch-3', number: '03', label: 'Understand' },
+    { id: 'ch-4', number: '04', label: 'Express' },
+    { id: 'ch-5', number: '05', label: 'Next' },
   ],
-  team: [{ id: 'team', number: '01', label: 'ROSTER' }],
+  team: [{ id: 'team', number: '01', label: 'Team' }],
 };
 
 export const PAGE_IDS = TOP_PAGES.map((page) => page.id);
