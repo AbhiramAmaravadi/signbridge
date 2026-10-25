@@ -50,30 +50,30 @@ body {
   width: 100%;
   min-height: 74px;
   padding: 14px clamp(24px, 4vw, 64px);
-  border: 0 !important;
-  border-bottom: 1px solid var(--product-line) !important;
+  border: 0;
+  border-bottom: 1px solid var(--product-line);
   border-radius: 0;
-  background: color-mix(in srgb, var(--fg) 90%, transparent) !important;
-  box-shadow: none !important;
-  backdrop-filter: blur(18px) saturate(1.1) !important;
+  background: color-mix(in srgb, var(--fg) 90%, transparent);
+  box-shadow: none;
+  backdrop-filter: blur(18px) saturate(1.1);
   transform: none;
 }
 
 .page-overview .sb-capsule-nav:not(.is-scrolled) {
-  border-bottom-color: var(--line-strong) !important;
-  background: color-mix(in srgb, var(--bg) 16%, transparent) !important;
+  border-bottom-color: var(--line-strong);
+  background: color-mix(in srgb, var(--bg) 16%, transparent);
 }
 
 .sb-capsule-brand,
 .sb-capsule-links a,
 .sb-capsule-docs {
-  color: #30343a !important;
+  color: #30343a;
 }
 
 .page-overview .sb-capsule-nav:not(.is-scrolled) .sb-capsule-brand,
 .page-overview .sb-capsule-nav:not(.is-scrolled) .sb-capsule-links a,
 .page-overview .sb-capsule-nav:not(.is-scrolled) .sb-capsule-docs {
-  color: color-mix(in srgb, var(--text) 86%, transparent) !important;
+  color: color-mix(in srgb, var(--text) 86%, transparent);
 }
 
 .sb-capsule-brand {
@@ -96,29 +96,29 @@ body {
 
 .sb-capsule-links a.is-active {
   border: 0;
-  color: var(--product-blue) !important;
+  color: var(--product-blue);
   background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 .page-overview .sb-capsule-nav:not(.is-scrolled) .sb-capsule-links a.is-active {
-  color: var(--text) !important;
+  color: var(--text);
   background: color-mix(in srgb, var(--fg) 14%, transparent);
 }
 
 .sb-capsule-cta,
 .premium-primary,
 .pill-button.control-primary {
-  color: var(--text) !important;
-  border: 1px solid var(--product-blue) !important;
-  background: var(--product-blue) !important;
-  box-shadow: none !important;
+  color: var(--text);
+  border: 1px solid var(--product-blue);
+  background: var(--product-blue);
+  box-shadow: none;
 }
 
 .sb-capsule-cta:hover,
 .premium-primary:hover,
 .pill-button.control-primary:hover {
-  color: var(--text) !important;
-  background: var(--product-blue-dark) !important;
+  color: var(--text);
+  background: var(--product-blue-dark);
   transform: translateY(-1px);
 }
 
@@ -152,15 +152,15 @@ body {
 }
 
 .premium-eyebrow {
-  color: color-mix(in srgb, var(--text) 68%, transparent) !important;
+  color: color-mix(in srgb, var(--text) 68%, transparent);
   font-family: var(--font-body);
   font-size: 13px;
   letter-spacing: 0.04em;
 }
 
 .premium-eyebrow i {
-  background: var(--accent) !important;
-  box-shadow: none !important;
+  background: var(--accent);
+  box-shadow: none;
 }
 
 .premium-hero h1 {
@@ -203,9 +203,9 @@ body {
 }
 
 .premium-secondary {
-  color: var(--text) !important;
-  border-color: color-mix(in srgb, var(--fg) 42%, transparent) !important;
-  background: color-mix(in srgb, var(--fg) 8%, transparent) !important;
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--fg) 42%, transparent);
+  background: color-mix(in srgb, var(--fg) 8%, transparent);
 }
 
 .premium-proof {
@@ -213,9 +213,9 @@ body {
 }
 
 .premium-proof span {
-  color: color-mix(in srgb, var(--text) 62%, transparent) !important;
-  border-color: var(--line-strong) !important;
-  background: transparent !important;
+  color: color-mix(in srgb, var(--text) 62%, transparent);
+  border-color: var(--line-strong);
+  background: transparent;
   font-size: 12px;
 }
 
@@ -226,10 +226,10 @@ body {
 .premium-product-stage {
   min-width: 0;
   padding: 0;
-  border: 0 !important;
+  border: 0;
   border-radius: 0;
-  background: transparent !important;
-  box-shadow: none !important;
+  background: transparent;
+  box-shadow: none;
 }
 
 .premium-product-stage::after {
@@ -243,16 +243,16 @@ body {
 
 .premium-stage-header span,
 .premium-camera-label {
-  color: color-mix(in srgb, var(--text) 72%, transparent) !important;
-  border-color: var(--line-strong) !important;
-  background: rgba(0, 0, 0, 0.18) !important;
+  color: color-mix(in srgb, var(--text) 72%, transparent);
+  border-color: var(--line-strong);
+  background: rgba(0, 0, 0, 0.18);
 }
 
 .premium-stage-camera {
   min-height: 650px;
-  border: 1px solid var(--line-strong) !important;
+  border: 1px solid var(--line-strong);
   border-radius: var(--r-lg);
-  background: color-mix(in srgb, var(--bg) 42%, transparent) !important;
+  background: color-mix(in srgb, var(--bg) 42%, transparent);
 }
 
 .premium-stage-camera .hero-scanner {
@@ -262,7 +262,7 @@ body {
 .premium-stage-footer {
   padding-top: 20px;
   color: color-mix(in srgb, var(--text) 48%, transparent);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .hero-stats {
@@ -307,9 +307,9 @@ body {
 }
 
 .sam-architecture-panel {
-  border: 0 !important;
+  border: 0;
   border-radius: var(--r-lg);
-  background: var(--surface) !important;
+  background: var(--surface);
 }
 
 .sam-architecture-heading h2 {
@@ -328,7 +328,7 @@ body {
 }
 
 .page-overview .sam-flow-beams path {
-  stroke: var(--accent) !important;
+  stroke: var(--accent);
   stroke-width: 2.5;
   stroke-dasharray: 30 176;
   stroke-dashoffset: 0;
@@ -336,13 +336,13 @@ body {
 }
 
 .page-overview .sam-flow-beams .sam-feedback-beam {
-  stroke: var(--accent) !important;
+  stroke: var(--accent);
   animation-duration: 2.8s;
 }
 
 .page-overview .sam-node.is-current,
 .page-overview .sam-convergence.is-current {
-  border-color: color-mix(in srgb, var(--accent) 72%, transparent) !important;
+  border-color: color-mix(in srgb, var(--accent) 72%, transparent);
 }
 
 @keyframes sam-product-flow {
@@ -420,15 +420,15 @@ body {
   grid-template-rows: 330px auto;
   min-height: 530px;
   overflow: visible;
-  border: 0 !important;
+  border: 0;
   border-radius: 0;
-  background: transparent !important;
-  box-shadow: none !important;
+  background: transparent;
+  box-shadow: none;
 }
 
 .context-bento-card::before,
 .context-bento-card::after {
-  display: none !important;
+  display: none;
 }
 
 .context-bento-card > img {
@@ -480,9 +480,9 @@ body {
 .scene-box,
 .autocomplete-demo span,
 .autocomplete-demo b {
-  color: var(--text) !important;
-  border-color: var(--line-strong) !important;
-  background: color-mix(in srgb, var(--surface) 60%, transparent) !important;
+  color: var(--text);
+  border-color: var(--line-strong);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
 }
 
 .bento-live-badge {
@@ -491,7 +491,7 @@ body {
 }
 
 .ambient-toggle {
-  color: var(--text) !important;
+  color: var(--text);
 }
 
 .editorial-story-section {
@@ -505,9 +505,9 @@ body {
 }
 
 .editorial-col {
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .editorial-image-wrap {
@@ -537,9 +537,9 @@ body {
 }
 
 .editorial-badge-pill {
-  color: var(--product-blue) !important;
-  border: 0 !important;
-  background: transparent !important;
+  color: var(--product-blue);
+  border: 0;
+  background: transparent;
 }
 
 .reasoning-comparison {
@@ -566,15 +566,15 @@ body {
 }
 
 .scenario-tab-btn {
-  color: #40444a !important;
-  border-color: var(--product-line) !important;
-  background: #fff !important;
+  color: #40444a;
+  border-color: var(--product-line);
+  background: #fff;
 }
 
 .scenario-tab-btn.is-active {
-  color: var(--text) !important;
-  border-color: var(--product-black) !important;
-  background: var(--product-black) !important;
+  color: var(--text);
+  border-color: var(--product-black);
+  background: var(--product-black);
 }
 
 .scenario-grid,
@@ -582,10 +582,10 @@ body {
 .scenario-grid.scenario-cyan {
   gap: 0;
   overflow: hidden;
-  border: 0 !important;
+  border: 0;
   border-radius: var(--r-lg);
-  background: var(--product-canvas) !important;
-  box-shadow: none !important;
+  background: var(--product-canvas);
+  box-shadow: none;
 }
 
 .scenario-media-frame {
@@ -615,12 +615,12 @@ body {
 
 .scenario-info p,
 .scenario-metric-box span {
-  color: var(--product-copy) !important;
+  color: var(--product-copy);
 }
 
 .scenario-metric-box {
-  border-color: var(--product-line) !important;
-  background: #fff !important;
+  border-color: var(--product-line);
+  background: #fff;
 }
 
 .signal-divider {
@@ -656,9 +656,9 @@ body {
 
 .page-demo .glass-card,
 .page-demo .developer-console {
-  border-color: var(--line) !important;
-  background: var(--surface) !important;
-  box-shadow: none !important;
+  border-color: var(--line);
+  background: var(--surface);
+  box-shadow: none;
 }
 
 .page-demo .workspace-grid {
@@ -690,14 +690,14 @@ body {
 }
 
 .sponsor-bento-card {
-  border-color: var(--product-line) !important;
-  background: #fff !important;
-  box-shadow: none !important;
+  border-color: var(--product-line);
+  background: #fff;
+  box-shadow: none;
 }
 
 .sponsor-bento-card h3,
 .team-roster-row strong {
-  color: var(--product-black) !important;
+  color: var(--product-black);
 }
 
 .footer {
@@ -944,8 +944,8 @@ body,
 
 .sb-capsule-nav,
 .page-overview .sb-capsule-nav:not(.is-scrolled) {
-  border-bottom-color: color-mix(in srgb, var(--accent) 13%, transparent) !important;
-  background: color-mix(in srgb, var(--bg) 86%, transparent) !important;
+  border-bottom-color: color-mix(in srgb, var(--accent) 13%, transparent);
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
 }
 
 .sb-capsule-brand,
@@ -954,11 +954,11 @@ body,
 .page-overview .sb-capsule-nav:not(.is-scrolled) .sb-capsule-brand,
 .page-overview .sb-capsule-nav:not(.is-scrolled) .sb-capsule-links a,
 .page-overview .sb-capsule-nav:not(.is-scrolled) .sb-capsule-docs {
-  color: color-mix(in srgb, var(--text) 84%, transparent) !important;
+  color: color-mix(in srgb, var(--text) 84%, transparent);
 }
 
 .sb-capsule-links a.is-active {
-  color: var(--text) !important;
+  color: var(--text);
   background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
@@ -991,8 +991,8 @@ body,
 }
 
 .sam-architecture-panel {
-  border: 1px solid color-mix(in srgb, var(--accent) 12%, transparent) !important;
-  background: var(--surface) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 12%, transparent);
+  background: var(--surface);
 }
 
 .context-bento-section,
@@ -1017,7 +1017,7 @@ body,
 }
 
 .editorial-badge-pill {
-  color: var(--accent) !important;
+  color: var(--accent);
 }
 
 .scenario-dial-section {
@@ -1026,23 +1026,23 @@ body,
 }
 
 .scenario-tab-btn {
-  color: var(--text) !important;
-  border-color: var(--product-line) !important;
-  background: var(--surface) !important;
+  color: var(--text);
+  border-color: var(--product-line);
+  background: var(--surface);
 }
 
 .scenario-tab-btn.is-active {
-  color: var(--text) !important;
-  border-color: var(--product-blue) !important;
-  background: var(--product-blue) !important;
+  color: var(--text);
+  border-color: var(--product-blue);
+  background: var(--product-blue);
 }
 
 .scenario-grid,
 .scenario-grid.scenario-rose,
 .scenario-grid.scenario-cyan,
 .scenario-metric-box {
-  border-color: var(--product-line) !important;
-  background: var(--surface) !important;
+  border-color: var(--product-line);
+  background: var(--surface);
 }
 
 .scenario-info h3,
@@ -1052,7 +1052,7 @@ body,
 
 .scenario-info p,
 .scenario-metric-box span {
-  color: var(--text-2) !important;
+  color: var(--text-2);
 }
 
 .morphing-translation {
@@ -1143,7 +1143,7 @@ body,
   padding-bottom: 22px;
   border-bottom: 1px solid color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--text-2);
-  font: 10px/1.2 var(--font-mono);
+  font: 12px/1.2 var(--font-mono);
   letter-spacing: 0.12em;
 }
 
@@ -1171,7 +1171,7 @@ body,
 .prediction-context span,
 .prediction-context small {
   color: var(--text-2);
-  font: 10px/1.3 var(--font-mono);
+  font: 12px/1.3 var(--font-mono);
   letter-spacing: 0.08em;
 }
 
@@ -1202,7 +1202,7 @@ body,
   align-items: center;
   min-height: 38px;
   color: var(--text-2);
-  font: 11px var(--font-mono);
+  font: 12px var(--font-mono);
 }
 
 .top-five-list li > strong {
@@ -1333,7 +1333,7 @@ body,
   padding: 14px;
   border-top: 1px solid color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--text-3);
-  font: 10px var(--font-mono);
+  font: 12px var(--font-mono);
 }
 
 .intel-metric-row b {
@@ -1387,7 +1387,7 @@ body,
 .sign-photo-grid figcaption span {
   grid-row: 1 / 3;
   color: var(--text-3);
-  font: 10px var(--font-mono);
+  font: 12px var(--font-mono);
 }
 
 .sign-photo-grid figcaption strong {
@@ -1399,14 +1399,14 @@ body,
 .sign-photo-grid figcaption small,
 .sign-photo-grid figure > em {
   color: var(--text-2);
-  font-size: 11px;
+  font-size: 12px;
   font-style: normal;
 }
 
 .sign-photo-grid figure > em {
   display: block;
   padding-left: 28px;
-  font: 9px var(--font-mono);
+  font: 12px var(--font-mono);
 }
 
 .sequence-research-note {
@@ -1423,7 +1423,7 @@ body,
 
 .sequence-research-note > div:last-child > span {
   color: var(--accent);
-  font: 10px var(--font-mono);
+  font: 12px var(--font-mono);
   letter-spacing: 0.1em;
 }
 
@@ -1497,7 +1497,7 @@ body,
 
 .voice-output > span {
   color: var(--accent);
-  font: 10px var(--font-mono);
+  font: 12px var(--font-mono);
   letter-spacing: 0.08em;
 }
 
@@ -1537,7 +1537,7 @@ body,
   flex-wrap: wrap;
   gap: 8px 24px;
   color: var(--text-3);
-  font: 10px var(--font-mono);
+  font: 12px var(--font-mono);
 }
 
 .voice-parameters b {
@@ -1549,15 +1549,15 @@ body,
 /* Partner and team credibility layer. */
 .sponsor-bento-card {
   color: inherit;
-  border-color: var(--product-line) !important;
-  background: var(--surface) !important;
-  box-shadow: none !important;
+  border-color: var(--product-line);
+  background: var(--surface);
+  box-shadow: none;
   text-decoration: none;
 }
 
 .sponsor-bento-card:hover {
-  border-color: color-mix(in srgb, var(--accent) 35%, transparent) !important;
-  background: var(--surface) !important;
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  background: var(--surface);
 }
 
 .sponsor-logo-stage {
@@ -1575,7 +1575,7 @@ body,
 
 .uw-wordmark {
   fill: var(--text);
-  font: 500 11px Arial, sans-serif;
+  font: 500 12px Arial, sans-serif;
   letter-spacing: 0.12em;
 }
 
@@ -1619,15 +1619,15 @@ body,
 
 .team-member-identity strong,
 .team-member-role b {
-  color: var(--text) !important;
+  color: var(--text);
   font-size: 16px;
   font-weight: 550;
 }
 
 .team-member-identity small,
 .team-member-role span {
-  color: var(--text-2) !important;
-  font: 10px/1.45 var(--font-mono) !important;
+  color: var(--text-2);
+  font: 12px/1.45 var(--font-mono);
 }
 
 @keyframes intel-live-pulse {
@@ -1780,8 +1780,7 @@ body,
   color: var(--accent);
   font-size: 12px;
   font-weight: 500;
-  letter-spacing: .055em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 .future-glasses-copy h2 {
@@ -1923,7 +1922,7 @@ body,
   border-bottom: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
   color: var(--accent);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: .055em;
 }
 
@@ -1940,7 +1939,7 @@ body,
   color: var(--accent);
   background: color-mix(in srgb, var(--surface) 82%, transparent);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .glasses-result-panel {
@@ -1954,7 +1953,7 @@ body,
 .glasses-speech-line span {
   color: var(--text-2);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .glasses-result-panel strong {

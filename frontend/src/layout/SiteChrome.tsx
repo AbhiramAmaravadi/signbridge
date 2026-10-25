@@ -52,6 +52,59 @@ type CapsuleNavProps = {
   onNavigate: (pageId: string) => void;
 };
 
+
+type ThemeChoice = 'system' | 'light' | 'dark';
+
+function readTheme(): ThemeChoice {
+  try {
+    const t = localStorage.getItem('sb-theme');
+    return t === 'light' || t === 'dark' ? t : 'system';
+  } catch {
+    return 'system';
+  }
+}
+
+function ThemeToggle() {
+  const [theme, setTheme] = useState<ThemeChoice>(readTheme);
+  const choose = (next: ThemeChoice) => {
+    setTheme(next);
+    const root = document.documentElement;
+    if (next === 'system') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', next);
+    try {
+      if (next === 'system') localStorage.removeItem('sb-theme');
+      else localStorage.setItem('sb-theme', next);
+    } catch {
+      /* storage can be unavailable; the choice still applies for this visit */
+    }
+  };
+  const options: { id: ThemeChoice; label: string; icon: string }[] = [
+    { id: 'light', label: 'Light theme', icon: 'M12 4V2m0 20v-2m8-8h2M2 12h2m13.66-5.66 1.41-1.41M4.93 19.07l1.41-1.41m0-11.32L4.93 4.93m14.14 14.14-1.41-1.41M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z' },
+    { id: 'system', label: 'Match system theme', icon: 'M3 5h18v11H3zM8 21h8m-4-5v5' },
+    { id: 'dark', label: 'Dark theme', icon: 'M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z' },
+  ];
+  return (
+    <div className="sb-theme-toggle" role="radiogroup" aria-label="Color theme">
+      {options.map((o) => (
+        <button
+          key={o.id}
+          type="button"
+          role="radio"
+          aria-checked={theme === o.id}
+          aria-label={o.label}
+          title={o.label}
+          className={theme === o.id ? 'is-active' : undefined}
+          onClick={() => choose(o.id)}
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d={o.icon} />
+          </svg>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function CapsuleNav({ activePage, onNavigate }: CapsuleNavProps) {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -120,6 +173,8 @@ export function CapsuleNav({ activePage, onNavigate }: CapsuleNavProps) {
             API Docs <span aria-hidden="true">↗</span>
           </a>
         </nav>
+
+        <ThemeToggle />
 
         <button
           className={`sb-capsule-burger ${open ? 'is-open' : ''}`}

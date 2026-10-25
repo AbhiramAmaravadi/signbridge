@@ -1,0 +1,114 @@
+/* Flow diagrams and media tiles. Tokens only: works in light, dark and system themes. */
+
+.flow-section { padding-block: clamp(56px, 8vw, 112px); }
+.flow-head { max-width: 760px; margin-bottom: clamp(28px, 4vw, 48px); }
+.flow-head h2 { margin: 12px 0 0; font-size: clamp(30px, 4vw, 52px); line-height: 1.06; }
+
+/* ---- pipeline (HTML) ---- */
+.pipeline-flow { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0; margin: 0; padding: 0; list-style: none; }
+.pipeline-step { position: relative; display: flex; flex-direction: column; gap: 16px; padding-right: 20px; }
+.pipeline-step::after { /* connector */
+  content: ''; position: absolute; top: 48px; right: 0; width: 20px; height: 2px;
+  background: var(--line-strong); transform: translateY(-1px);
+}
+.pipeline-step:last-child::after { display: none; }
+.pipeline-step::before { /* packet travelling along the connector */
+  content: ''; position: absolute; top: 48px; right: 0; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); transform: translate(0, -3px); animation: flow-hop 3.6s linear infinite; animation-delay: calc(var(--i) * 0.6s); opacity: 0;
+}
+.pipeline-step:last-child::before { display: none; }
+@keyframes flow-hop { 0% { transform: translate(-20px, -3px); opacity: 0; } 15% { opacity: 1; } 35% { transform: translate(0, -3px); opacity: 1; } 45%, 100% { transform: translate(0, -3px); opacity: 0; } }
+
+.pipeline-media {
+  display: grid; place-items: center; aspect-ratio: 5 / 3.3; overflow: hidden;
+  border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-2);
+}
+.pipeline-copy h3 { margin: 4px 0 6px; font-size: 18px; letter-spacing: -0.02em; }
+.pipeline-copy p { margin: 0; color: var(--text-2); font-size: 14px; line-height: 1.5; }
+.pipeline-index { color: var(--text-3); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+.viz { width: 100%; height: 100%; display: grid; place-items: center; padding: 10px; box-sizing: border-box; }
+.viz svg { width: 100%; height: 100%; }
+.viz-frame { fill: none; stroke: var(--line-strong); stroke-width: 1.5; }
+.viz-ink { fill: var(--surface-3); }
+.viz-scan { fill: var(--accent); animation: viz-scan 2.6s ease-in-out infinite; }
+@keyframes viz-scan { 0%, 100% { transform: translateY(0); opacity: .2; } 50% { transform: translateY(78px); opacity: 1; } }
+.viz-line { fill: none; stroke: color-mix(in srgb, var(--accent) 55%, transparent); stroke-width: 1.4; stroke-linejoin: round; }
+.viz-dot { fill: var(--accent); transform-box: fill-box; transform-origin: center; animation: viz-pulse 1.8s ease-in-out infinite; }
+@keyframes viz-pulse { 0%, 100% { transform: scale(1); opacity: .65; } 50% { transform: scale(1.6); opacity: 1; } }
+
+.viz-classify { align-content: center; gap: 5px; padding: 8px 12px; }
+.viz-row { display: grid; grid-template-columns: 52px 1fr; align-items: center; gap: 8px; width: 100%; font-size: 12px; color: var(--text-2); }
+.viz-row i { display: block; height: 6px; border-radius: 3px; background: var(--accent); transform-origin: left; width: var(--w); animation: viz-bar 3.2s ease-in-out infinite; }
+@keyframes viz-bar { 0%, 12% { transform: scaleX(.08); } 40%, 85% { transform: scaleX(1); } 100% { transform: scaleX(.08); } }
+
+.viz-context { align-content: center; gap: 12px; }
+.viz-tag { padding: 4px 10px; border: 1px solid var(--line-strong); border-radius: 999px; font-size: 12px; color: var(--text-2); }
+.viz-rank { position: relative; display: flex; gap: 6px; font-size: 13px; }
+.viz-rank span, .viz-rank b { padding: 5px 11px; border-radius: 999px; background: var(--surface-3); color: var(--text-2); font-weight: 500; }
+.viz-rank b { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); animation: viz-pop 3.2s ease-in-out infinite; }
+@keyframes viz-pop { 0%, 30% { transform: translateX(0); } 55%, 100% { transform: translateX(0) scale(1.08); } }
+
+.viz-sentence { align-content: center; gap: 10px; text-align: left; justify-items: start; }
+.viz-raw { color: var(--text-3); font-size: 12px; text-decoration: line-through; text-decoration-color: var(--line-strong); }
+.viz-typed { display: inline-block; max-width: 100%; overflow: hidden; white-space: nowrap; border-right: 2px solid var(--accent); animation: viz-type 4s steps(24) infinite, viz-caret .8s step-end infinite; }
+.viz-typed em { font-style: normal; font-size: 14px; font-weight: 600; color: var(--text); }
+@keyframes viz-type { 0% { width: 0; } 55%, 90% { width: 100%; } 100% { width: 0; } }
+@keyframes viz-caret { 50% { border-color: transparent; } }
+
+.viz-voice { display: flex; align-items: center; justify-content: center; gap: 4px; }
+.viz-voice i { width: 4px; height: var(--h); border-radius: 2px; background: var(--accent); transform-origin: center; animation: viz-wave 1.1s ease-in-out infinite; }
+@keyframes viz-wave { 0%, 100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
+
+@media (max-width: 1100px) {
+  .pipeline-flow { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 36px; }
+  .pipeline-step:nth-child(3n)::after, .pipeline-step:nth-child(3n)::before { display: none; }
+}
+@media (max-width: 640px) {
+  .pipeline-flow { grid-template-columns: 1fr; row-gap: 0; }
+  .pipeline-step { flex-direction: row; align-items: center; gap: 16px; padding: 0 0 28px; }
+  .pipeline-media { flex: 0 0 44%; }
+  .pipeline-step::after { top: auto; bottom: 0; left: calc(22% - 1px); right: auto; width: 2px; height: 28px; }
+  .pipeline-step::before { display: none; }
+  .pipeline-step:nth-child(3n)::after { display: block; }
+  .pipeline-step:last-child::after { display: none; }
+}
+
+/* ---- svg diagrams ---- */
+.flow-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); padding: clamp(16px, 3vw, 32px); }
+.flow-svg { display: block; width: 100%; min-width: 760px; height: auto; font-family: var(--font-body); overflow: visible; }
+.flow-node rect, .flow-node path { fill: var(--surface-2); stroke: var(--line-strong); stroke-width: 1.2; }
+.flow-node.is-accent rect { fill: color-mix(in srgb, var(--accent) 10%, var(--surface)); stroke: var(--accent); }
+.flow-node.is-decision path { fill: var(--surface); stroke: var(--text-3); }
+.flow-chip rect { fill: none; stroke: var(--line-strong); stroke-dasharray: 4 4; }
+.flow-title { fill: var(--text); font-size: 15px; font-weight: 600; }
+.flow-sub { fill: var(--text-3); font-size: 12px; }
+.flow-label { fill: var(--text-2); font-size: 12px; font-weight: 600; }
+.flow-edge { fill: none; stroke: var(--text-3); stroke-width: 1.4; }
+.flow-arrow { fill: var(--text-3); }
+.flow-edge-live { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 2 10; stroke-linecap: round; opacity: .55; animation: flow-dash 1.4s linear infinite; }
+.flow-edge-live.is-reverse { animation-direction: reverse; }
+@keyframes flow-dash { to { stroke-dashoffset: -24; } }
+.flow-packet { fill: var(--accent); }
+.flow-packet.is-alt { fill: var(--ok); }
+
+@media (prefers-reduced-motion: reduce) {
+  .viz-scan, .viz-dot, .viz-row i, .viz-rank b, .viz-typed, .viz-voice i, .flow-edge-live, .pipeline-step::before { animation: none; }
+  .viz-typed { width: 100%; }
+  .viz-row i { transform: none; }
+  .flow-packet { display: none; }
+}
+
+/* ---- media tiles ---- */
+.media-section { padding-block: clamp(56px, 8vw, 112px); }
+.media-row { display: grid; grid-template-columns: var(--cols); gap: 20px; margin-bottom: 20px; align-items: start; }
+.media-tile { margin: 0; min-width: 0; }
+.media-frame { overflow: hidden; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface-2); }
+.media-video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.media-tile figcaption { display: flex; flex-direction: column; gap: 2px; padding: 14px 4px 0; }
+.media-tile figcaption strong { font-size: 16px; letter-spacing: -0.01em; }
+.media-tile figcaption span { color: var(--text-2); font-size: 14px; }
+@media (max-width: 800px) {
+  .media-row { grid-template-columns: 1fr; }
+  .media-tile.is-wide { display: none; } /* the live, scrollable diagram sits on the Features page */
+}

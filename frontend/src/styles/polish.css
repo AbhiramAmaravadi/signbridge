@@ -12,28 +12,29 @@ p { text-wrap: pretty; }
 a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* small mono labels: never below 11px, never washed out */
-.bento-live-badge, .emotion-tags span, .scene-box, .ambient-toggle, .autocomplete-demo span, .autocomplete-demo b { font-size: 11px; }
+.bento-live-badge, .emotion-tags span, .scene-box, .ambient-toggle, .autocomplete-demo span, .autocomplete-demo b { font-size: 12px; }
 .bento-content p { font-size: 15px; }
 
 /* nav hairline instead of a heavy bar */
 nav, header[class*="nav"] { border-bottom: 1px solid var(--line); }
 
 ::selection { background: color-mix(in srgb, var(--accent) 25%, transparent); }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms; transition-duration: .01ms; } }
 
 /* buttons: Apple-style pills */
-.premium-primary, .premium-secondary { border-radius: 999px !important; font-family: var(--font-body); font-weight: 600; box-shadow: none !important; }
-.premium-primary { background: var(--accent) !important; color: var(--on-accent) !important; border: 1px solid transparent !important; }
-.premium-primary:hover { background: color-mix(in srgb, var(--accent) 88%, #000) !important; }
-.premium-secondary { background: transparent !important; color: var(--accent) !important; border: 1px solid var(--accent) !important; }
-.premium-secondary:hover { background: color-mix(in srgb, var(--accent) 8%, transparent) !important; }
-.premium-secondary span { color: inherit !important; }
-.premium-stage-header span, .premium-stage-header small { background: transparent !important; border: 0 !important; color: color-mix(in srgb, var(--text) 80%, transparent) !important; font-size: 11px !important; }
+.premium-primary, .premium-secondary { border-radius: 999px; font-family: var(--font-body); font-weight: 600; box-shadow: none; }
+.premium-primary { background: var(--accent); color: var(--on-accent); border: 1px solid transparent; }
+.premium-primary:hover { background: color-mix(in srgb, var(--accent) 88%, #000); }
+.premium-secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+.premium-secondary:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.premium-secondary span { color: inherit; }
+.premium-stage-header span, .premium-stage-header small { background: transparent; border: 0; color: color-mix(in srgb, var(--text) 80%, transparent); font-size: 12px; }
 /* hero product stage = real dark panel on the light page (SAM 3 style) */
-.premium-product-stage { background: var(--bg) !important; border-radius: var(--r-lg) !important; padding: 20px !important; overflow: hidden; }
-.premium-stage-camera { background: var(--surface) !important; border-color: var(--line) !important; }
+.premium-product-stage { background: var(--bg); border-radius: var(--r-lg); padding: 20px; overflow: hidden; }
+.premium-stage-camera { background: var(--surface); border-color: var(--line); }
 /* hero headline: Apple scale, 3 lines max */
 .premium-hero h1 { max-width: 12ch; font-size: clamp(44px, 5.6vw, 84px); font-weight: 600; letter-spacing: -0.045em; line-height: 1.04; }
-.hero-stat-status { font-size: 11px !important; }
+.hero-stat-status { font-size: 12px; }
 
-.dev-floating-toggle { background: var(--surface) !important; color: var(--text-2) !important; border: 1px solid var(--line-strong) !important; font-size: 11px !important; opacity: 1 !important; }
+.dev-floating-toggle { background: var(--surface); color: var(--text-2); border: 1px solid var(--line-strong); font-size: 12px; opacity: 1; }
+.sam-tokens { color: var(--accent); }

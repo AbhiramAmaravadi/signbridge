@@ -1,3 +1,5 @@
+import { MediaShowcase } from './components/MediaShowcase';
+import { DecisionFlow, DeployFlow, PipelineFlow } from './components/Flows';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ImgHTMLAttributes, type PointerEvent, type SyntheticEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGSAP } from '@gsap/react';
@@ -434,8 +436,8 @@ function HandHelloVisual({ devMode }: { devMode: boolean }) {
               strokeWidth="1.2"
               strokeDasharray="4 4"
             />
-            <text x="135" y="35" fill="#22d3ee" fontSize="8" fontFamily="monospace" fontWeight="bold">[DEV_MODE: SPATIAL BOUNDING BOX]</text>
-            <text x="135" y="425" fill="#22d3ee" fontSize="8" fontFamily="monospace">LIMITS: X[130, 445] Y[20, 435]</text>
+            <text x="135" y="35" fill="#22d3ee" fontSize="8" fontFamily="monospace" fontWeight="bold">Dev mode · spatial bounding box</text>
+            <text x="135" y="425" fill="#22d3ee" fontSize="8" fontFamily="monospace">Limits · x 130–445, y 20–435</text>
           </g>
         )}
 
@@ -473,17 +475,17 @@ function HandHelloVisual({ devMode }: { devMode: boolean }) {
           ))}
         </g>
         <g className="hello-data-labels" aria-hidden="true">
-          <text x="36" y="84">ASL / HELLO</text>
-          <text x="36" y="101">OUTWARD WAVE TRAJECTORY</text>
-          <text x="448" y="401">21 NODES</text>
-          <text x="448" y="418">BROWSER STREAM</text>
+          <text x="36" y="84">ASL · Hello</text>
+          <text x="36" y="101">Outward wave trajectory</text>
+          <text x="448" y="401">21 nodes</text>
+          <text x="448" y="418">Browser stream</text>
         </g>
         <path className="hello-wave-trail" d="M420 124C500 154 507 228 458 282" />
         <path className="hello-wave-arrow" d="M454 271l8 12-14 1" />
       </svg>
 
-      <motion.div className="hello-hud hello-hud-confidence magnetic-tag" style={{ x: magnet.x, y: magnet.y }} whileHover={{ scale: 1.1 }} onPointerEnter={() => hoverNode(8)}><span>PROTOTYPE</span><strong>DEMO</strong></motion.div>
-      <motion.div className="hello-hud hello-hud-coordinate magnetic-tag" style={{ x: -magnet.x, y: -magnet.y }} whileHover={{ scale: 1.1 }} onPointerEnter={() => hoverNode(activeNode ?? 0)}><span>{activeNode === null ? 'X: 0.42, Y: 0.81, Z: -0.12' : coordinatesFor(activeNode)}</span><small>LIVE 3D VECTOR</small></motion.div>
+      <motion.div className="hello-hud hello-hud-confidence magnetic-tag" style={{ x: magnet.x, y: magnet.y }} whileHover={{ scale: 1.1 }} onPointerEnter={() => hoverNode(8)}><span>Prototype</span><strong>DEMO</strong></motion.div>
+      <motion.div className="hello-hud hello-hud-coordinate magnetic-tag" style={{ x: -magnet.x, y: -magnet.y }} whileHover={{ scale: 1.1 }} onPointerEnter={() => hoverNode(activeNode ?? 0)}><span>{activeNode === null ? 'X: 0.42, Y: 0.81, Z: -0.12' : coordinatesFor(activeNode)}</span><small>Live 3D vector</small></motion.div>
       <motion.div className="hello-engine-tag magnetic-tag" style={{ x: magnet.x * 0.5, y: magnet.y * 0.5 }} whileHover={{ scale: 1.1 }} onPointerEnter={() => hoverNode(0)}><i /> {status}</motion.div>
     </motion.div>
   );
@@ -540,7 +542,7 @@ function ContextBentoGrid() {
         </motion.article>
         <motion.article className="context-bento-card bento-scene" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
           <img src="https://i0.wp.com/downloads.mixtile.com/doc-images/hailo/restaurant-table-status/output-empty-and-occupied-tables.jpeg?w=1020&ssl=1" alt="Restaurant scene for ambient context recognition" loading="lazy" referrerPolicy="no-referrer" />
-          <div className="bento-image-gradient" /><span className="scene-box scene-table">[ Table ]</span><span className="scene-box scene-menu">[ Menu ]</span>
+          <div className="bento-image-gradient" /><span className="scene-box scene-table">Table</span><span className="scene-box scene-menu">Menu</span>
           <div className="bento-content"><span className="bento-index">03 / Scene context</span><h3>Optional Visual Context</h3><p>When a sentence is finalized, the configured translation endpoint may receive one camera snapshot with the recognized words.</p><button className={`ambient-toggle ${ambientContext ? 'is-on' : ''}`} type="button" onClick={() => setAmbientContext((enabled) => !enabled)} aria-pressed={ambientContext}><i /> {ambientContext ? 'Context example enabled' : 'Context example paused'}</button></div>
         </motion.article>
         <motion.article className="context-bento-card bento-prediction" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
@@ -590,7 +592,7 @@ function IntelligenceLab() {
 
       <div className="intelligence-grid">
         <motion.article className="intel-panel intel-top-five" initial={{ opacity: 0, y: 32 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .25 }}>
-          <div className="intel-panel-head"><span>LIVE CLASSIFIER</span><b><i /> TOP–5 HYPOTHESES</b></div>
+          <div className="intel-panel-head"><span>Live classifier</span><b><i /> TOP–5 HYPOTHESES</b></div>
           <div className="prediction-context"><span>Observed sequence</span><strong>{scene.prefix}<em>_</em></strong><small>{scene.context}</small></div>
           <AnimatePresence mode="wait">
             <motion.ol key={scene.prefix} className="top-five-list" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: .35 }}>
@@ -603,7 +605,7 @@ function IntelligenceLab() {
         </motion.article>
 
         <motion.article className="intel-panel intel-next-word" initial={{ opacity: 0, y: 32 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .25 }} transition={{ delay: .08 }}>
-          <div className="intel-panel-head"><span>LANGUAGE MODEL</span><b>NEXT WORD</b></div>
+          <div className="intel-panel-head"><span>Language model</span><b>Next word</b></div>
           <div className="next-word-sentence"><span>I</span><span>would</span><span>like</span><span>to</span><strong>order</strong><i /></div>
           <div className="next-word-options"><span><b>order</b><small>0.76</small></span><span><b>buy</b><small>0.48</small></span><span><b>ask</b><small>0.31</small></span></div>
           <p>Locked signs become language context. The prediction head proposes the next likely word before the next gesture is complete.</p>
@@ -611,7 +613,7 @@ function IntelligenceLab() {
         </motion.article>
 
         <motion.article className="intel-panel intel-sign-library" initial={{ opacity: 0, y: 32 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .18 }}>
-          <div className="intel-panel-head"><span>VISUAL LEXICON</span><b>IMAGE → ENGLISH</b></div>
+          <div className="intel-panel-head"><span>Visual lexicon</span><b>Image → English</b></div>
           <div className="sign-photo-grid">
             {signExamples.map((sign, index) => (
               <motion.figure key={sign.word} whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 260, damping: 22 }}>
@@ -628,7 +630,7 @@ function IntelligenceLab() {
         </motion.article>
 
         <motion.article className="intel-panel intel-emotion-voice" initial={{ opacity: 0, y: 32 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .2 }}>
-          <div className="intel-panel-head"><span>AFFECTIVE OUTPUT</span><b>EMOTION → VOICE</b></div>
+          <div className="intel-panel-head"><span>Affective output</span><b>Emotion → voice</b></div>
           <div className="emotion-selector" role="group" aria-label="Voice emotion preview">
             {(['warm', 'urgent', 'joyful'] as const).map((tone) => <button className={emotion === tone ? 'is-active' : ''} key={tone} type="button" onClick={() => setEmotion(tone)}>{tone}</button>)}
           </div>
@@ -690,7 +692,7 @@ function SmartGlassesFuture() {
         <img src="/future/signbridge-smart-glasses-concept.png" width="1760" height="880" alt="Original SignBridge concept render of lightweight smart glasses" loading="lazy" />
         <div className="glasses-scan" aria-hidden="true" />
         <div className="glasses-hud" aria-label="Simulated smart glasses interpretation preview">
-          <span className="glasses-hud-label">SIGNBRIDGE · CONCEPT</span>
+          <span className="glasses-hud-label">SignBridge · concept</span>
           <div className="glasses-token-row" aria-hidden="true"><span className="glasses-token">HELLO</span><span className="glasses-token">NICE</span><span className="glasses-token">MEET</span></div>
           <div className="glasses-result-panel">
             <span>Editable interpretation</span>
@@ -710,6 +712,7 @@ function FeatureExperience() {
       <ContextBentoGrid />
       <div className="signal-divider" aria-hidden="true"><span /></div>
       <IntelligenceLab />
+      <DecisionFlow />
       <div className="signal-divider" aria-hidden="true"><span /></div>
       <EditorialStory />
       <div className="signal-divider" aria-hidden="true"><span /></div>
@@ -747,7 +750,7 @@ function PremiumHero({ devMode, isRunning, onLaunchDemo, onExplore }: PremiumHer
       onPointerLeave={() => setPointer({ x: 50, y: 50 })}
     >
       <div className="premium-hero-copy">
-        <span className="premium-eyebrow"><i /> SIGNBRIDGE / ASL RESEARCH PROTOTYPE</span>
+        <span className="premium-eyebrow"><i /> SignBridge · ASL research prototype</span>
         <h1>Make every gesture <span className="hero-emphasis">understood.</span></h1>
         <p>SignBridge turns hands, expression, and movement into natural conversation — in the moment, with the person signing always in control.</p>
         <div className="premium-actions">
@@ -759,9 +762,9 @@ function PremiumHero({ devMode, isRunning, onLaunchDemo, onExplore }: PremiumHer
         <div className="premium-proof"><span><b>Browser-based</b> landmark extraction</span><span><b>Editable</b> language output</span></div>
       </div>
       <div className="premium-product-stage" aria-label="SignBridge live translation preview">
-        <div className="premium-stage-header"><span><i /> LIVE PREVIEW</span><small>Camera · Face · Hands · Pose</small></div>
+        <div className="premium-stage-header"><span><i /> Live preview</span><small>Camera · Face · Hands · Pose</small></div>
         <div className="premium-stage-body">
-          <div className="premium-stage-camera"><HeroLandmarkScanner devMode={devMode} /><span className="premium-camera-label">SPATIAL SIGNAL</span></div>
+          <div className="premium-stage-camera"><HeroLandmarkScanner devMode={devMode} /><span className="premium-camera-label">Spatial signal</span></div>
         </div>
         <div className="premium-stage-footer"><span>01</span><span>Detect movement</span><span className="premium-stage-line" /><span>02</span><span>Shape meaning</span><span className="premium-stage-line" /><span>03</span><span>Give it a voice</span></div>
       </div>
@@ -840,21 +843,21 @@ function SponsorTeamShowcaseV3() {
   const sponsors = [
     {
       name: 'University of Wisconsin–Madison',
-      badge: '[ ACADEMIC HOME ]',
+      badge: 'Academic home',
       description: 'A cross-disciplinary environment connecting computer science, data, design, and human-centered problem solving.',
       logoKind: 'uw' as const,
       href: 'https://www.wisc.edu/',
     },
     {
       name: 'Summer of AI Laboratory',
-      badge: '[ SAIL PROGRAM ]',
+      badge: 'SAIL program',
       description: 'UW–Madison CDIS program for building original AI products through project-based learning and industry mentorship.',
       logoKind: 'sail' as const,
       href: 'https://cdis.wisc.edu/preparing-students-for-the-ai-era-cdis-and-openai-launch-sail/',
     },
     {
       name: 'Qualcomm',
-      badge: '[ EDGE HARDWARE ]',
+      badge: 'Edge hardware',
       description: 'Research direction: evaluate efficient on-device inference and hardware-aware deployment for future prototypes.',
       logoKind: 'qualcomm' as const,
       href: 'https://www.qualcomm.com/',
@@ -868,7 +871,7 @@ function SponsorTeamShowcaseV3() {
   return (
     <section className="acknowledgments-section section-shell" id="team">
       <div className="acknowledgments-intro">
-        <span className="eyebrow">[ ACKNOWLEDGMENTS ]</span>
+        <span className="eyebrow">Acknowledgments</span>
         <h2>Acknowledgments</h2>
         <p>Supported by academic programs and industry partners building a more expressive web.</p>
       </div>
@@ -885,7 +888,7 @@ function SponsorTeamShowcaseV3() {
       </div>
       <div className="team-showcase team-showcase-clean">
         <div className="team-showcase-copy">
-          <span className="team-badge">[ TEAM GREEN LAKE ]</span>
+          <span className="team-badge">Team Green Lake</span>
           <h2>Team Green Lake.</h2>
           <p>Three disciplines, one shared goal: turn spatial AI into communication people can trust.</p>
         </div>
@@ -894,7 +897,7 @@ function SponsorTeamShowcaseV3() {
             <a className="team-roster-row team-roster-row-polished" href={`mailto:${member.email}`} key={member.email}>
               <div className="team-member-identity"><strong>{member.name}</strong><small>{member.email}</small></div>
               <div className="team-member-role"><b>{member.role}</b><span>{member.focus}</span></div>
-              <span className="team-contact-pill">[ Contact ↗ ]</span>
+              <span className="team-contact-pill">Contact ↗</span>
             </a>
           ))}
         </div>
@@ -913,7 +916,7 @@ function ReasoningComparisonV2() {
     const timer = window.setTimeout(() => setShowNaturalSentence((visible) => !visible), showNaturalSentence ? 3500 : 2500);
     return () => window.clearTimeout(timer);
   }, [showNaturalSentence]);
-  return <section className="reasoning-comparison section-shell" id="translation" aria-label="Sign-token sentence refinement example"><div className="comparison-stage morphing-translation"><div className="morphing-content"><span className="gemini-pill">[ LANGUAGE REFINEMENT ]</span><p className="gemini-subtitle">EXAMPLE TRANSLATION OUTPUT</p><div className="morphing-copy-stage"><AnimatePresence mode="wait"><motion.div key={showNaturalSentence ? 'natural' : 'raw'} className={`morphing-copy ${showNaturalSentence ? 'morphing-natural' : 'morphing-raw'}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: .5, ease: 'easeInOut' }}><span className={`morphing-status ${showNaturalSentence ? 'status-refined' : 'status-raw'}`}>{showNaturalSentence ? '[ EDITABLE SENTENCE EXAMPLE ]' : '[ RAW SIGN TOKENS ]'}</span><strong>{showNaturalSentence ? 'Could I please get a glass of water?' : '"I" ... "WANT" ... "WATER"'}</strong></motion.div></AnimatePresence></div><p className="morphing-explanation">The configured translation service can refine recognized tokens into a sentence for the signer to review.</p></div></div></section>;
+  return <section className="reasoning-comparison section-shell" id="translation" aria-label="Sign-token sentence refinement example"><div className="comparison-stage morphing-translation"><div className="morphing-content"><span className="gemini-pill">Language refinement</span><p className="gemini-subtitle">Example translation output</p><div className="morphing-copy-stage"><AnimatePresence mode="wait"><motion.div key={showNaturalSentence ? 'natural' : 'raw'} className={`morphing-copy ${showNaturalSentence ? 'morphing-natural' : 'morphing-raw'}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: .5, ease: 'easeInOut' }}><span className={`morphing-status ${showNaturalSentence ? 'status-refined' : 'status-raw'}`}>{showNaturalSentence ? 'Editable sentence example' : 'Raw sign tokens'}</span><strong>{showNaturalSentence ? 'Could I please get a glass of water?' : '"I" ... "WANT" ... "WATER"'}</strong></motion.div></AnimatePresence></div><p className="morphing-explanation">The configured translation service can refine recognized tokens into a sentence for the signer to review.</p></div></div></section>;
 }
 
 function SamArchitectureDiagramV2() {
@@ -1571,9 +1574,15 @@ function App() {
         <div className="hero-stat-status"><i /> ASL recognition research prototype</div>
       </section>
 
+      <MediaShowcase />
+
+      <PipelineFlow />
+
       <div className="overview-pipeline-block section-shell" id="architecture">
         <SamArchitectureDiagramV2 />
       </div>
+
+      <DeployFlow />
       </div>
 
       <div className="sb-page-view" hidden={activePage !== 'demo'}>
@@ -1595,7 +1604,7 @@ function App() {
               <div className="video-scanline" />
               <div className="video-corner video-corner-tl" /><div className="video-corner video-corner-tr" /><div className="video-corner video-corner-bl" /><div className="video-corner video-corner-br" />
               {!isRunning && <div className="camera-empty"><span className="camera-icon">◎</span><strong>Camera is ready</strong><p>Start a session to see spatial landmarks and live recognition.</p></div>}
-              <div className="video-overlay-top"><span>MEDIAPIPE HOLISTIC</span><span>30 FPS TARGET / BROWSER</span></div>
+              <div className="video-overlay-top"><span>MediaPipe Holistic</span><span>30 FPS TARGET / BROWSER</span></div>
               <div className="video-overlay-bottom"><span className="overlay-status"><i /> {isRunning ? 'Signal detected' : 'Awaiting signal'}</span><span>Face · Hands · Pose</span></div>
             </div>
             <div className="camera-controls">
