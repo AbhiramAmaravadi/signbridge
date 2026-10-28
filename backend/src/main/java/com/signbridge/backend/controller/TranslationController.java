@@ -31,8 +31,13 @@ import com.signbridge.backend.entity.Translation;
  * Example Response:
  *
  * {
- * "sentence":
- * "STORE I GO TOMORROW"
+ * "id": 1,
+ * "aslGloss": "STORE I GO TOMORROW",
+ * "englishSentence": "I'm going to the store tomorrow.",
+ * "speechAudio": "<base64 mp3>",
+ * "detectedEmotion": "neutral",
+ * "detectedScene": "unknown",
+ * "usedGemini": true
  * }
  */
 @RestController
@@ -58,32 +63,30 @@ public class TranslationController {
     }
 
     /**
-     * Receives recognized ASL words
-     * from frontend or AI service.
+     * Receives recognized ASL words (or a landmark
+     * sequence) from the frontend.
      *
-     * Future Flow:
+     * Flow:
      *
      * Frontend
      * ↓
      * Spring Boot
      * ↓
-     * OpenAI
+     * FastAPI (only when landmarks are sent)
+     * ↓
+     * Gemini → Google TTS
      * ↓
      * PostgreSQL
      *
-     * @param request contains ASL words
-     * @return translated sentence
+     * @param request contains ASL words or landmarks
+     * @return gloss, English sentence and speech audio
      */
     @PostMapping("/translate")
     public TranslationResult translate(
             @RequestBody TranslationRequest request) {
 
-        return translationService.translate(request.words());
+        return translationService.translate(request);
     }
-
-    /**
-     * Tests OpenAI integration.
-     */
 
     /**
      * Returns translation history.

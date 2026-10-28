@@ -61,6 +61,10 @@ class PredictRequest(BaseModel):
     reset_buffer: bool = False
     force_finalize: bool = False
     scene_context: str | None = None
+    update_sentence: bool = Field(
+        default=True,
+        description="Set false for one-off classification that must not touch the live sentence state.",
+    )
 
 
 class PredictionItem(BaseModel):
@@ -455,6 +459,16 @@ def predict(request: PredictRequest) -> PredictResponse:
     if request.landmarks is not None:
         try:
             sequence = normalize_landmark_sequence(np.asarray(request.landmarks, dtype=np.float32))
+            if not request.update_sentence:
+                return PredictResponse(
+                    timestamp=_utc_now(),
+                    ready=True,
+                    sequence_length=int(sequence.shape[0]),
+                    buffer_length=int(sequence.shape[0]),
+                    top_k=_predict_sequence(sequence, request.top_k),
+                    status="stateless",
+                    detail="Stateless inference; sentence state unchanged.",
+                )
             _latest_landmark_sequence = sequence
             top_k = _predict_sequence(sequence, request.top_k)
             state = _state_payload(top_k, sequence, request.force_finalize, request.scene_context)
