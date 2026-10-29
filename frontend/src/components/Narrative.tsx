@@ -3,17 +3,13 @@ import { useState } from 'react';
    Only figures with a public source are shown; sectors are directions, not customers. */
 
 const WM = (f: string, w = 1000) => `https://commons.wikimedia.org/wiki/Special:FilePath/${f}?width=${w}`;
-const SOURCES = {
-  who: 'https://www.who.int/news-room/fact-sheets/detail/deafness-and-hearing-loss',
-  un: 'https://www.un.org/en/observances/sign-languages-day',
-};
-
 export function WhyItMatters() {
+  // Figures are quoted from the World Federation of the Deaf (via the UN) and the WHO.
   const stats = [
-    { n: '70M', t: 'deaf people worldwide', s: 'World Federation of the Deaf, via the UN', href: SOURCES.un },
-    { n: '300+', t: 'distinct sign languages in use', s: 'World Federation of the Deaf, via the UN', href: SOURCES.un },
-    { n: '430M', t: 'people who need hearing rehabilitation today', s: 'World Health Organization', href: SOURCES.who },
-    { n: '2.5B', t: 'people projected with some hearing loss by 2050', s: 'World Health Organization', href: SOURCES.who },
+    { n: '70M', t: 'deaf people worldwide', s: 'World Federation of the Deaf, via the UN', f: 'Group_of_deaf_people,_2010_(01).jpg', a: 'A group of deaf friends signing and laughing together' },
+    { n: '300+', t: 'distinct sign languages in use', s: 'World Federation of the Deaf, via the UN', f: 'Ghanaian_sign_language_interpreter_working_at_University_of_Education_Winneba.jpg', a: 'A Ghanaian Sign Language interpreter at work' },
+    { n: '430M', t: 'people who need hearing rehabilitation today', s: 'World Health Organization', f: 'LAMAT_2026-_U_S_Air_Force_audiologists_expand_hearing_care_in_Saint_Kitts_and_Nevis_(9549320).jpg', a: 'An audiologist adjusting a hearing test device' },
+    { n: '2.5B', t: 'people projected with some hearing loss by 2050', s: 'World Health Organization', f: 'Oticon_hearing_aid_top_view.jpg', a: 'A behind-the-ear hearing aid' },
   ];
   return (
     <section className="story-section section-shell" id="why" aria-labelledby="why-h">
@@ -22,16 +18,19 @@ export function WhyItMatters() {
         <h2 id="why-h">Hearing loss is growing. Everyday access to sign language is not.</h2>
         <p>Most spoken-language services still assume a hearing customer. Interpreters are scarce, so simple moments such as a pharmacy question or a hotel check-in become barriers.</p>
       </div>
-      <div className="stat-row">
-        {stats.map((x) => (
-          <a key={x.n} className="stat-tile" href={x.href} target="_blank" rel="noreferrer">
+      <ul className="stat-strip">
+        {stats.map((x, i) => (
+          <li key={x.n} className="stat-card" style={{ ['--i' as string]: i }}>
+            <div className="stat-card-photo">
+              <img src={WM(x.f, 640)} alt={x.a} loading="lazy" referrerPolicy="no-referrer" onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }} />
+            </div>
             <strong>{x.n}</strong>
             <span>{x.t}</span>
             <small>{x.s}</small>
-          </a>
+          </li>
         ))}
-      </div>
-      <p className="story-note">WHO also estimates unaddressed hearing loss costs the world almost US$1 trillion a year.</p>
+      </ul>
+      <p className="story-note">WHO also estimates unaddressed hearing loss costs the world almost US$1 trillion a year. Photos: Wikimedia Commons.</p>
     </section>
   );
 }
@@ -46,9 +45,8 @@ const SECTORS = [
 ];
 
 export function WhereItApplies() {
+  // Hover (or focus, or tap) a sector to bring its photo forward.
   const [i, setI] = useState(0);
-  const n = SECTORS.length;
-  const go = (k: number) => setI((k + n) % n);
   return (
     <section className="story-section section-shell" id="industries" aria-labelledby="ind-h">
       <div className="story-head">
@@ -56,29 +54,38 @@ export function WhereItApplies() {
         <h2 id="ind-h">Built for the moments between interpreters.</h2>
         <p>These are the sectors we are designing for. SignBridge is a research prototype, so none of them are paying customers yet.</p>
       </div>
-      <div className="sector-tabs" role="tablist" aria-label="Sectors">
-        {SECTORS.map((x, k) => (
-          <button key={x.k} type="button" role="tab" aria-selected={k === i} className={k === i ? 'is-active' : ''} onClick={() => go(k)}>{x.k}</button>
-        ))}
-      </div>
-      <div className="sector-viewport">
-        <div className="sector-track" style={{ transform: `translateX(-${i * 100}%)` }}>
+      <div className="sector-hover">
+        <ol className="sector-list" aria-label="Sectors">
           {SECTORS.map((x, k) => (
-            <article key={x.k} className="sector-slide" aria-hidden={k !== i}>
-              <div className="sector-photo">
-                <img src={WM(x.f, 1200)} alt={`${x.k} setting`} loading="lazy" referrerPolicy="no-referrer" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-              </div>
-              <div className="sector-copy">
-                <span className="sector-n">{String(k + 1).padStart(2, '0')} / {String(n).padStart(2, '0')}</span>
-                <h3>{x.k}</h3>
-                <p>{x.d}</p>
-              </div>
-            </article>
+            <li key={x.k}>
+              <button
+                type="button"
+                className={k === i ? 'is-active' : ''}
+                aria-pressed={k === i}
+                onPointerEnter={() => setI(k)}
+                onFocus={() => setI(k)}
+                onClick={() => setI(k)}
+              >
+                <span className="sector-n">{String(k + 1).padStart(2, '0')}</span>
+                <span className="sector-text"><b>{x.k}</b><span>{x.d}</span></span>
+              </button>
+            </li>
           ))}
-        </div>
-        <div className="sector-nav">
-          <button type="button" aria-label="Previous sector" onClick={() => go(i - 1)}>←</button>
-          <button type="button" aria-label="Next sector" onClick={() => go(i + 1)}>→</button>
+        </ol>
+        <div className="sector-stage" aria-live="polite">
+          {SECTORS.map((x, k) => (
+            <img
+              key={x.k}
+              className={k === i ? 'is-active' : ''}
+              src={WM(x.f, 1200)}
+              alt={k === i ? `${x.k} setting` : ''}
+              aria-hidden={k !== i}
+              loading={k === 0 ? 'eager' : 'lazy'}
+              referrerPolicy="no-referrer"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+            />
+          ))}
+          <span className="sector-caption">{SECTORS[i].k}</span>
         </div>
       </div>
     </section>
@@ -130,6 +137,8 @@ export function Chapter({ n, title, line }: { n: number; title: string; line: st
 }
 
 const LP = 'https://www.lifeprint.com/asl101/';
+export const HELLO_GIF = '/media/signs/hello.gif';
+export const HELLO_CLIP = LP + 'videos/hi.mp4';
 
 export function Photo({ src, alt, credit, href, ratio = '4 / 3', fallback }: { src: string; alt: string; credit: string; href?: string; ratio?: string; fallback?: React.ReactNode }) {
   const [bad, setBad] = useState(false);
@@ -137,7 +146,9 @@ export function Photo({ src, alt, credit, href, ratio = '4 / 3', fallback }: { s
   return (
     <figure className="photo-fig">
       <div className="photo-frame" style={{ aspectRatio: ratio }}>
-        <img src={src} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setBad(true)} />
+        {/\.(mp4|webm)$/i.test(src)
+          ? <video src={src} autoPlay loop muted playsInline aria-label={alt} onError={() => setBad(true)} />
+          : <img src={src} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setBad(true)} />}
       </div>
       <figcaption>{href ? <a href={href} target="_blank" rel="noreferrer">{credit}</a> : credit}</figcaption>
     </figure>
@@ -145,7 +156,8 @@ export function Photo({ src, alt, credit, href, ratio = '4 / 3', fallback }: { s
 }
 
 const SIGNS = [
-  { k: 'Flower', src: LP + 'signjpegs/f/flower1.jpg', page: LP + 'pages-signs/f/flower.htm' },
+  // Hello prefers the local GIF; until it is added, the Lifeprint clip stands in.
+  { k: 'Hello', src: HELLO_GIF, fallback: HELLO_CLIP, page: LP + 'pages-signs/h/hello.htm' },
   { k: 'Shhh', src: LP + 'gifs-animated/shhh.gif', page: LP + 'pages-signs/q/quiet.htm' },
   { k: 'Wolf', src: LP + 'gifs/w/wolf.gif', page: LP + 'pages-signs/w/wolf.htm' },
   { k: 'Look', src: LP + 'gifs/l/look-at-1.gif', page: LP + 'pages-signs/l/look.htm' },
@@ -153,10 +165,17 @@ const SIGNS = [
 export function SignGallery() {
   return (
     <section className="story-section section-shell" id="sign-gallery" aria-label="Signs the model reads best">
-      <div className="story-head"><span className="eyebrow">Best results so far</span><h2>Four signs it reads best.</h2><p>Flower, shhh, wolf and look are the signs the prototype recognises most reliably today. More are in training.</p></div>
+      <div className="story-head"><span className="eyebrow">Best results so far</span><h2>Four signs it reads best.</h2><p>Hello, shhh, wolf and look are four signs the prototype recognises reliably today. More are in training.</p></div>
       <div className="sign-gallery">
         {SIGNS.map((x) => (
-          <Photo key={x.k} src={x.src} alt={`The ASL sign for ${x.k}`} credit={`${x.k} · Lifeprint`} href={x.page} ratio="1 / 1" />
+          <Photo
+            key={x.k}
+            src={x.src}
+            alt={`The ASL sign for ${x.k}`}
+            credit={x.k}
+            ratio="1 / 1"
+            fallback={'fallback' in x && x.fallback ? <Photo src={x.fallback} alt={`The ASL sign for ${x.k}`} credit={`${x.k} · Lifeprint`} href={x.page} ratio="1 / 1" /> : undefined}
+          />
         ))}
       </div>
     </section>
