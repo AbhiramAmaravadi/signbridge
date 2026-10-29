@@ -41,13 +41,20 @@ export const API_DOCS_URL = `${API_BASE_URL}/docs`;
 export const HEALTH_URL = `${API_BASE_URL}/health`;
 
 /**
- * Fire-and-forget request sent as soon as the page loads so a cold Cloud Run
- * instance starts booting (model + MediaPipe init) before the user clicks "Start".
+ * Wake-up request sent as soon as the page loads so a cold Cloud Run instance
+ * starts booting (model + MediaPipe init) before the user clicks "Start".
+ * The promise is shared so the UI can show whether the backend is awake yet.
  */
-export function warmUpBackend(): void {
-  try {
-    void fetch(HEALTH_URL, { method: 'GET', mode: 'cors', cache: 'no-store' }).catch(() => undefined);
-  } catch {
-    /* ignore: warm-up is best effort */
-  }
+const WAKE_TIMEOUT_MS = 90_000;
+let wakePromise: Promise<boolean> | null = null;
+
+export function warmUpBackend(force = false): Promise<boolean> {
+  if (wakePromise && !force) return wakePromise;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), WAKE_TIMEOUT_MS);
+  wakePromise = fetch(HEALTH_URL, { method: 'GET', mode: 'cors', cache: 'no-store', signal: controller.signal })
+    .then((res) => res.ok)
+    .catch(() => false)
+    .finally(() => clearTimeout(timer));
+  return wakePromise;
 }

@@ -14,11 +14,13 @@ import './overview.css'
 import './sam3.css'
 import './styles/flows.css'
 import './styles/practice.css'
+import './styles/videos.css'
 import './styles/polish.css'
+import './styles/experience.css'
 import App from './App.tsx'
 import { warmUpBackend } from './config'
 
-warmUpBackend()
+void warmUpBackend()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
