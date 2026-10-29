@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="https://signbridge-frontend-389644353290.us-central1.run.app/#overview">🚀 Launch the SignBridge Live Demo</a>
+  <a href="https://signbridge-web-two.vercel.app/#overview">🚀 Launch the SignBridge Live Demo</a>
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
 
 SignBridge is a modular, real-time sign language recognition and translation platform. It captures video, extracts body/hand/face landmarks, classifies temporal gesture sequences, assembles recognized signs into sentences, and optionally uses Gemini for natural-language refinement and scene-aware translation.
 
-Try the deployed application: [SignBridge Live Demo](https://signbridge-frontend-389644353290.us-central1.run.app/#overview).
+Try the deployed application: [SignBridge Live Demo](https://signbridge-web-two.vercel.app/#overview).
 
 The repository is organized as three cooperating applications:
 
@@ -41,6 +41,23 @@ SignBridge/
 </p>
 
 The video covers the system architecture, machine-learning pipeline, and a live demonstration of SignBridge.
+
+## Videos
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <a href="https://signbridge-web-two.vercel.app/media/intro.mp4"><img src="https://signbridge-web-two.vercel.app/media/intro.jpg" alt="Play the 20-second SignBridge introduction" width="100%" /></a>
+      <br /><strong>Meet SignBridge</strong> · 0:20, with sound
+    </td>
+    <td align="center" width="50%">
+      <a href="https://signbridge-web-two.vercel.app/media/demo-session.mp4"><img src="https://signbridge-web-two.vercel.app/media/demo-session.jpg" alt="Play the recorded live demo session" width="100%" /></a>
+      <br /><strong>Recorded live session</strong> · 0:37: “look”, “wolf” and “shhh” become <em>“Look over there, a wolf! Shhh!”</em>
+    </td>
+  </tr>
+</table>
+
+Click a thumbnail to play the video. Both also play on the website: the introduction on the [Overview](https://signbridge-web-two.vercel.app/#overview) page and the recorded session at the top of the [Live Demo](https://signbridge-web-two.vercel.app/#demo) page.
 
 ## Key Features
 
