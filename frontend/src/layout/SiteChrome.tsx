@@ -6,14 +6,6 @@ function useActiveSection(sectionIds: readonly string[], fallback: string) {
   const [activeId, setActiveId] = useState(fallback);
 
   useEffect(() => {
-    const elements = sectionIds
-      .map((id) => document.getElementById(id))
-      .filter((el): el is HTMLElement => Boolean(el));
-
-    if (!elements.length) {
-      return undefined;
-    }
-
     const ratios = new Map<string, number>();
     const observer = new IntersectionObserver(
       (entries) => {
@@ -40,8 +32,20 @@ function useActiveSection(sectionIds: readonly string[], fallback: string) {
       },
     );
 
-    for (const el of elements) observer.observe(el);
-    return () => observer.disconnect();
+    // Lazy pages mount after this effect runs, so keep watching the DOM and
+    // observe each section as soon as it appears.
+    const observed = new Set<string>();
+    const attach = () => {
+      for (const id of sectionIds) {
+        const el = observed.has(id) ? null : document.getElementById(id);
+        if (el) { observer.observe(el); observed.add(id); }
+      }
+      if (observed.size === sectionIds.length) dom.disconnect();
+    };
+    const dom = new MutationObserver(attach);
+    dom.observe(document.body, { childList: true, subtree: true });
+    attach();
+    return () => { observer.disconnect(); dom.disconnect(); };
   }, [fallback, sectionIds]);
 
   return activeId;
@@ -49,8 +53,12 @@ function useActiveSection(sectionIds: readonly string[], fallback: string) {
 
 type CapsuleNavProps = {
   activePage: string;
-  onNavigate: (pageId: string) => void;
+  onNavigate: (pageId: string, sectionId?: string) => void;
 };
+
+/* Sub-sections shown under each page in the nav. The developer console is hidden
+   unless Dev Mode is on, so it is left out here. */
+const navSections = (pageId: string) => (PAGE_SUBSECTIONS[pageId] ?? []).filter((s) => s.id !== 'demo-console');
 
 
 type ThemeChoice = 'system' | 'light' | 'dark';
@@ -122,9 +130,11 @@ export function CapsuleNav({ activePage, onNavigate }: CapsuleNavProps) {
   }, [open]);
 
   const go = useCallback(
-    (id: string) => {
+    (id: string, sectionId?: string) => {
       setOpen(false);
-      onNavigate(id);
+      onNavigate(id, sectionId);
+      // Close the hover menu after a choice, even while the pointer is still over it.
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     },
     [onNavigate],
   );
@@ -145,30 +155,42 @@ export function CapsuleNav({ activePage, onNavigate }: CapsuleNavProps) {
         </a>
 
         <nav className="sb-capsule-links" aria-label="Pages">
-          {TOP_PAGES.map((link) =>
-            link.cta ? (
-              <button
-                key={link.id}
-                className={`sb-capsule-cta ${activePage === link.id ? 'is-active' : ''}`}
-                type="button"
-                onClick={() => go(link.id)}
-              >
-                {link.label}
-              </button>
-            ) : (
-              <a
-                key={link.id}
-                href={`#${link.id}`}
-                className={activePage === link.id ? 'is-active' : undefined}
-                onClick={(e) => {
-                  e.preventDefault();
-                  go(link.id);
-                }}
-              >
-                {link.label}
-              </a>
-            ),
-          )}
+          {TOP_PAGES.map((link) => {
+            const sections = navSections(link.id);
+            return (
+              <div key={link.id} className={`sb-nav-item ${sections.length > 1 ? 'has-menu' : ''}`}>
+                {link.cta ? (
+                  <button
+                    className={`sb-capsule-cta ${activePage === link.id ? 'is-active' : ''}`}
+                    type="button"
+                    onClick={() => go(link.id)}
+                  >
+                    {link.label}
+                  </button>
+                ) : (
+                  <a
+                    href={`#${link.id}`}
+                    className={activePage === link.id ? 'is-active' : undefined}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      go(link.id);
+                    }}
+                  >
+                    {link.label}
+                  </a>
+                )}
+                {sections.length > 1 && (
+                  <div className="sb-nav-menu" role="menu" aria-label={`${link.label} sections`}>
+                    {sections.map((sec) => (
+                      <button key={sec.id} type="button" role="menuitem" onClick={() => go(link.id, sec.id)}>
+                        <span>{sec.number}</span>{sec.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
           <a className="sb-capsule-docs" href={API_DOCS_URL} target="_blank" rel="noreferrer">
             API Docs <span aria-hidden="true">↗</span>
           </a>
@@ -193,14 +215,22 @@ export function CapsuleNav({ activePage, onNavigate }: CapsuleNavProps) {
       <div id="sb-mobile-nav-drawer" className={`sb-mobile-nav-drawer ${open ? 'is-open' : ''}`} hidden={!open}>
         <nav aria-label="Mobile navigation">
           {TOP_PAGES.map((link) => (
-            <button
-              key={link.id}
-              type="button"
-              className={link.cta || activePage === link.id ? 'is-cta' : undefined}
-              onClick={() => go(link.id)}
-            >
-              {link.label}
-            </button>
+            <div key={link.id} className="sb-drawer-group">
+              <button
+                type="button"
+                className={link.cta || activePage === link.id ? 'is-cta' : undefined}
+                onClick={() => go(link.id)}
+              >
+                {link.label}
+              </button>
+              {navSections(link.id).length > 1 && (
+                <div className="sb-drawer-sub">
+                  {navSections(link.id).map((sec) => (
+                    <button key={sec.id} type="button" onClick={() => go(link.id, sec.id)}>{sec.label}</button>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
           <a href={API_DOCS_URL} target="_blank" rel="noreferrer" onClick={() => setOpen(false)}>
             API Docs ↗

@@ -1,0 +1,333 @@
+/* =====================================================================
+   Experience layer (loaded last): one heading scale, one motion curve,
+   calm transitions between sections, and the reworked Overview blocks.
+   Tokens only, so it follows light, dark and system themes.
+   ===================================================================== */
+
+:root {
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --t-slow: .9s;
+  --t-med: .45s;
+  --section-gap: clamp(96px, 11vw, 160px);
+}
+
+/* ---------- one continuous background: no seam under the hero ---------- */
+.overview-page { background: var(--bg); }
+.overview-page .premium-hero { background: transparent; }
+
+/* ---------- headings: one size for every section title ----------
+   Prefixed with .app-shell .sb-page-view so it outranks the older per-page rules. */
+.app-shell .sb-page-view :is(.story-head, .flow-head, .section-intro, .sam-architecture-heading, .acknowledgments-intro, .team-showcase-copy, .future-glasses-copy, .chapter) h2 {
+  max-width: 24ch;
+  margin: 12px 0 16px;
+  color: var(--text);
+  font: 600 clamp(32px, 3.8vw, 48px) / 1.12 var(--font-display);
+  letter-spacing: -0.028em;
+  text-wrap: balance;
+}
+.app-shell .sb-page-view :is(.story-head, .flow-head, .section-intro, .sam-architecture-heading, .acknowledgments-intro, .team-showcase-copy, .future-glasses-copy, .chapter) > p,
+.app-shell .sb-page-view :is(.story-head, .flow-head, .section-intro, .chapter) div > p {
+  max-width: 60ch;
+  margin: 0;
+  color: var(--text-2);
+  font-size: 18px;
+  line-height: 1.6;
+}
+:is(.story-head, .flow-head, .section-intro) { margin-bottom: clamp(36px, 4vw, 56px); }
+.chapter { margin-top: var(--section-gap); padding-bottom: 32px; }
+.chapter-n { color: var(--accent); font: 600 14px/1 var(--font-display); }
+.story-section { padding-top: var(--section-gap); }
+.story-section.video-section { padding-top: clamp(32px, 4vw, 64px); padding-bottom: 0; }
+
+/* ---------- motion: page switch, hero entrance, scroll reveal ---------- */
+.sb-page-view:not([hidden]) { animation: page-in .55s var(--ease-out) both; }
+@keyframes page-in { from { opacity: 0; } to { opacity: 1; } }
+
+.premium-hero-copy > * { animation: rise-in var(--t-slow) var(--ease-out) both; }
+.premium-hero-copy > :nth-child(2) { animation-delay: 80ms; }
+.premium-hero-copy > :nth-child(3) { animation-delay: 160ms; }
+.premium-hero-copy > :nth-child(4) { animation-delay: 240ms; }
+.premium-hero-copy > :nth-child(5) { animation-delay: 320ms; }
+.premium-product-stage { animation: rise-in 1.1s var(--ease-out) 200ms both; }
+@keyframes rise-in { from { opacity: 0; transform: translate3d(0, 24px, 0); } to { opacity: 1; transform: none; } }
+
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, 32px, 0);
+  transition: opacity var(--t-slow) var(--ease-out) var(--reveal-delay, 0ms), transform var(--t-slow) var(--ease-out) var(--reveal-delay, 0ms);
+}
+.reveal.is-in { opacity: 1; transform: none; }
+
+/* Intro film grows into place as it scrolls up from the hero (Chrome, Edge, Safari 26+). */
+@supports (animation-timeline: view()) {
+  .video-section .video-frame {
+    animation: film-in linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 35%;
+  }
+  @keyframes film-in {
+    from { opacity: .35; transform: scale(.9); border-radius: 40px; }
+    to { opacity: 1; transform: none; border-radius: var(--r-lg); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.is-in { opacity: 1; transform: none; transition: none; }
+  .sb-page-view:not([hidden]), .premium-hero-copy > *, .premium-product-stage, .video-section .video-frame { animation: none; }
+}
+
+/* ---------- hero: hand photo with its 21 landmarks ---------- */
+/* Layout: same 1120px column as every section below, two balanced halves,
+   and a square stage so the hand fills its frame instead of floating in it. */
+.app-shell .overview-page .premium-hero {
+  width: min(1120px, calc(100% - 56px));
+  min-height: min(860px, 100svh);
+  margin-inline: auto;
+  padding: 120px 0 72px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(40px, 5vw, 80px);
+  align-items: center;
+}
+.app-shell .overview-page .premium-hero h1 { max-width: 11ch; font-size: clamp(44px, 5vw, 76px); }
+.app-shell .overview-page .premium-hero-copy > p { max-width: 34ch; font-size: clamp(17px, 1.3vw, 19px); }
+.app-shell .overview-page .premium-product-stage { min-width: 0; padding: 0; overflow: visible; background: transparent; }
+.premium-stage-body .premium-stage-camera { position: relative; min-height: 0; aspect-ratio: 1 / 1; max-height: 600px; }
+@media (max-width: 1080px) {
+  .app-shell .overview-page .premium-hero { grid-template-columns: 1fr; min-height: 0; padding-top: 112px; }
+  .premium-stage-body .premium-stage-camera { max-height: none; aspect-ratio: 4 / 5; }
+}
+@media (max-width: 680px) {
+  .app-shell .overview-page .premium-hero { width: calc(100% - 32px); padding-top: 96px; }
+}
+
+/* Two layers in 3D: photo at the back, landmark mesh floating 48px in front.
+   The mesh is scaled down by the perspective factor (1052/1100) so both line up when flat. */
+.hero-hand { position: absolute; inset: 0; padding: 52px 24px 48px; perspective: 1100px; }
+.hero-hand-rig {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  outline: none;
+  cursor: grab;
+  touch-action: pan-y;
+  transform-style: preserve-3d;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.hero-hand.is-dragging .hero-hand-rig { cursor: grabbing; }
+.hero-hand-rig.is-settling { transition: transform .9s cubic-bezier(.34, 1.4, .64, 1); }
+.hero-hand-rig:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; border-radius: var(--r-md); }
+.hero-hand-layer { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: visible; }
+.hero-hand-layer.is-mesh { transform: translateZ(48px) scale(.9564); }
+.hero-hand.is-dragging .hero-hand-wave { animation-play-state: paused; }
+.hero-hand.is-dragging .hero-hand-photo-img { opacity: .38; }
+.hero-hand-photo-img { transition: opacity .4s ease; }
+.hero-hand-photo-img { opacity: .5; filter: grayscale(1) contrast(1.05); }
+.hero-hand-wave { transform-box: view-box; transform-origin: 221px 560px; animation: hero-wave 7s ease-in-out infinite; }
+@keyframes hero-wave { 0%, 100% { transform: rotate(-1.4deg); } 50% { transform: rotate(1.4deg); } }
+
+.hero-hand-bones line {
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 6 6;
+  opacity: .8;
+  vector-effect: non-scaling-stroke;
+  animation: bone-flow 2.4s linear infinite;
+}
+@keyframes bone-flow { to { stroke-dashoffset: -24; } }
+
+.hero-hand-node { cursor: pointer; outline: none; transform-box: fill-box; transform-origin: center; animation: node-breathe 3s ease-in-out infinite; }
+.hero-hand-hit { fill: transparent; }
+.hero-hand-dot {
+  fill: var(--accent);
+  stroke: var(--text);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform var(--t-med) var(--ease-out), fill var(--t-med) ease;
+}
+.hero-hand-node.is-active .hero-hand-dot,
+.hero-hand-node:focus-visible .hero-hand-dot { fill: var(--text); transform: scale(1.8); }
+@keyframes node-breathe { 0%, 100% { opacity: .75; } 50% { opacity: 1; } }
+
+.hero-hand-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 90px;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent) 16%, transparent) 85%, color-mix(in srgb, var(--accent) 55%, transparent) 99%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+  pointer-events: none;
+  animation: hand-scan 6s ease-in-out infinite;
+}
+@keyframes hand-scan {
+  0% { transform: translateY(-90px); opacity: 0; }
+  15%, 80% { opacity: 1; }
+  100% { transform: translateY(560px); opacity: 0; }
+}
+.hero-hand-bbox { fill: none; stroke: var(--accent); stroke-width: 1; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
+
+.hero-hand-badge,
+.hero-hand-readout {
+  position: absolute;
+  left: 16px;
+  padding: 6px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.hero-hand-badge { top: 16px; }
+.hero-hand-readout { bottom: 16px; max-width: calc(100% - 32px); overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-hand-wave, .hero-hand-bones line, .hero-hand-node, .hero-hand-scan { animation: none; }
+  .hero-hand-rig.is-settling { transition: none; }
+  .hero-hand-scan { opacity: 0; }
+}
+
+/* ---------- Why it matters: one row of photo + figure ---------- */
+.stat-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(16px, 2vw, 28px); margin: 0; padding: 0; list-style: none; }
+.stat-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.stat-card-photo { aspect-ratio: 4 / 3; margin-bottom: 14px; overflow: hidden; border-radius: var(--r-md); background: var(--surface-2); }
+.stat-card-photo img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease-out); }
+.stat-card:hover .stat-card-photo img { transform: scale(1.04); }
+.stat-card strong { color: var(--accent); font: 600 clamp(36px, 3.4vw, 52px) / 1 var(--font-display); letter-spacing: -0.03em; }
+.stat-card span { color: var(--text); font-size: 16px; line-height: 1.45; }
+.stat-card small { color: var(--text-3); font-size: 13px; line-height: 1.4; }
+
+@media (max-width: 760px) {
+  /* Still one row: swipe sideways, each card snaps into place. */
+  .stat-strip {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 74%;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+  }
+  .stat-card { scroll-snap-align: start; }
+}
+
+/* ---------- Where it applies: hover a sector to change the photo ---------- */
+.sector-hover { display: grid; grid-template-columns: minmax(260px, .85fr) minmax(0, 1.35fr); gap: clamp(24px, 4vw, 56px); align-items: stretch; }
+.sector-list { display: flex; flex-direction: column; justify-content: center; margin: 0; padding: 0; border-top: 1px solid var(--line); list-style: none; }
+.sector-list li { border-bottom: 1px solid var(--line); }
+.sector-list button {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 4px;
+  border: 0;
+  background: none;
+  color: var(--text-3);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--t-med) ease;
+}
+.sector-list button:hover { color: var(--text-2); }
+.sector-list button.is-active { color: var(--text); }
+.sector-list .sector-n { padding-top: 5px; color: inherit; font-size: 13px; font-variant-numeric: tabular-nums; transition: color var(--t-med) ease; }
+.sector-list button.is-active .sector-n { color: var(--accent); }
+.sector-text b { display: block; color: inherit; font: 600 20px / 1.3 var(--font-display); letter-spacing: -0.015em; }
+.sector-text > span {
+  display: block;
+  max-height: 0;
+  margin-top: 0;
+  overflow: hidden;
+  color: var(--text-2);
+  font-size: 15px;
+  line-height: 1.55;
+  opacity: 0;
+  transition: max-height .6s var(--ease-out), opacity var(--t-med) ease, margin-top .6s var(--ease-out);
+}
+.sector-list button.is-active .sector-text > span { max-height: 6em; margin-top: 6px; opacity: 1; }
+
+.sector-stage { position: relative; min-height: 420px; overflow: hidden; border-radius: var(--r-lg); background: var(--surface-2); }
+.sector-stage img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.05);
+  transition: opacity .8s ease, transform 1.4s var(--ease-out);
+}
+.sector-stage img.is-active { opacity: 1; transform: none; }
+.sector-caption {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .55);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+}
+
+@media (max-width: 860px) {
+  .sector-hover { grid-template-columns: 1fr; }
+  .sector-stage { order: -1; min-height: 0; aspect-ratio: 4 / 3; }
+}
+
+/* ---------- nav: hover a page to see its sections ---------- */
+.sb-nav-item { position: relative; display: inline-flex; }
+.sb-nav-menu {
+  position: absolute;
+  z-index: 120;
+  top: calc(100% + 12px);
+  left: 50%;
+  min-width: 210px;
+  padding: 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 18px 40px -20px rgba(0, 0, 0, .45);
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, -6px);
+  transition: opacity .22s ease, transform .3s var(--ease-out), visibility 0s linear .22s;
+}
+.sb-nav-menu::before { position: absolute; top: -14px; right: 0; left: 0; height: 14px; content: ''; } /* hover bridge */
+.sb-nav-item.has-menu:hover .sb-nav-menu,
+.sb-nav-item.has-menu:focus-within .sb-nav-menu { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition-delay: 0s; }
+.sb-nav-menu button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease;
+}
+.sb-nav-menu button span { color: var(--text-3); font-size: 12px; font-variant-numeric: tabular-nums; }
+.sb-nav-menu button:hover,
+.sb-nav-menu button:focus-visible { background: var(--surface-2); color: var(--text); }
+
+.sb-mobile-nav-drawer .sb-drawer-sub { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 0 8px 10px; }
+.sb-mobile-nav-drawer .sb-drawer-sub button { width: auto; padding: 6px 10px; color: var(--text-2); font-size: .8rem; font-weight: 500; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-nav-menu, .sector-stage img, .sector-text > span, .stat-card-photo img { transition: none; }
+}
