@@ -100,12 +100,13 @@ type InferenceResponse = {
 };
 
 type TranslateResponse = {
-  raw_sentence: string;
-  polished_sentence: string;
-  detected_emotion: string;
-  detected_scene: string;
-  prompt: string;
-  used_gemini: boolean;
+  id: number | null;
+  aslGloss: string;
+  englishSentence: string;
+  speechAudio: string | null;
+  detectedEmotion: string;
+  detectedScene: string;
+  usedGemini: boolean;
 };
 
 type ConnectionState = 'idle' | 'loading' | 'connected' | 'disconnected' | 'error';
@@ -494,6 +495,7 @@ function App() {
   const inFlightRef = useRef(false);
   const pendingWindowRef = useRef<LandmarkFrame[] | null>(null);
   const lastSpokenSentenceRef = useRef<string | null>(null);
+  const speechAudioRef = useRef<HTMLAudioElement | null>(null);
   const pauseTimerRef = useRef<number | null>(null);
   const isPausedRef = useRef(false);
   const lastFrameAtRef = useRef(0);
@@ -557,7 +559,7 @@ function App() {
     }, PAUSE_AFTER_FINALIZE_MS);
   }, [isRunning]);
 
-  const speakSentence = useCallback((sentence: string, emotion = 'neutral') => {
+  const speakWithBrowser = useCallback((sentence: string, emotion = 'neutral') => {
     if (!voiceEnabled || !('speechSynthesis' in window) || !sentence.trim()) {
       setUiMode(isRunning ? 'listening' : 'idle');
       return;
@@ -577,6 +579,22 @@ function App() {
     utterance.onerror = () => setUiMode(isRunning ? 'listening' : 'idle');
     window.speechSynthesis.speak(utterance);
   }, [isRunning, voiceEnabled]);
+
+  // Prefer the Google Cloud TTS audio from the backend; fall back to the browser voice.
+  const speakSentence = useCallback((sentence: string, emotion = 'neutral', speechAudio?: string | null) => {
+    speechAudioRef.current?.pause();
+    if (!voiceEnabled || !speechAudio) {
+      speakWithBrowser(sentence, emotion);
+      return;
+    }
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    const audio = new Audio(`data:audio/mpeg;base64,${speechAudio}`);
+    speechAudioRef.current = audio;
+    audio.onplay = () => setUiMode('speaking');
+    audio.onended = () => setUiMode(isRunning ? 'listening' : 'idle');
+    audio.onerror = () => speakWithBrowser(sentence, emotion);
+    audio.play().catch(() => speakWithBrowser(sentence, emotion));
+  }, [isRunning, speakWithBrowser, voiceEnabled]);
 
   const drawResults = useCallback((results: HolisticResults) => {
     const canvas = canvasRef.current;
@@ -728,6 +746,7 @@ function App() {
     isPausedRef.current = false;
     setIsPaused(false);
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    speechAudioRef.current?.pause();
     try {
       await axios.post(RESET_URL, {}, { timeout: 10000, headers: JSON_HEADERS });
     } catch (requestError) {
@@ -761,13 +780,13 @@ function App() {
         { words, image_base64: captureSnapshot(), mime_type: 'image/jpeg', detected_emotion: detectedEmotion },
         { timeout: 30000, headers: JSON_HEADERS },
       );
-      const polished = response.data.polished_sentence || sentence;
-      const resolved = resolveContext(response.data.detected_emotion, response.data.detected_scene, sentence);
+      const polished = response.data.englishSentence || sentence;
+      const resolved = resolveContext(response.data.detectedEmotion, response.data.detectedScene, sentence);
       setPolishedSentence(polished);
-      setUsedGemini(response.data.used_gemini);
+      setUsedGemini(response.data.usedGemini);
       setDetectedEmotion(resolved.emotion);
       setDetectedScene(resolved.scene);
-      speakSentence(polished, resolved.emotion);
+      speakSentence(polished, resolved.emotion, response.data.speechAudio);
     } catch {
       const fallbackSentence = sentence ? `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.` : '';
       const resolved = resolveContext(null, null, sentence);

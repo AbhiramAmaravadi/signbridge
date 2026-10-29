@@ -1,0 +1,62 @@
+# Local full stack:  docker compose up --build
+#
+#   Browser → frontend (http://localhost:5173)
+#           → backend  (Spring Boot, http://localhost:8080)
+#           → ai-service (FastAPI, internal only) + postgres
+#
+# Optional secrets are read from your shell or a root .env file (git-ignored):
+#   GEMINI_API_KEY, TTS_API_KEY, DB_PASSWORD
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: signbridge
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-signbridge}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d signbridge"]
+      interval: 5s
+      retries: 10
+
+  ai-service:
+    build:
+      context: .
+      dockerfile: ai-service/Dockerfile
+    environment:
+      PORT: "8001"
+    # Not published to the host: only the backend talks to it.
+    expose:
+      - "8001"
+
+  backend:
+    build: ./backend
+    environment:
+      FASTAPI_BASE_URL: http://ai-service:8001
+      DB_URL: jdbc:postgresql://postgres:5432/signbridge
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${DB_PASSWORD:-signbridge}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      TTS_API_KEY: ${TTS_API_KEY:-}
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ai-service:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:8080
+    ports:
+      - "5173:8080"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

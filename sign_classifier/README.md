@@ -6,8 +6,8 @@ This directory contains sign classification model used in this project.
 
 The model uses two Transformer encoder blocks to classify input hand gestures into 250 ASL signs.
 
-- Preprocessing: temporal interpolation into 64 frames
-- Input: variable-length landmark sequences `[T, 543, 3]`
+- Preprocessing: temporal interpolation into 64 frames, performed **inside** the TFLite graph (NaN → 0, reshape to `[T, 1629]`, bilinear resize to `[64, 1629]`). Feed the raw sequence; do not resample in Python.
+- Input: variable-length landmark sequences `[T, 543, 3]`, float32, in MediaPipe order face (468), left hand (21), pose (33), right hand (21)
 - Output: probability distribution over 250 classes `[250]`
 
 ## Evaluation

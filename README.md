@@ -27,8 +27,8 @@ The repository is organized as three cooperating applications:
 ```text
 SignBridge/
 ├── frontend/          React 19 + Vite web application
-├── backend/            Java 21 + Spring Boot API and translation history
-├── ai-service/         Python FastAPI + MediaPipe + TensorFlow Lite inference service
+├── backend/            Java 21 + Spring Boot API gateway: Gemini, TTS, PostgreSQL history
+├── ai-service/         Python FastAPI + MediaPipe + TensorFlow Lite inference service (internal)
 ├── sign_classifier/    Transformer-based TFLite sign model and evaluation tools
 ├── emotion_classifier/ TFLite emotion model used by the AI service
 └── docs/               Architecture and API notes
@@ -53,20 +53,50 @@ The video covers the system architecture, machine-learning pipeline, and a live 
 
 ## Architecture
 
+The browser talks only to the **Spring Boot backend**. Spring Boot forwards recognition traffic to the internal **FastAPI ML service** and runs the translation pipeline itself.
+
+```text
+React (browser: webcam + MediaPipe Holistic landmarks)
+  ↓  HTTP REST
+Spring Boot  (public API gateway, port 8080)
+  ↓  HTTP REST  (FASTAPI_BASE_URL)
+FastAPI ML Service  (internal, port 8001)
+  ↓
+MediaPipe + Transformer (TFLite)  →  top-k signs + sentence state
+  ↓
+ASL Gloss  (back in Spring Boot)
+  ↓
+Gemini  →  Natural English
+  ↓
+Google Cloud TTS  →  MP3 audio
+  ↓
+PostgreSQL  (translation history)
+  ↓
+Response to React  (text + audio; falls back to the browser voice)
+```
+
 ```mermaid
 flowchart LR
-    A[Camera Input] --> B[MediaPipe Holistic\nPose, Hands, Face]
-    B --> C[Feature Extraction\nand Sequence Buffer]
-    C --> D[TensorFlow Lite\nTransformer Prediction]
-    D --> E[Prediction Stabilization\nand Sentence State]
-    E --> F[Text Output]
-    E --> G[Optional Gemini\nSentence / Scene Refinement]
-    F --> H[Browser Speech Output]
-    G --> F
-    Frontend[React + Vite Frontend] <--> API[FastAPI / Spring Boot APIs]
-    API --> D
-    API --> E
+    UI[React + Vite\nMediaPipe in browser] -->|/api/v1/inference\n/api/v1/sentence/*| SB[Spring Boot\nAPI gateway]
+    UI -->|/api/v1/translate| SB
+    SB -->|forward| ML[FastAPI ML service\nTFLite Transformer\nsentence state]
+    SB --> GM[Gemini]
+    SB --> TTS[Google Cloud TTS]
+    SB --> DB[(PostgreSQL)]
 ```
+
+Two request flows go through Spring Boot:
+
+| Flow | Frontend call | What Spring Boot does |
+| --- | --- | --- |
+| Live recognition (several times per second) | `POST /api/v1/inference`, `POST /api/v1/sentence/{finalize,reset,append,delete}` | Forwards the JSON unchanged to FastAPI and returns FastAPI's response unchanged |
+| Translation (once per sentence) | `POST /api/v1/translate` | Builds the ASL gloss → Gemini → Google Cloud TTS → saves to PostgreSQL → returns `aslGloss`, `englishSentence`, `speechAudio` |
+
+`/api/v1/translate` also accepts a raw `landmarks` sequence instead of `words`; Spring Boot then asks FastAPI to classify it (statelessly) before translating.
+
+**Why two backend technologies?** Python FastAPI is responsible for computer vision and machine-learning inference because the ASL recognition pipeline relies on Python ML tooling (MediaPipe, TensorFlow Lite). Java Spring Boot acts as the main application backend, handling API orchestration, business logic, persistence, Gemini integration, TTS integration, and communication with the ML service.
+
+Graceful degradation: without `GEMINI_API_KEY` the sentence is polished locally (`usedGemini: false`); without `TTS_API_KEY` no audio is returned and the browser speaks instead; if PostgreSQL is down the translation is still returned (`id: null`); if FastAPI is down the recognition endpoints return `503`.
 
 The classifier consumes landmark sequences in the project’s training order and predicts 250 ASL sign classes. The documented held-out validation results are 67.25% top-1 accuracy and 87.57% top-5 accuracy; see [`sign_classifier/README.md`](sign_classifier/README.md) for model details.
 
@@ -138,9 +168,15 @@ For shared or production environments, override these values through your normal
 
 ### 4. Start the services
 
-Run each service in its own terminal.
+Run each service in its own terminal, in this order.
 
-**AI service — FastAPI inference API**
+| Service | URL | Reached by |
+| --- | --- | --- |
+| FastAPI ML service | `http://127.0.0.1:8001` | Spring Boot only |
+| Spring Boot backend | `http://localhost:8080` | Browser |
+| React frontend | `http://localhost:5173` | Browser |
+
+**1) AI service — FastAPI inference API**
 
 ```bash
 cd ai-service
@@ -149,16 +185,25 @@ cd ai-service
 uvicorn app_server:app --host 127.0.0.1 --port 8001 --reload
 ```
 
-**Spring Boot backend**
+**2) Spring Boot backend**
 
 ```bash
 cd backend
+export DB_PASSWORD="your_postgres_password"
+export FASTAPI_BASE_URL="http://127.0.0.1:8001"   # default
+# Optional: export GEMINI_API_KEY=...  TTS_API_KEY=...
 ./mvnw spring-boot:run
-
-# Windows PowerShell: .\\mvnw.cmd spring-boot:run
 ```
 
-**React frontend**
+PowerShell:
+
+```powershell
+cd backend
+$env:DB_PASSWORD = "your_postgres_password"
+.\mvnw.cmd spring-boot:run
+```
+
+**3) React frontend**
 
 ```bash
 cd frontend
@@ -166,7 +211,18 @@ npm install
 npm run dev
 ```
 
-Open the Vite URL shown in the terminal, usually `http://127.0.0.1:5173`.
+In development the frontend calls `http://localhost:8080` (Spring Boot) automatically. Open `http://localhost:5173`.
+
+### Alternative: Docker Compose
+
+Runs PostgreSQL, the FastAPI ML service (internal only), Spring Boot and the frontend:
+
+```bash
+# optional: export GEMINI_API_KEY=... TTS_API_KEY=...
+docker compose up --build
+```
+
+Then open `http://localhost:5173`. The Spring Boot API is on `http://localhost:8080`; FastAPI is not published to the host.
 
 ### Optional: local OpenCV webcam demo
 
@@ -183,24 +239,31 @@ Press `q` to exit. Useful options include `--output-dir`, `--save-stride`, `--mo
 
 ### Frontend API target
 
-The frontend uses `VITE_API_BASE_URL` when set; otherwise it uses the configured deployment URL in [`frontend/src/config.ts`](frontend/src/config.ts).
+`VITE_API_BASE_URL` must point at the **Spring Boot backend**. When unset, `npm run dev` uses `http://localhost:8080` and production builds use the fallback URL in [`frontend/src/config.ts`](frontend/src/config.ts).
 
 ```bash
 cd frontend
-printf "VITE_API_BASE_URL=http://127.0.0.1:8001\n" > .env.local
+printf "VITE_API_BASE_URL=http://localhost:8080\n" > .env.local
 npm run dev
 ```
 
-For PowerShell:
+### Backend environment variables
 
-```powershell
-$env:VITE_API_BASE_URL = "http://127.0.0.1:8001"
-npm run dev
-```
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `FASTAPI_BASE_URL` | `http://localhost:8001` | Where Spring Boot reaches the ML service |
+| `FASTAPI_READ_TIMEOUT` | `30s` | Allows for an ML-service cold start |
+| `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | `jdbc:postgresql://localhost:5432/signbridge`, `postgres`, empty | PostgreSQL |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | unset, `gemini-2.5-flash` | Sentence refinement |
+| `TTS_API_KEY` | unset | Google Cloud Text-to-Speech (API key with the TTS API enabled) |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` + deployed frontend | Browser origins allowed to call Spring Boot |
+| `PORT` | `8080` | HTTP port (set by Cloud Run) |
+
+API keys live only in the backend environment; nothing secret is shipped to the browser.
 
 ### Gemini integration
 
-Gemini is optional. Without a key, the AI service uses a safe local fallback for sentence and scene operations.
+Gemini is optional and is called by Spring Boot. Without a key, a local fallback capitalizes the gloss into a sentence. (The FastAPI service keeps its own `/api/v1/gemini/*` endpoints for standalone use; the frontend no longer calls them.)
 
 ```bash
 export GEMINI_API_KEY="your_api_key_here"
@@ -216,7 +279,27 @@ $env:GEMINI_MODEL = "gemini-2.5-flash"
 
 ## API Reference
 
-The FastAPI service provides interactive OpenAPI documentation at `http://127.0.0.1:8001/docs`.
+### Spring Boot (public API, `http://localhost:8080`, OpenAPI UI at `/docs`)
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/health` | Backend status plus `mlService: ok/unavailable` |
+| `POST` | `/api/v1/inference` (alias `/inference`) | Forwarded to FastAPI `/api/v1/inference` |
+| `POST` | `/api/v1/sentence/{finalize,reset,append,delete}` | Forwarded to FastAPI sentence state |
+| `POST` | `/api/v1/translate` | Gloss → Gemini → TTS → PostgreSQL |
+| `GET` | `/api/v1/translations` | Translation history |
+| `GET` | `/api/v1/translations/{id}` | One translation (`404` if missing) |
+| `DELETE` | `/api/v1/translations/{id}` | Delete a translation |
+
+```bash
+curl -X POST http://localhost:8080/api/v1/translate \
+  -H "Content-Type: application/json" \
+  -d '{"words": ["STORE", "GO", "TOMORROW"]}'
+# {"id":1,"aslGloss":"STORE GO TOMORROW","englishSentence":"...","speechAudio":"<base64 mp3 or null>",
+#  "detectedEmotion":"neutral","detectedScene":"unknown","usedGemini":true}
+```
+
+### FastAPI ML service (internal, `http://127.0.0.1:8001`, OpenAPI UI at `/docs`)
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
@@ -238,7 +321,7 @@ curl -X POST http://127.0.0.1:8001/api/v1/inference \\
   -d '{"landmarks": [[[0.0, 0.0, 0.0]]], "top_k": 5}'
 ```
 
-The Spring Boot service is available at `http://127.0.0.1:8080` and exposes `/health`, `/api/v1/recognize`, `/api/v1/translate`, and translation history routes under `/api/v1/translations`.
+Add `"update_sentence": false` for a one-off classification that leaves the live sentence state untouched (Spring Boot uses this for `/api/v1/translate` with landmarks).
 
 ## Model Evaluation
 
