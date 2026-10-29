@@ -1,13 +1,13 @@
-import { FaceVisual, LanguageVisual, ScenarioArt, PredictionVisual, SceneVisual } from './components/ContextVisuals';
 import { PracticeCoach, TopFive } from './components/Practice';
-import { ClipFigure } from './components/MediaShowcase';
-import { BuiltWith, Chapter, ScenarioPhoto, SignGallery, WhereItApplies, WhyItMatters, WhyNow } from './components/Narrative';
+import { BuiltWith, WhereItApplies, WhyItMatters, WhyNow } from './components/Narrative';
 import { MediaShowcase } from './components/MediaShowcase';
-import { DecisionFlow, DeployFlow, PipelineFlow } from './components/Flows';
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ImgHTMLAttributes, type PointerEvent, type SyntheticEvent } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { useGSAP } from '@gsap/react';
-import { gsap } from 'gsap';
+import { DeployFlow, PipelineFlow } from './components/Flows';
+import { DemoRecording, IntroVideo } from './components/Videos';
+import { HeroHand } from './components/HeroHand';
+import { useReveal } from './lib/useReveal';
+import { contextFromWords, emotionLabel, sceneLabel } from './lib/signContext';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type SyntheticEvent } from 'react';
+import { motion } from 'framer-motion';
 import axios, { AxiosError } from 'axios';
 import {
   API_HOST_LABEL,
@@ -20,9 +20,14 @@ import {
   TRANSLATE_URL,
 } from './config';
 import { CapsuleNav, SectionIndex } from './layout/SiteChrome';
-import { PAGE_IDS, scrollToSection } from './layout/siteNavigation';
+import { useBackendStatus } from './lib/useBackendStatus';
 
-gsap.registerPlugin(useGSAP);
+// Pages behind a nav click load on demand, keeping GSAP and their visuals out of the first bundle.
+const FeatureExperience = lazy(() => import('./pages/FeaturesPage'));
+const SponsorTeamShowcaseV3 = lazy(() => import('./pages/TeamPage'));
+const PageFallback = () => <div className="page-loading section-shell" aria-live="polite">Loading…</div>;
+import { PAGE_IDS, scrollToSection, scrollToSectionWhenReady } from './layout/siteNavigation';
+
 
 type Landmark = { x: number; y: number; z: number; visibility?: number };
 type LandmarkFrame = number[][];
@@ -202,19 +207,8 @@ const formatError = (error: unknown): string => {
   return error instanceof Error ? error.message : 'Unexpected camera or inference error.';
 };
 
-const contextFallback = (sentence: string): { emotion: string; scene: string } => {
-  const words = sentence.toLowerCase().split(/\s+/);
-  if (words.some((word) => ['look', 'shhh', 'quiet', 'listen'].includes(word))) {
-    return { emotion: 'attentive / focused', scene: 'classroom / quiet area' };
-  }
-  if (words.some((word) => ['happy', 'flower', 'beautiful', 'smile'].includes(word))) {
-    return { emotion: 'joyful', scene: 'park / outdoors' };
-  }
-  return { emotion: 'neutral', scene: 'unknown' };
-};
-
 const resolveContext = (emotion: string | null | undefined, scene: string | null | undefined, sentence: string) => {
-  const fallback = contextFallback(sentence);
+  const fallback = contextFromWords(sentence);
   const normalizedEmotion = emotion?.trim().toLowerCase();
   const normalizedScene = scene?.trim().toLowerCase();
   return {
@@ -225,22 +219,6 @@ const resolveContext = (emotion: string | null | undefined, scene: string | null
       ? fallback.scene
       : normalizedScene,
   };
-};
-
-const emotionLabel = (emotion: string): string => {
-  if (emotion.includes('joy') || emotion.includes('happy')) return '😄 Joyful';
-  if (emotion.includes('attentive') || emotion.includes('focused')) return '😊 Attentive';
-  if (emotion.includes('empathetic') || emotion.includes('sad')) return '💙 Empathetic';
-  if (emotion.includes('excited')) return '✨ Excited';
-  return '😌 Neutral';
-};
-
-const sceneLabel = (scene: string): string => {
-  if (scene.includes('classroom') || scene.includes('quiet')) return '🏫 Classroom';
-  if (scene.includes('park') || scene.includes('outdoors')) return '🌸 Park / Outdoors';
-  if (scene.includes('supportive')) return '🤝 Supportive setting';
-  if (scene.includes('restaurant') || scene.includes('cafe')) return '🍽 Restaurant';
-  return '◌ Scene pending';
 };
 
 const statusText = (status: ConnectionState, mode: UiMode): string => {
@@ -296,345 +274,6 @@ function ArrowIcon() {
 }
 
 
-interface ResilientImageProps extends ImgHTMLAttributes<HTMLImageElement> {
-  children?: React.ReactNode;
-  fallbackSrc?: string;
-}
-
-function ResilientImage({ src, alt, className, children, fallbackSrc, ...props }: ResilientImageProps) {
-  const [hasError, setHasError] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [activeSrc, setActiveSrc] = useState(src);
-  const [usedFallback, setUsedFallback] = useState(false);
-
-  const handleError = () => {
-    if (fallbackSrc && !usedFallback) {
-      setUsedFallback(true);
-      setActiveSrc(fallbackSrc);
-      return;
-    }
-    setHasError(true);
-  };
-
-  return (
-    <div className={`media-container ${className || ''}`}>
-      <div className={`cyber-fallback ${hasError ? 'is-visible' : ''}`} aria-hidden={!hasError}>
-        <span className="cyber-fallback-text">Image unavailable</span>
-      </div>
-
-      {!hasError && (
-        <img
-          src={activeSrc}
-          alt={alt}
-          loading={props.loading ?? 'lazy'}
-          className={`media-image ${isLoaded ? 'is-loaded' : ''}`}
-          onLoad={() => setIsLoaded(true)}
-          onError={handleError}
-          {...props}
-        />
-      )}
-
-      {children}
-
-      <div className="unify-dark-overlay" />
-    </div>
-  );
-}
-
-const HELLO_HAND_POINTS = [
-  [300, 424],
-  [258, 338], [218, 298], [180, 252], [148, 198],
-  [278, 306], [261, 230], [248, 145], [244, 70],
-  [305, 292], [307, 198], [309, 102], [310, 31],
-  [331, 300], [349, 216], [362, 130], [369, 63],
-  [355, 319], [389, 258], [414, 194], [428, 132],
-] as const;
-
-const HELLO_HAND_BONES = [
-  [0, 1], [1, 2], [2, 3], [3, 4],
-  [0, 5], [5, 6], [6, 7], [7, 8],
-  [0, 9], [9, 10], [10, 11], [11, 12],
-  [0, 13], [13, 14], [14, 15], [15, 16],
-  [0, 17], [17, 18], [18, 19], [19, 20],
-] as const;
-
-function HandHelloVisual({ devMode }: { devMode: boolean }) {
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const [magnet, setMagnet] = useState({ x: 0, y: 0 });
-  const [activeNode, setActiveNode] = useState<number | null>(null);
-  const [rippleNode, setRippleNode] = useState<number | null>(null);
-  const [status, setStatus] = useState('Spatial landmark stream active');
-
-  const coordinatesFor = useCallback((index: number) => {
-    const [x, y] = HELLO_HAND_POINTS[index];
-    return `X: ${(x / 600).toFixed(2)}, Y: ${(y / 520).toFixed(2)}, Z: ${(-0.04 - index * 0.009).toFixed(2)}`;
-  }, []);
-
-  const handlePointerMove = useCallback((event: PointerEvent<HTMLDivElement>) => {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const x = ((event.clientX - bounds.left) / bounds.width - 0.5) * 8;
-    const y = ((event.clientY - bounds.top) / bounds.height - 0.5) * -8;
-    setTilt({ x, y });
-    setMagnet({ x: x * 0.85, y: -y * 0.85 });
-  }, []);
-
-  const activateNode = useCallback((index: number) => {
-    setActiveNode(index);
-    setRippleNode(index);
-    setStatus(`Node ${String(index + 1).padStart(2, '0')} selected — gesture energy sampled`);
-    window.setTimeout(() => setRippleNode((current) => current === index ? null : current), 850);
-  }, []);
-
-  const hoverNode = useCallback((index: number) => {
-    setActiveNode(index);
-    setStatus(`Tracking node ${String(index + 1).padStart(2, '0')} · ${coordinatesFor(index)}`);
-  }, [coordinatesFor]);
-
-  return (
-    <motion.div
-      className="hand-hello-visual"
-      onPointerMove={handlePointerMove}
-      onPointerLeave={() => { setTilt({ x: 0, y: 0 }); setMagnet({ x: 0, y: 0 }); setActiveNode(null); setStatus('Spatial landmark stream active'); }}
-      animate={{ rotateX: tilt.y * 1.5, rotateY: tilt.x * 1.5 }}
-      transition={{ type: "spring", stiffness: 120, damping: 20 }}
-      style={{ perspective: 1000, transformStyle: "preserve-3d" }}
-      aria-label="Animated ASL hello hand landmark visualization"
-      role="img"
-    >
-      {devMode && (
-        <div className="dev-node-telemetry">
-          SPATIAL RENDER: 2D_GRID | FPS: 60.0
-        </div>
-      )}
-      <svg viewBox="0 0 600 520" role="presentation" style={{ transformStyle: "preserve-3d" }}>
-        <defs>
-          <linearGradient id="helloLine" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0" stopColor="#1a73e8" />
-            <stop offset="0.52" stopColor="#00f0ff" />
-            <stop offset="1" stopColor="#ffffff" />
-          </linearGradient>
-          <radialGradient id="helloGlow">
-            <stop offset="0" stopColor="#00f0ff" stopOpacity="0.9" />
-            <stop offset="0.5" stopColor="#3b82f6" stopOpacity="0.35" />
-            <stop offset="1" stopColor="#3b82f6" stopOpacity="0" />
-          </radialGradient>
-          <filter id="helloBlur"><feGaussianBlur stdDeviation="7" /></filter>
-          <filter id="helloNeon"><feGaussianBlur stdDeviation="2.4" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
-        </defs>
-        <g className="hello-grid-lines" aria-hidden="true" style={{ transformStyle: "preserve-3d" }}>
-          <path d="M42 432H548M84 390H516M124 348H476" />
-          <path d="M110 72V466M170 40V466M230 24V466M290 18V466M350 18V466M410 38V466M470 72V466" />
-        </g>
-        <circle className="hello-aura" cx="300" cy="238" r="170" fill="url(#helloGlow)" filter="url(#helloBlur)" />
-        <rect className="hello-bounds" x="117" y="16" width="333" height="425" rx="18" />
-
-        {devMode && (
-          <g className="dev-bounding-box-group" aria-hidden="true">
-            <rect
-              x="130"
-              y="20"
-              width="315"
-              height="415"
-              fill="none"
-              stroke="#22d3ee"
-              strokeWidth="1.2"
-              strokeDasharray="4 4"
-            />
-            <text x="135" y="35" fill="#22d3ee" fontSize="8" fontFamily="monospace" fontWeight="bold">Dev mode · spatial bounding box</text>
-            <text x="135" y="425" fill="#22d3ee" fontSize="8" fontFamily="monospace">Limits · x 130–445, y 20–435</text>
-          </g>
-        )}
-
-        <g className="hello-corner-brackets" aria-hidden="true" style={{ transform: `translate(${magnet.x}px, ${magnet.y}px)` }}>
-          <path d="M117 48V16h32M418 16h32v32M117 409v32h32M450 409v32h-32" />
-        </g>
-        <g className="hello-hand-group" style={{ transformStyle: "preserve-3d" }}>
-          {HELLO_HAND_BONES.map(([from, to], index) => (
-            <line
-              className="hello-bone"
-              key={`${from}-${to}`}
-              x1={HELLO_HAND_POINTS[from][0]}
-              y1={HELLO_HAND_POINTS[from][1]}
-              x2={HELLO_HAND_POINTS[to][0]}
-              y2={HELLO_HAND_POINTS[to][1]}
-              style={{ animationDelay: `${index * 45}ms` }}
-            />
-          ))}
-          {HELLO_HAND_POINTS.map(([x, y], index) => (
-            <g
-              className={`hello-node-wrap ${activeNode === index ? 'is-active' : ''}`}
-              key={`${x}-${y}`}
-              style={{ animationDelay: `${index * 70}ms` }}
-              role="button"
-              tabIndex={0}
-              aria-label={`Landmark node ${index + 1}, ${coordinatesFor(index)}`}
-              onPointerEnter={() => hoverNode(index)}
-              onClick={() => activateNode(index)}
-              onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activateNode(index); } }}
-            >
-              {rippleNode === index && <circle className="hello-energy-ring" cx={x} cy={y} r="7" />}
-              <circle className="hello-node-glow" cx={x} cy={y} r="18" />
-              <circle className="hello-node" cx={x} cy={y} r={index === 0 ? 5 : 4} />
-            </g>
-          ))}
-        </g>
-        <g className="hello-data-labels" aria-hidden="true">
-          <text x="36" y="84">ASL · Hello</text>
-          <text x="36" y="101">Outward wave trajectory</text>
-          <text x="448" y="401">21 nodes</text>
-          <text x="448" y="418">Browser stream</text>
-        </g>
-        <path className="hello-wave-trail" d="M420 124C500 154 507 228 458 282" />
-        <path className="hello-wave-arrow" d="M454 271l8 12-14 1" />
-      </svg>
-
-      <motion.div className="hello-hud hello-hud-confidence magnetic-tag" style={{ x: magnet.x, y: magnet.y }} whileHover={{ scale: 1.1 }} onPointerEnter={() => hoverNode(8)}><span>Prototype</span><strong>DEMO</strong></motion.div>
-      <motion.div className="hello-hud hello-hud-coordinate magnetic-tag" style={{ x: -magnet.x, y: -magnet.y }} whileHover={{ scale: 1.1 }} onPointerEnter={() => hoverNode(activeNode ?? 0)}><span>{activeNode === null ? 'X: 0.42, Y: 0.81, Z: -0.12' : coordinatesFor(activeNode)}</span><small>Live 3D vector</small></motion.div>
-      <motion.div className="hello-engine-tag magnetic-tag" style={{ x: magnet.x * 0.5, y: magnet.y * 0.5 }} whileHover={{ scale: 1.1 }} onPointerEnter={() => hoverNode(0)}><i /> {status}</motion.div>
-    </motion.div>
-  );
-}
-
-function HeroLandmarkScanner({ devMode }: { devMode: boolean }) {
-  const [pointer, setPointer] = useState({ x: 50, y: 50 });
-  const [isActive, setIsActive] = useState(false);
-  const idleTimer = useRef<number | null>(null);
-
-  const resetIdleTimer = () => {
-    if (idleTimer.current) window.clearTimeout(idleTimer.current);
-    setIsActive(true);
-    idleTimer.current = window.setTimeout(() => setIsActive(false), 3000);
-  };
-
-  useEffect(() => () => { if (idleTimer.current) window.clearTimeout(idleTimer.current); }, []);
-
-  const onMove = (event: PointerEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    setPointer({ x: ((event.clientX - rect.left) / rect.width) * 100, y: ((event.clientY - rect.top) / rect.height) * 100 });
-    resetIdleTimer();
-  };
-
-  return <div className={`hero-scanner ${isActive ? 'is-active' : 'is-idle'}`} onPointerMove={onMove} onPointerLeave={() => setIsActive(false)} style={{ '--scan-x': `${pointer.x}%`, '--scan-y': `${pointer.y}%` } as CSSProperties}>
-    <ResilientImage className="hero-hand-photo" src="/woman-open-hand-french-manicure-isolated-white-background-51186691-removebg-preview.png" alt="Hand prepared for spatial landmark tracking" loading="eager" fetchPriority="high" width={560} height={690} />
-    <div className="hero-xray-mask" />
-    <HandHelloVisual devMode={devMode} />
-    <div className="hero-scanner-badge">21 HAND POINTS · DEMO</div>
-    <div className="hero-idle-line" />
-  </div>;
-}
-
-function ContextBentoGrid() {
-  const [ambientContext, setAmbientContext] = useState(true);
-
-  return (
-    <section className="context-bento-section section-shell" id="capabilities">
-      <div className="section-intro centered">
-        <span className="eyebrow">Context engine</span>
-        <h2>Recognition gets smarter with context.</h2>
-        <p>Four real-time intelligence layers turn movement into communication that feels natural, nuanced, and fast.</p>
-      </div>
-      <div className="context-bento-grid">
-        <motion.article className="context-bento-card bento-llm" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
-          <LanguageVisual />
-          <div className="bento-image-gradient" />
-          <div className="bento-content"><span className="bento-index">01 / Language layer</span><span className="bento-live-badge"><i /> Translation endpoint</span><h3>Sentence Refinement</h3><p>The configured translation service can refine recognized sign tokens into an editable sentence before speech output.</p></div>
-        </motion.article>
-        <motion.article className="context-bento-card bento-expression" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
-          <FaceVisual />
-          <div className="bento-image-gradient" /><div className="emotion-tags"><span>Questioning (88%)</span><span>Tone: Curious</span></div>
-          <div className="bento-content"><span className="bento-index">02 / Facial mesh</span><h3>Nonmanual Signal Input</h3><p>Facial and body landmarks are included in the prototype input because nonmanual information can contribute linguistic meaning.</p></div>
-        </motion.article>
-        <motion.article className="context-bento-card bento-scene" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
-          <SceneVisual />
-          <div className="bento-image-gradient" /><span className="scene-box scene-table">Table</span><span className="scene-box scene-menu">Menu</span>
-          <div className="bento-content"><span className="bento-index">03 / Scene context</span><h3>Optional Visual Context</h3><p>When a sentence is finalized, the configured translation endpoint may receive one camera snapshot with the recognized words.</p><button className={`ambient-toggle ${ambientContext ? 'is-on' : ''}`} type="button" onClick={() => setAmbientContext((enabled) => !enabled)} aria-pressed={ambientContext}><i /> {ambientContext ? 'Context example enabled' : 'Context example paused'}</button></div>
-        </motion.article>
-        <motion.article className="context-bento-card bento-prediction" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .22 }} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 220, damping: 24 }}>
-          <PredictionVisual />
-          <div className="bento-image-gradient" /><div className="autocomplete-demo"><span>I would like to</span><i>→</i><b>order</b><b>buy</b><b>ask</b></div>
-          <div className="bento-content"><span className="bento-index">04 / Prediction</span><h3>Smart Next-Word Completion</h3><p>Suggests possible next words from the current sequence so the signer can inspect and choose what comes next.</p></div>
-        </motion.article>
-      </div>
-    </section>
-  );
-}
-
-function SmartGlassesFuture() {
-  const sectionRef = useRef<HTMLElement | null>(null);
-
-  useGSAP(() => {
-    const media = gsap.matchMedia();
-    media.add('(prefers-reduced-motion: no-preference)', () => {
-      const timeline = gsap.timeline({ defaults: { ease: 'power2.out' } });
-      timeline
-        .set('.glasses-result-panel', { autoAlpha: 0, y: 14 })
-        .set('.glasses-token', { autoAlpha: 0, y: 8 })
-        .set('.glasses-scan', { xPercent: -130, autoAlpha: 0 })
-        .to('.glasses-scan', { xPercent: 170, autoAlpha: 1, duration: 1.15, ease: 'power1.inOut' })
-        .to('.glasses-scan', { autoAlpha: 0, duration: .18 }, '<.92')
-        .to('.glasses-token', { autoAlpha: 1, y: 0, duration: .32, stagger: .13 }, '-=.08')
-        .to('.glasses-result-panel', { autoAlpha: 1, y: 0, duration: .55 }, '+=.18')
-        .to('.glasses-speech-line i', { scaleX: 1, duration: .75, ease: 'power2.inOut' }, '<.1')
-        .to('.glasses-speech-line i', { opacity: .45, duration: .35 }, '+=1.4');
-    });
-    media.add('(prefers-reduced-motion: reduce)', () => {
-      gsap.set(['.glasses-result-panel', '.glasses-token'], { autoAlpha: 1, y: 0 });
-      gsap.set('.glasses-speech-line i', { scaleX: 1 });
-      gsap.set('.glasses-scan', { autoAlpha: 0 });
-    });
-    return () => media.revert();
-  }, { scope: sectionRef });
-
-  return (
-    <section className="future-glasses-section section-shell" id="future-hardware" ref={sectionRef} aria-labelledby="future-glasses-title">
-      <div className="future-glasses-copy">
-        <span className="future-label">Future research direction</span>
-        <h2 id="future-glasses-title">Conversation support that can move with you.</h2>
-        <p>We want to explore how a future wearable could keep the signer, the interpreted sentence, and the conversation partner in the same line of sight.</p>
-        <div className="future-principles" aria-label="Future smart glasses research principles">
-          <div><span>01</span><strong>Glanceable, not distracting</strong><p>Short results appear only when they help the conversation.</p></div>
-          <div><span>02</span><strong>Signer-controlled</strong><p>Recognition remains provisional until the signer confirms it.</p></div>
-          <div><span>03</span><strong>Privacy under test</strong><p>On-device processing and visible capture cues are research requirements, not current guarantees.</p></div>
-        </div>
-        <p className="future-disclaimer">Concept visualization only. SignBridge does not currently ship smart-glasses hardware or claim integration with Meta products.</p>
-      </div>
-      <figure className="glasses-concept-stage">
-        <div className="glasses-axis" aria-hidden="true"><i /><i /><i /></div>
-        <img src="/future/signbridge-smart-glasses-concept.png" width="1760" height="880" alt="Original SignBridge concept render of lightweight smart glasses" loading="lazy" />
-        <div className="glasses-scan" aria-hidden="true" />
-        <div className="glasses-hud" aria-label="Simulated smart glasses interpretation preview">
-          <span className="glasses-hud-label">SignBridge · concept</span>
-          <div className="glasses-token-row" aria-hidden="true"><span className="glasses-token">HELLO</span><span className="glasses-token">NICE</span><span className="glasses-token">MEET</span></div>
-          <div className="glasses-result-panel">
-            <span>Editable interpretation</span>
-            <strong>Hello, it’s nice to meet you.</strong>
-            <div className="glasses-speech-line"><span>Ready to speak</span><i /></div>
-          </div>
-        </div>
-        <figcaption>Original, brand-neutral hardware concept rendered for SignBridge. Interface data is simulated.</figcaption>
-      </figure>
-    </section>
-  );
-}
-
-function FeatureExperience() {
-  return (
-    <>
-      <Chapter n={1} title="Recognize" line="Every frame votes, and a sign is only accepted when the votes agree." />
-      <div className="clip-pair section-shell"><ClipFigure name="hand" /><ClipFigure name="classifier" /></div>
-      <SignGallery />
-      <DecisionFlow />
-      <Chapter n={2} title="Understand" line="Face, scene and likely next words add the context a hand shape alone lacks." />
-      <ContextBentoGrid />
-      <Chapter n={3} title="Express" line="Raw tokens become a sentence a person can edit and speak." />
-      <ReasoningComparisonV2 />
-      <ScenarioDial />
-      <Chapter n={4} title="Next" line="Where the same pipeline goes once it fits on your face." />
-      <SmartGlassesFuture />
-    </>
-  );
-}
-
 type PremiumHeroProps = {
   devMode: boolean;
   isRunning: boolean;
@@ -674,7 +313,7 @@ function PremiumHero({ devMode, isRunning, onLaunchDemo, onExplore }: PremiumHer
       <div className="premium-product-stage" aria-label="SignBridge live translation preview">
         <div className="premium-stage-header"><span><i /> Live preview</span><small>Camera · Face · Hands · Pose</small></div>
         <div className="premium-stage-body">
-          <div className="premium-stage-camera"><HeroLandmarkScanner devMode={devMode} /><span className="premium-camera-label">Spatial signal</span></div>
+          <div className="premium-stage-camera"><HeroHand devMode={devMode} /></div>
         </div>
         <div className="premium-stage-footer"><span>01</span><span>Detect movement</span><span className="premium-stage-line" /><span>02</span><span>Shape meaning</span><span className="premium-stage-line" /><span>03</span><span>Give it a voice</span></div>
       </div>
@@ -682,143 +321,17 @@ function PremiumHero({ devMode, isRunning, onLaunchDemo, onExplore }: PremiumHer
   );
 }
 
-function ScenarioDial() {
-  const [scenario, setScenario] = useState<'medical' | 'tour'>('medical');
-  const content = scenario === 'medical'
-    ? { title: 'Medical context', raw: 'PAIN / RIGHT / ABDOMEN', translation: 'I have pain on the right side of my abdomen.', accent: 'rose', alt: 'Medical communication example with a signer and clinician' }
-    : { title: 'Tour & daily context', raw: 'LOOK / HISTORIC / TOWER', translation: 'The historic tower is on your left.', accent: 'cyan', alt: 'Daily communication example during a guided tour' };
-  return (
-    <section className="scenario-dial-section" id="scenario">
-      <div className="section-shell">
-        <div className="section-intro centered">
-          <span className="eyebrow">Context in use</span>
-          <h2>One gesture. The right meaning.</h2>
-          <p>Spatial motion becomes more useful when it understands where the conversation is happening.</p>
-        </div>
-        <div className="scenario-selector-tabs">
-          <button className={`scenario-tab-btn ${scenario === 'medical' ? 'is-active' : ''}`} type="button" onClick={() => setScenario('medical')}>Medical Context</button>
-          <button className={`scenario-tab-btn ${scenario === 'tour' ? 'is-active' : ''}`} type="button" onClick={() => setScenario('tour')}>Tour &amp; Daily Context</button>
-        </div>
-        <motion.div className={`scenario-grid scenario-${content.accent}`} key={scenario} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .35 }}>
-          <div className="scenario-media-frame"><ScenarioPhoto key={scenario} kind={scenario} fallback={<ScenarioArt kind={scenario} />} /></div>
-          <div className="scenario-content-panel">
-            <div className="scenario-info"><span className="eyebrow">Illustrative workflow</span><h3>{content.title}</h3><p>This simulated example shows how recognized sign tokens could be reviewed and rewritten as editable language. It is not a medical diagnostic tool.</p></div>
-            <div className="scenario-metrics-row"><div className="scenario-metric-box"><span>Example sign tokens</span><strong className="scenario-signal-value">{content.raw}</strong></div><div className="scenario-metric-box"><span>Editable sentence example</span><strong className="scenario-translation-value">{content.translation}</strong></div></div>
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  );
+function BackendBanner({ status, elapsed, onRetry }: { status: 'checking' | 'waking' | 'ready' | 'down'; elapsed: number; onRetry: () => void }) {
+  if (status === 'checking') return null;
+  if (status === 'ready') return <div className="backend-banner is-ready" role="status"><i /> Recognition server is awake</div>;
+  if (status === 'waking') return <div className="backend-banner is-waking" role="status"><i /> Waking the recognition server… {elapsed}s <small>The first visit after a quiet period can take 20–40 s. You can start the camera meanwhile.</small></div>;
+  return <div className="backend-banner is-down" role="alert"><i /> Recognition server did not answer. <button type="button" onClick={onRetry}>Try again</button><small>The recorded session above still shows a full run.</small></div>;
 }
 
-type SponsorLogoKind = 'uw' | 'sail' | 'qualcomm';
+type DevStats = Record<string, string | number | boolean | null | string[]>;
 
-function SponsorLogoMark({ kind, alt }: { kind: SponsorLogoKind; alt: string }) {
-  return (
-    <div className={`sponsor-logo-stage sponsor-logo-${kind}`} role="img" aria-label={alt}>
-      {kind === 'uw' && (
-        <svg className="sponsor-logo-svg uw-logo-svg" viewBox="0 0 300 72" aria-hidden="true">
-          <path className="uw-crest" d="M10 7h49v43c0 9-11 14-24.5 18C21 64 10 59 10 50V7Z" />
-          <path className="uw-letter" d="m19 20 6 29h8l4-17 4 17h8l6-29h-7l-3 18-4-18h-8l-4 18-3-18h-7Z" />
-          <text x="72" y="31" className="uw-wordmark">UNIVERSITY OF</text>
-          <text x="72" y="52" className="uw-wordmark uw-wordmark-strong">WISCONSIN–MADISON</text>
-        </svg>
-      )}
-      {kind === 'sail' && (
-        <svg className="sponsor-logo-svg" viewBox="0 0 280 72" aria-hidden="true">
-          <path className="sail-mark" d="M11 56 34 8l23 48H11Zm23-31-8 22h17L34 25Z" />
-          <text x="72" y="39" className="sail-wordmark">SAIL</text>
-          <text x="73" y="56" className="sail-caption">SUMMER OF AI LABORATORY</text>
-        </svg>
-      )}
-      {kind === 'qualcomm' && (
-        <svg className="sponsor-logo-svg qualcomm-svg" viewBox="0 0 280 72" aria-hidden="true">
-          <path className="qualcomm-mark" d="M32 12c-13 0-23 10-23 23s10 23 23 23c6 0 11-2 15-6l8 8 7-7-8-8c1-3 2-7 2-10 0-13-10-23-24-23Zm0 11c7 0 12 5 12 12s-5 12-12 12-12-5-12-12 5-12 12-12Z" />
-          <text x="72" y="46" className="qualcomm-wordmark">QUALCOMM</text>
-        </svg>
-      )}
-    </div>
-  );
-}
-
-function SponsorTeamShowcaseV3() {
-  const sponsors = [
-    {
-      name: 'University of Wisconsin–Madison',
-      badge: 'Academic home',
-      description: 'A cross-disciplinary environment connecting computer science, data, design, and human-centered problem solving.',
-      logoKind: 'uw' as const,
-      href: 'https://www.wisc.edu/',
-    },
-    {
-      name: 'Summer of AI Laboratory',
-      badge: 'SAIL program',
-      description: 'UW–Madison CDIS program for building original AI products through project-based learning and industry mentorship.',
-      logoKind: 'sail' as const,
-      href: 'https://cdis.wisc.edu/preparing-students-for-the-ai-era-cdis-and-openai-launch-sail/',
-    },
-    {
-      name: 'Qualcomm',
-      badge: 'Edge hardware',
-      description: 'Research direction: evaluate efficient on-device inference and hardware-aware deployment for future prototypes.',
-      logoKind: 'qualcomm' as const,
-      href: 'https://www.qualcomm.com/',
-    },
-  ];
-  const team = [
-    { name: 'Siqi Dai', email: 'sdai66@wisc.edu', role: 'Product & Multimodal Experience', focus: 'Product direction · Interaction system · Gemini reasoning' },
-    { name: 'Abhiram Amaravadi', email: 'aamaravadi@wisc.edu', role: 'Spatial ML & Inference', focus: 'Landmark features · Temporal recognition · Top-K ranking' },
-    { name: 'Jianhong Shi', email: 'jshi296@wisc.edu', role: 'Realtime Platform & Voice', focus: 'Camera pipeline · Backend/API · Context-aware TTS' },
-  ];
-  return (
-    <section className="acknowledgments-section section-shell" id="team">
-      <div className="acknowledgments-intro">
-        <span className="eyebrow">Acknowledgments</span>
-        <h2>Acknowledgments</h2>
-        <p>Supported by academic programs and industry partners building a more expressive web.</p>
-      </div>
-      <div className="sponsor-bento-grid">
-        {sponsors.map((sponsor) => (
-          <motion.a key={sponsor.name} className="sponsor-bento-card" href={sponsor.href} target="_blank" rel="noreferrer" whileHover={{ y: -4 }}>
-            <SponsorLogoMark kind={sponsor.logoKind} alt={`${sponsor.name} logo`} />
-            <span className="sponsor-bento-badge">{sponsor.badge}</span>
-            <h3>{sponsor.name}</h3>
-            <p>{sponsor.description}</p>
-            <span className="partner-link-label">Visit official site ↗</span>
-          </motion.a>
-        ))}
-      </div>
-      <div className="team-showcase team-showcase-clean">
-        <div className="team-showcase-copy">
-          <span className="team-badge">Team Green Lake</span>
-          <h2>Team Green Lake.</h2>
-          <p>Three disciplines, one shared goal: turn spatial AI into communication people can trust.</p>
-        </div>
-        <div className="team-roster">
-          {team.map((member) => (
-            <a className="team-roster-row team-roster-row-polished" href={`mailto:${member.email}`} key={member.email}>
-              <div className="team-member-identity"><strong>{member.name}</strong><small>{member.email}</small></div>
-              <div className="team-member-role"><b>{member.role}</b><span>{member.focus}</span></div>
-              <span className="team-contact-pill">Contact ↗</span>
-            </a>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function DeveloperModeToggle({ active, onToggle }: { active: boolean; onToggle: () => void }) {
-  return <><button className={`dev-floating-toggle ${active ? 'is-active' : ''}`} type="button" onClick={onToggle}><i className="dev-toggle-indicator" /> Dev Mode: {active ? 'ON' : 'OFF'}</button>{active && <aside className="dev-inspector-panel" aria-label="Developer mode inspector"><div className="dev-inspector-header"><span>Spatial payload inspector</span><span>LIVE</span></div><div className="dev-inspector-body"><pre>{JSON.stringify({ frame: 543, fps: 30, buffer: '8/8', context: 'gemini-flash', transport: 'wasm → api → tts' }, null, 2)}</pre></div></aside>}</>;
-}
-
-function ReasoningComparisonV2() {
-  const [showNaturalSentence, setShowNaturalSentence] = useState(false);
-  useEffect(() => {
-    const timer = window.setTimeout(() => setShowNaturalSentence((visible) => !visible), showNaturalSentence ? 3500 : 2500);
-    return () => window.clearTimeout(timer);
-  }, [showNaturalSentence]);
-  return <section className="reasoning-comparison section-shell" id="translation" aria-label="Sign-token sentence refinement example"><div className="comparison-stage morphing-translation"><div className="morphing-content"><span className="gemini-pill">Language refinement</span><p className="gemini-subtitle">Example translation output</p><div className="morphing-copy-stage"><AnimatePresence mode="wait"><motion.div key={showNaturalSentence ? 'natural' : 'raw'} className={`morphing-copy ${showNaturalSentence ? 'morphing-natural' : 'morphing-raw'}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: .5, ease: 'easeInOut' }}><span className={`morphing-status ${showNaturalSentence ? 'status-refined' : 'status-raw'}`}>{showNaturalSentence ? 'Editable sentence example' : 'Raw sign tokens'}</span><strong>{showNaturalSentence ? 'Could I please get a glass of water?' : '"I" ... "WANT" ... "WATER"'}</strong></motion.div></AnimatePresence></div><p className="morphing-explanation">The configured translation service can refine recognized tokens into a sentence for the signer to review.</p></div></div></section>;
+function DeveloperModeToggle({ active, onToggle, stats, live }: { active: boolean; onToggle: () => void; stats: DevStats; live: boolean }) {
+  return <><button className={`dev-floating-toggle ${active ? 'is-active' : ''}`} type="button" onClick={onToggle}><i className="dev-toggle-indicator" /> Dev Mode: {active ? 'ON' : 'OFF'}</button>{active && <aside className="dev-inspector-panel" aria-label="Developer mode inspector"><div className="dev-inspector-header"><span>Spatial payload inspector</span><span>{live ? 'LIVE' : 'IDLE'}</span></div><div className="dev-inspector-body"><pre>{JSON.stringify(stats, null, 2)}</pre></div></aside>}</>;
 }
 
 function SamArchitectureDiagramV2() {
@@ -1005,6 +518,11 @@ function App() {
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [fps, setFps] = useState(0);
   const [bufferLength, setBufferLength] = useState(0);
+  const [framesTotal, setFramesTotal] = useState(0);
+  const [inferenceCount, setInferenceCount] = useState(0);
+  const framesTotalRef = useRef(0);
+  const backend = useBackendStatus();
+  const { markReady } = backend;
 
   const liveWords = output?.words ?? [];
   const nextWords = output?.finalized_sentence
@@ -1116,6 +634,8 @@ function App() {
           );
           if (!mountedRef.current || isPausedRef.current) break;
           setOutput(response.data);
+          setInferenceCount((n) => n + 1);
+          markReady();
           setDetectedEmotion(response.data.detected_emotion || 'Neutral');
           setLatencyMs(Math.round(performance.now() - startedAt));
           setStatus('connected');
@@ -1133,7 +653,7 @@ function App() {
       inFlightRef.current = false;
       pendingWindowRef.current = null;
     }
-  }, []);
+  }, [markReady]);
 
   const finalizeSentence = useCallback(async () => {
     pauseInference();
@@ -1307,9 +827,11 @@ function App() {
         try {
           await holistic.send({ image: video });
           fpsFramesRef.current += 1;
+          framesTotalRef.current += 1;
           const elapsed = now - fpsStartedAtRef.current;
           if (elapsed >= 1000) {
             setFps(Math.round((fpsFramesRef.current * 1000) / elapsed));
+            setFramesTotal(framesTotalRef.current);
             fpsFramesRef.current = 0;
             fpsStartedAtRef.current = now;
           }
@@ -1414,12 +936,21 @@ function App() {
   const [activePage, setActivePage] = useState('overview');
   const [scrollProgress, setScrollProgress] = useState(0);
 
-  const goToPage = useCallback((pageId: string) => {
+  const goToPage = useCallback((pageId: string, sectionId?: string) => {
     if (!PAGE_IDS.includes(pageId)) return;
+    const samePage = pageId === activePage;
     setActivePage(pageId);
-    window.scrollTo({ top: 0, behavior: 'auto' });
     window.history.replaceState(null, '', `#${pageId}`);
-  }, []);
+    if (sectionId) {
+      // Same page: glide there. New page: wait for it to mount (lazy pages load first).
+      if (samePage) scrollToSection(sectionId);
+      else { window.scrollTo({ top: 0, behavior: 'auto' }); scrollToSectionWhenReady(sectionId); }
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: samePage ? 'smooth' : 'auto' });
+  }, [activePage]);
+
+  useReveal(activePage);
 
   useEffect(() => {
     const syncFromHash = () => {
@@ -1469,6 +1000,8 @@ function App() {
         onExplore={() => scrollToSection('architecture')}
       />
 
+      <IntroVideo />
+
       <WhyItMatters />
       <WhereItApplies />
       <WhyNow />
@@ -1491,7 +1024,10 @@ function App() {
         <div className="section-intro demo-intro">
           <div><span className="eyebrow">Live demo</span><h2>A clearer signal, from first gesture to final thought.</h2></div>
           <div className="connection-state"><span className={`state-dot state-${status}`} /> {statusText(status, uiMode)} <span className="state-divider" /> <code>{API_HOST_LABEL}</code></div>
+          <BackendBanner status={backend.status} elapsed={backend.elapsed} onRetry={backend.retry} />
         </div>
+
+        <DemoRecording />
 
         <PracticeCoach topK={output?.top_k ?? []} locked={output?.locked_word} candidate={output?.candidate} isRunning={isRunning} isStarting={isStarting} onStartCamera={startCamera} />
 
@@ -1559,16 +1095,39 @@ function App() {
       </div>
 
       <div className="sb-page-view" hidden={activePage !== 'features'}>
-      <FeatureExperience />
-
+      {activePage === 'features' && <Suspense fallback={<PageFallback />}><FeatureExperience /></Suspense>}
       </div>
 
       <div className="sb-page-view" hidden={activePage !== 'team'}>
-      <SponsorTeamShowcaseV3 />
+      {activePage === 'team' && <Suspense fallback={<PageFallback />}><SponsorTeamShowcaseV3 /></Suspense>}
       </div>
 
       <footer className="footer section-shell"><a className="brand-lockup" href="#overview" onClick={(e) => { e.preventDefault(); goToPage('overview'); }}><span className="brand-mark"><span /></span><span><strong>SignBridge</strong><small>Spatial AI for human connection</small></span></a><span>Built for a more expressive web.</span><a href="#overview" onClick={(e) => { e.preventDefault(); goToPage('overview'); }}>Back to top ↑</a></footer>
-      <DeveloperModeToggle active={devMode} onToggle={() => setDevMode((active) => !active)} />
+      <DeveloperModeToggle
+        active={devMode}
+        onToggle={() => setDevMode((active) => !active)}
+        live={isRunning}
+        stats={{
+          camera: isRunning ? 'running' : isStarting ? 'starting' : 'off',
+          backend: backend.status,
+          mode: uiMode,
+          frames: framesTotal,
+          fps,
+          buffer: `${bufferLength}/${WINDOW_SIZE}`,
+          stride: STRIDE_FRAMES,
+          landmarks_per_frame: LANDMARKS_PER_FRAME,
+          inferences: inferenceCount,
+          latency_ms: latencyMs,
+          top_1: topPrediction ? `${topPrediction.label} ${(topPrediction.confidence * 100).toFixed(1)}%` : null,
+          candidate: output?.candidate ?? null,
+          locked: output?.locked_word ?? null,
+          words: liveWords,
+          emotion: context.emotion,
+          scene: context.scene,
+          refine: usedGemini ? 'gemini' : 'local',
+          api: API_HOST_LABEL,
+        }}
+      />
     </main>
   );
 
