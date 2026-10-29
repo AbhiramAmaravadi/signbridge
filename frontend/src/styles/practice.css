@@ -60,3 +60,19 @@
 .practice-view button{padding:4px 10px;border:0;border-radius:999px;background:transparent;color:var(--text-2);font:inherit;font-size:12px;cursor:pointer}
 .practice-view button.is-active{background:var(--accent);color:var(--on-accent)}
 a.practice-tag{text-decoration:underline;background:color-mix(in srgb,var(--surface) 88%,transparent);padding:2px 6px;border-radius:6px}
+
+/* Per-lesson prediction panel */
+.practice-photos video{width:100%;height:100%;object-fit:contain;display:block;background:#fff}
+.practice-sub{color:var(--text-3);font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.topk-list li.is-lookalike .topk-bar i{background:var(--warn)}
+.topk-list li.is-lookalike .topk-label{color:var(--warn)}
+.practice-fix{display:grid;gap:6px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface)}
+.practice-fix span{display:flex;flex-wrap:wrap;align-items:center;gap:6px;color:var(--text-2);font-size:13px}
+.practice-fix b{padding:1px 8px;border-radius:999px;background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);font-size:12px;font-weight:600}
+.practice-fix p{margin:0;color:var(--text-2);font-size:13px;line-height:1.45}
+.practice-fix.is-on{border-color:color-mix(in srgb,var(--warn) 55%,transparent)}
+.practice-fix.is-on p{color:var(--text)}
+.practice-live[data-state="drift"] .practice-status{color:var(--warn)}
+.practice-live[data-state="drift"] .practice-status i{background:var(--warn)}
+.practice-watch{min-width:0}.practice-photos{grid-auto-columns:minmax(0,1fr)}.practice-photos video{min-width:0}
+.practice-watch{width:100%;justify-self:stretch}
